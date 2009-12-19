@@ -19,7 +19,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "includes.h"
+#include "../include/includes.h"
 
 /* Initialize default values of the configuration.			*/
 void configuration_define_defaults( config_t *c )
