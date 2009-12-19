@@ -1,9 +1,9 @@
 /* 
- * stad2 
+ * stad 
  * capture transfer data from the vfs_smb_traffic_analyzer module, and store
  * the data via various plugins
  *
- * Copyright (C) Holger Hetterich, 2008-2010
+ * Copyright (C) Holger Hetterich, 2008
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,18 +21,7 @@
 
 #include "../include/includes.h"
 
-int main(int argc, char *argv[])
+void network_handle_connections( config_t *c )
 {
-	config_t conf;
 
-	/* parse command line 						*/
-	if ( configuration_parse_cmdline( &conf, argc, argv ) <0 ) exit;
-
-	/* become a daemon, depending on configuration 			*/
-	daemon_daemonize( &conf );
-
-	/* enter the main network function.				*/
-	network_handle_connections( &conf );
-
-	exit(0);
 }

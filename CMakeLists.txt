@@ -31,7 +31,7 @@ dl
 SET(PLATFORM_LINKFLAGS "-pthread")
 
 SET(CurrentExe "stad2")
-ADD_EXECUTABLE(${CurrentExe} src/main.c src/configuration.c src/help.c src/daemon.c)
+ADD_EXECUTABLE(${CurrentExe} src/main.c src/configuration.c src/help.c src/daemon.c src/network.c)
 TARGET_LINK_LIBRARIES(${CurrentExe} ${Libraries})
 
 
