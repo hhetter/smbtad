@@ -26,5 +26,5 @@ int main(int argc, char *argv[])
 	config_t conf;
 
 	/* parse command line */
-	configuration_parse_cmdline( &conf, argc, argv );
+	if ( configuration_parse_cmdline( &conf, argc, argv ) <0 ) exit;
 }
