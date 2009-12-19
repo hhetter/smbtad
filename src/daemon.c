@@ -19,18 +19,39 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-typedef struct configuration_data {
-	/* Number of the port to use */
-	int port;
-	/* the maintenance timer strings */
-	char maint_timer[200];
-	char maint_timer_conf[200];
-	/* debug level */
-	int debug_level;
-	/* configuration file */
-	char *config_file;
-	/* daemon mode */
-	int daemon;
-} config_t;
+#include "../include/includes.h"
 
-int configuration_check_configuration( config_t *c );
+void daemon_signal_term( int signum )
+{
+	exit(0);
+}
+
+
+
+void daemon_daemonize()
+{
+
+	int fhandle;
+	/*	check if we are already daemonized. 	*/
+	if ( getppid() == 1 ) return;
+
+	fhandle = fork();
+
+	if ( fhandle < 0 ) {
+		printf("ERROR: unable to fork!\n");
+		exit(1);
+	}
+	if (fhandle > 0 ) {
+		/* let the parent exit 			*/
+		exit(0);
+	}
+
+	/* continue in child.				*/
+	setsid(); /* get a new process group 		*/
+	signal(SIGCHLD,SIG_IGN); /* ignore child 	*/
+	signal(SIGTSTP,SIG_IGN); /* ignore tty signals 	*/
+	signal(SIGTTOU,SIG_IGN);
+	signal(SIGTTIN,SIG_IGN);
+	/* catch term 					*/
+	signal(SIGTERM,daemon_signal_term);
+}

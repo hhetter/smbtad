@@ -19,18 +19,5 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-typedef struct configuration_data {
-	/* Number of the port to use */
-	int port;
-	/* the maintenance timer strings */
-	char maint_timer[200];
-	char maint_timer_conf[200];
-	/* debug level */
-	int debug_level;
-	/* configuration file */
-	char *config_file;
-	/* daemon mode */
-	int daemon;
-} config_t;
 
-int configuration_check_configuration( config_t *c );
+void daemonize();

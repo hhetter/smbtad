@@ -21,3 +21,4 @@
 
 #include "configuration.h"
 #include "help.h"
+#include "daemon.h"
