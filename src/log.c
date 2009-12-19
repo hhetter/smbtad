@@ -21,7 +21,11 @@
 
 #include "../include/includes.h"
 
-void network_handle_connections( config_t *c )
+void l_( int debuglevel, const char *msg, config_t *c )
 {
-	l_(0,"Hello World.",c);
+	if ( debuglevel >= c->debug_level ) {
+		syslog( LOG_DAEMON, msg );
+	}
 }
+
+

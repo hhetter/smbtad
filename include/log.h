@@ -19,9 +19,6 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../include/includes.h"
 
-void network_handle_connections( config_t *c )
-{
-	l_(0,"Hello World.",c);
-}
+void l_( int debuglevel, const char *msg, config_t *c );
+

@@ -22,3 +22,4 @@
 #include "configuration.h"
 #include "help.h"
 #include "daemon.h"
+#include "log.h"
