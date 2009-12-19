@@ -20,4 +20,5 @@
  */
 
 
-void daemonize();
+
+void daemonize( config_t *c );

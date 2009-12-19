@@ -28,8 +28,10 @@ void daemon_signal_term( int signum )
 
 
 
-void daemon_daemonize()
+void daemon_daemonize( config_t *c )
 {
+
+	if ( c->daemon == 0 ) return;
 
 	int fhandle;
 	/*	check if we are already daemonized. 	*/

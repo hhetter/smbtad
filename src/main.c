@@ -25,6 +25,9 @@ int main(int argc, char *argv[])
 {
 	config_t conf;
 
-	/* parse command line */
+	/* parse command line 						*/
 	if ( configuration_parse_cmdline( &conf, argc, argv ) <0 ) exit;
+
+	/* become a daemon, depending on configuration 			*/
+	daemon_daemonize( &conf );
 }
