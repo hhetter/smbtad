@@ -20,7 +20,7 @@
  */
 
 enum conn_fn_enum {
-	SOCK_TYPE_INCOMING_DATA,
+	SOCK_TYPE_DATA,
 	SOCK_TYPE_DB_QUERY
 };
 
@@ -34,4 +34,5 @@ struct connection_struct {
 int connection_list_add( int socket, enum conn_fn_enum conn_fn );
 int connection_list_remove( int socket );
 int connection_list_max();
-
+void connection_list_recreate_fd_sets( 	fd_set *active_read_fd_set,
+					fd_set *active_write_fd_set);

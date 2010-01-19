@@ -31,6 +31,10 @@ typedef struct configuration_data {
 	char *config_file;
 	/* daemon mode */
 	int daemon;
+
+	/* run time configuration */
+	int vfs_socket;
+
 } config_t;
 
 int configuration_check_configuration( config_t *c );

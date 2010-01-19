@@ -67,6 +67,19 @@ int connection_list_remove( int socket )
 	}
 }
 
+void connection_list_recreate_fs_sets( 	fd_set *active_read_fd_set,
+					fd_set *active_write_fd_set) {
+	FD_ZERO(active_read_fd_set);
+	FD_ZERO(active_write_fd_set);
+	struct connection_struct *Searcher = connection_list_start;
+
+	while (Searcher != NULL) {
+		FD_SET(Searcher->mysocket, active_read_fd_set);
+		Searcher = Searcher->next;
+	}
+}
+
+
 int connection_list_max()
 {
 	struct connection_struct *Searcher = connection_list_start;

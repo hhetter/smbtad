@@ -21,7 +21,7 @@
 
 #include "../include/includes.h"
 
-int network_create_socket( int port, config_t *c )
+int network_create_socket( int port )
 {
 	int sock_fd, new_fd;
 	struct sockaddr_in6 my_addr;
@@ -60,6 +60,52 @@ int network_create_socket( int port, config_t *c )
 
 void network_handle_connections( config_t *c )
 {
-	l_(0,"Hello World.",c);
+	int i;
+	int z=0;
+	int sr;
+	int t;
+	struct sockaddr_in remote;
+	t=sizeof(remote);
+	fd_set read_fd_set, active_read_fd_set;
+	fd_set write_fd_set, active_write_fd_set;
+
+	FD_ZERO( &active_read_fd_set );
+	FD_ZERO( &active_write_fd_set );
+
+	c->vfs_socket = network_create_socket( c->port );
+
+	connection_list_add( c->port, SOCK_TYPE_DATA );
+
+	for (;;) {
+		connection_list_recreate_fs_sets( &active_read_fd_set,
+						&active_write_fd_set);
+		read_fd_set = active_read_fd_set;
+		write_fd_set = active_write_fd_set;
+
+		while( z == 0) {
+			connection_list_recreate_fs_sets(
+				&active_read_fd_set,
+				&active_write_fd_set);
+
+			z = select( connection_list_max() +1,
+				&read_fd_set, &write_fd_set, NULL,NULL);
+
+			if (z < 0) {
+				syslog(LOG_DAEMON,"ERROR: select error.");
+				exit(1);
+			}
+		}
 	
+
+		for( i = 0; i < connection_list_max() + 1; ++i) {
+			if ( i == c->vfs_socket) {
+				if ( (sr = accept( c->vfs_socket,(struct sockaddr *) &remote,
+							 &t)) == -1) {
+					syslog(LOG_DAEMON,"ERROR: accept failed.");
+				}
+				connection_list_add( sr, SOCK_TYPE_DATA );
+				/* data arrives */
+			}
+		}
+	}
 }
