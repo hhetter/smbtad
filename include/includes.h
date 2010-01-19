@@ -23,3 +23,4 @@
 #include "help.h"
 #include "daemon.h"
 #include "log.h"
+#include "connection_list.h"
