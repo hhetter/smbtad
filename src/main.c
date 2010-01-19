@@ -23,6 +23,8 @@
 
 int main(int argc, char *argv[])
 {
+
+
 	config_t conf;
 
 	/* parse command line 						*/

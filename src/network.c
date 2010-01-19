@@ -30,14 +30,14 @@ int network_create_socket( int port )
 	struct sigaction sa;
 
 	if ( (sock_fd = socket(AF_INET6, SOCK_STREAM,0)) == -1 ) {
-		syslog( LOG_DAEMON, "ERROR: socket creation failed." );
+		syslog( LOG_DEBUG, "ERROR: socket creation failed." );
 		exit(1);
 	}
 
 	int y;
 	if ( setsockopt( sock_fd, SOL_SOCKET, SO_REUSEADDR, &y,
 		sizeof( int )) == -1 ) {
-		syslog( LOG_DAEMON, "ERROR: setsockopt failed." );
+		syslog( LOG_DEBUG, "ERROR: setsockopt failed." );
 		exit(1);
 	}
 
@@ -45,12 +45,12 @@ int network_create_socket( int port )
 	my_addr.sin6_addr = in6addr_any;
 
 	if (bind(sock_fd,(struct sockaddr *)&my_addr,sizeof(my_addr)) == -1 ) {
-		syslog( LOG_DAEMON, "ERROR: bind failed." );
+		syslog( LOG_DEBUG, "ERROR: bind failed." );
 		exit(1);
 	}
 
 	if ( listen( sock_fd, 50 ) == -1 ) {
-		syslog( LOG_DAEMON, "ERROR: listen failed." );
+		syslog( LOG_DEBUG, "ERROR: listen failed." );
 		exit(1);
 	}
 
@@ -74,7 +74,7 @@ void network_handle_connections( config_t *c )
 
 	c->vfs_socket = network_create_socket( c->port );
 
-	connection_list_add( c->port, SOCK_TYPE_DATA );
+	connection_list_add( c->vfs_socket, SOCK_TYPE_DATA );
 
 	for (;;) {
 		connection_list_recreate_fs_sets( &active_read_fd_set,
@@ -91,7 +91,7 @@ void network_handle_connections( config_t *c )
 				&read_fd_set, &write_fd_set, NULL,NULL);
 
 			if (z < 0) {
-				syslog(LOG_DAEMON,"ERROR: select error.");
+				syslog(LOG_DEBUG,"ERROR: select error.");
 				exit(1);
 			}
 		}
@@ -101,10 +101,9 @@ void network_handle_connections( config_t *c )
 			if ( i == c->vfs_socket) {
 				if ( (sr = accept( c->vfs_socket,(struct sockaddr *) &remote,
 							 &t)) == -1) {
-					syslog(LOG_DAEMON,"ERROR: accept failed.");
+					syslog(LOG_DEBUG,"ERROR: accept failed.");
 				}
 				connection_list_add( sr, SOCK_TYPE_DATA );
-				/* data arrives */
 			}
 		}
 	}
