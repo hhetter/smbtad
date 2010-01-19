@@ -19,6 +19,6 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-
+#define D_ syslog
 void l_( int debuglevel, const char *msg, config_t *c );
 
