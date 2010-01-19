@@ -21,7 +21,45 @@
 
 #include "../include/includes.h"
 
+int create_socket( int port, config_t *c )
+{
+	int sock_fd, new_fd;
+	struct sockaddr_in6 my_addr;
+	struct sockaddr_in6 their_addr;
+	socklen_t sin_size;
+	struct sigaction sa;
+
+	if ( (sock_fd = socket(AF_INET6, SOCK_STREAM,0)) == -1 ) {
+		syslog( LOG_DAEMON, "ERROR: socket creation failed." );
+		exit(1);
+	}
+
+	int y;
+	if ( setsockopt( sock_fd, SOL_SOCKET, SO_REUSEADDR, &y,
+		sizeof( int )) == -1 ) {
+		syslog( LOG_DAEMON, "ERROR: setsockopt failed." );
+		exit(1);
+	}
+
+	my_addr.sin6_port = htons( port );
+	my_addr.sin6_addr = in6addr_any;
+
+	if (bind(sock_fd,(struct sockaddr *)&my_addr,sizeof(my_addr)) == -1 ) {
+		syslog( LOG_DAEMON, "ERROR: bind failed." );
+		exit(1);
+	}
+
+	if ( listen( sock_fd, 50 ) == -1 ) {
+		syslog( LOG_DAEMON, "ERROR: listen failed." );
+		exit(1);
+	}
+
+	return sock_fd;
+}
+
+
 void network_handle_connections( config_t *c )
 {
 	l_(0,"Hello World.",c);
+	
 }
