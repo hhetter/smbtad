@@ -21,7 +21,7 @@
 
 #include "../include/includes.h"
 
-int create_socket( int port, config_t *c )
+int network_create_socket( int port, config_t *c )
 {
 	int sock_fd, new_fd;
 	struct sockaddr_in6 my_addr;
