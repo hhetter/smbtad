@@ -31,4 +31,6 @@ struct connection_struct {
 	enum conn_fn_enum connection_function;
 };
 
+int connection_list_add( int socket, enum conn_fn_enum conn_fn );
+int connection_list_remove( int socket );
 
