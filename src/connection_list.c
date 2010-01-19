@@ -66,3 +66,16 @@ int connection_list_remove( int socket )
 	Searcher = Searcher->next;
 	}
 }
+
+int connection_list_max()
+{
+	struct connection_struct *Searcher = connection_list_start;
+	int cc=0;
+
+	while (Searcher != NULL) {
+		if (Searcher->mysocket > cc) cc = Searcher->mysocket;
+		Searcher = Searcher->next;
+	}
+
+	return cc;
+}

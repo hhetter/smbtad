@@ -33,4 +33,5 @@ struct connection_struct {
 
 int connection_list_add( int socket, enum conn_fn_enum conn_fn );
 int connection_list_remove( int socket );
+int connection_list_max();
 
