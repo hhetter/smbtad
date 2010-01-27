@@ -36,11 +36,17 @@ int connection_list_add( int socket,
 		connection_list_start = new_entry;
 		connection_list_end = new_entry;
 		new_entry->mysocket = socket;
+		new_entry->next = NULL;
+		new_entry->connection_function = conn_fn;
+		new_entry->data_state = CONN_READ_HEADER;
 		return 0;
 	} else {
 		new_entry->mysocket = socket;
 		connection_list_end->next = new_entry;
 		connection_list_end = new_entry;
+		new_entry->connection_function = conn_fn;
+		new_entry->data_state = CONN_READ_HEADER;
+		new_entry->next = NULL;
 	}
 }
 
@@ -74,6 +80,7 @@ void connection_list_recreate_fs_sets( 	fd_set *active_read_fd_set,
 	struct connection_struct *Searcher = connection_list_start;
 
 	while (Searcher != NULL) {
+		syslog(LOG_DEBUG,"GESETZT Muah");
 		FD_SET(Searcher->mysocket, active_read_fd_set);
 		Searcher = Searcher->next;
 	}
@@ -92,3 +99,14 @@ int connection_list_max()
 
 	return cc;
 }
+
+struct connection_struct *connection_list_identify( int socket ) {
+	struct connection_struct *Searcher = connection_list_start;
+	while (Searcher != NULL) {
+		if (Searcher->mysocket == socket) return Searcher;
+		Searcher = Searcher->next;
+	}
+	return NULL;
+}
+
+

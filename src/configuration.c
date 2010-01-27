@@ -30,7 +30,29 @@ void configuration_define_defaults( config_t *c )
 	c->daemon = 1;
 	c->config_file = NULL;
 	c->debug_level = 0;
+	_DBG = 0;
 }
+
+
+void configuration_status( config_t *c )
+{
+	syslog(LOG_DEBUG,"**** stad2 configuration table ***");
+	switch(c->daemon) {
+	case 1:
+		syslog(LOG_DEBUG,"Running as daemon		: Yes");
+		break;
+	case 2: 
+		syslog(LOG_DEBUG,"Running as daemon		: No");
+		break;
+	}
+	if (c->config_file != NULL) {
+		syslog(LOG_DEBUG,"Using configuration file	: %s",
+			c->config_file);
+	}
+	syslog(LOG_DEBUG,"Running on port		: %i",c->port);
+}
+
+
 
 int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 {
@@ -52,11 +74,12 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 		static struct option long_options[] = {\
 			{ "inet-port", 1, NULL, 'i' },
 			{ "interactive", 0, NULL, 'o' },
+			{ "debug-level",1, NULL, 'd' },
 			{ 0,0,0,0 }
 		};
 
 		i = getopt_long( argc, argv,
-			"i:o", long_options, &option_index );
+			"d:i:o", long_options, &option_index );
 
 		if ( i == -1 ) break;
 
@@ -66,6 +89,10 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 				break;
 			case 'o':
 				c->daemon = 0;
+				break;
+			case 'd':
+				c->debug_level = atoi( optarg );
+				_DBG = c->debug_level;
 				break;
 			default	:
 				printf("ERROR: unkown option.\n\n");

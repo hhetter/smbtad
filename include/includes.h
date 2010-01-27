@@ -24,3 +24,18 @@
 #include "daemon.h"
 #include "log.h"
 #include "connection_list.h"
+#include "network.h"
+#include "protocol.h"
+
+/**
+ * Debug Levels:
+ * 0 -> only fatal errors which lead to terminate stad
+ * 1 -> protocol debug messages
+ * 2 -> network debug messages
+ * The global integer _DGB will be set by the configuration
+ * to a value and will be queried when a debug message
+ * has to be send out.
+ */
+int _DBG;
+
+

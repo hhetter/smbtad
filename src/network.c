@@ -21,6 +21,61 @@
 
 #include "../include/includes.h"
 
+char *network_receive_header( int sock )
+{
+	char *buf = malloc( sizeof(char) * 30 );
+	size_t t;
+	t = recv( sock, buf, 28, 0);
+	syslog(LOG_DEBUG, "received %i chars",t);
+	return buf;
+}
+
+char *network_receive_data( int sock, int length)
+{
+	char *buf = malloc( sizeof(char) * (length+1) );
+	size_t t;
+	t = recv( sock, buf, length, 0);
+	syslog(LOG_DEBUG, "received %i chars",t);
+	return buf;
+}
+
+int network_header_get_blocklen( char *buf )
+{
+	return atoi( buf+12 );
+}
+
+
+
+int network_handle_data( int i )
+{
+	syslog(LOG_DEBUG,"BIN DRIN");
+     	struct connection_struct *connection =
+		connection_list_identify(i);
+        if (connection->connection_function == SOCK_TYPE_DATA) {
+		switch(connection->data_state) {
+		case CONN_READ_HEADER:
+			syslog(LOG_DEBUG,"kodiere header");
+			char *header = network_receive_header(i);
+			protocol_check_header(header);
+			connection->data_state = CONN_READ_DATA;
+			connection->blocklen = network_header_get_blocklen( header );
+			
+			syslog(LOG_DEBUG,"HEADER RECEIVED and OK");
+			free(header);
+			break;
+		case CONN_READ_DATA:
+			syslog(LOG_DEBUG,"reading data");
+			char *body = network_receive_data(i, connection->blocklen);
+			connection->data_state = CONN_READ_HEADER;
+			free(body);
+			break;
+
+		}
+	}
+}
+
+
+	 
 int network_create_socket( int port )
 {
 	int sock_fd, new_fd;
@@ -81,12 +136,13 @@ void network_handle_connections( config_t *c )
 						&active_write_fd_set);
 		read_fd_set = active_read_fd_set;
 		write_fd_set = active_write_fd_set;
-
+		z = 0;
 		while( z == 0) {
 			connection_list_recreate_fs_sets(
 				&active_read_fd_set,
 				&active_write_fd_set);
-
+			read_fd_set=active_read_fd_set;
+			write_fd_set=active_write_fd_set;
 			z = select( connection_list_max() +1,
 				&read_fd_set, &write_fd_set, NULL,NULL);
 
@@ -95,15 +151,18 @@ void network_handle_connections( config_t *c )
 				exit(1);
 			}
 		}
-	
 
 		for( i = 0; i < connection_list_max() + 1; ++i) {
-			if ( i == c->vfs_socket) {
-				if ( (sr = accept( c->vfs_socket,(struct sockaddr *) &remote,
-							 &t)) == -1) {
-					syslog(LOG_DEBUG,"ERROR: accept failed.");
+			if (FD_ISSET(i,&read_fd_set)) {
+				if ( i == c->vfs_socket) {
+					if ( (sr = accept( c->vfs_socket,(struct sockaddr *) &remote,
+								 &t)) == -1) {
+						syslog(LOG_DEBUG,"ERROR: accept failed.");
+					}
+					connection_list_add( sr, SOCK_TYPE_DATA );
+				} else {
+				network_handle_data( i );
 				}
-				connection_list_add( sr, SOCK_TYPE_DATA );
 			}
 		}
 	}

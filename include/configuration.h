@@ -19,6 +19,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+
+
 typedef struct configuration_data {
 	/* Number of the port to use */
 	int port;

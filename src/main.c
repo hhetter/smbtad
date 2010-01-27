@@ -21,20 +21,21 @@
 
 #include "../include/includes.h"
 
+
 int main(int argc, char *argv[])
 {
 
 
 	config_t conf;
-
-	/* parse command line 						*/
+	
+	/* parse command line */
 	if ( configuration_parse_cmdline( &conf, argc, argv ) <0 ) exit(1);
 
-	/* become a daemon, depending on configuration 			*/
+
+	/* become a daemon, depending on configuration	*/
 	daemon_daemonize( &conf );
 
-	/* enter the main network function.				*/
+	/* enter the main network function. */
 	network_handle_connections( &conf );
-
 	exit(0);
 }

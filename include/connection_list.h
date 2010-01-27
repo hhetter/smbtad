@@ -24,13 +24,20 @@ enum conn_fn_enum {
 	SOCK_TYPE_DB_QUERY
 };
 
+enum conn_data_state {
+	CONN_READ_HEADER,
+	CONN_READ_DATA 
+};
 
 struct connection_struct {
 	struct connection_struct *next;
 	int mysocket;
+	int blocklen;
 	enum conn_fn_enum connection_function;
+	enum conn_data_state data_state;
 };
 
+struct connection_struct *connection_list_identify( int socket );
 int connection_list_add( int socket, enum conn_fn_enum conn_fn );
 int connection_list_remove( int socket );
 int connection_list_max();
