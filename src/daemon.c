@@ -34,7 +34,7 @@ void daemon_daemonize( config_t *c )
 	if ( c->daemon == 0 ) return;
 
 	int fhandle;
-	/*	check if we are already daemonized. 	*/
+	/* check if we are already daemonized. */
 	if ( getppid() == 1 ) return;
 
 	fhandle = fork();
@@ -44,16 +44,16 @@ void daemon_daemonize( config_t *c )
 		exit(1);
 	}
 	if (fhandle > 0 ) {
-		/* let the parent exit 			*/
+		/* let the parent exit */
 		exit(0);
 	}
 
-	/* continue in child.				*/
-	setsid(); /* get a new process group 		*/
-	signal(SIGCHLD,SIG_IGN); /* ignore child 	*/
+	/* continue in child. */
+	setsid(); /* get a new process group */
+	signal(SIGCHLD,SIG_IGN); /* ignore child */
 	signal(SIGTSTP,SIG_IGN); /* ignore tty signals 	*/
 	signal(SIGTTOU,SIG_IGN);
 	signal(SIGTTIN,SIG_IGN);
-	/* catch term 					*/
+	/* catch term */
 	signal(SIGTERM,daemon_signal_term);
 }
