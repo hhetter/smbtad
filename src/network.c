@@ -37,12 +37,13 @@ char *network_receive_header( int sock )
 		free(buf);
 		return NULL;
 	}
+	*(buf + t + 1) = '\0';
 	return buf;
 }
 
 char *network_receive_data( int sock, int length)
 {
-	char *buf = malloc( sizeof(char) * (length+1) );
+	char *buf = malloc( sizeof(char) * (length+2) );
 	size_t t;
 	t = recv( sock, buf, length, 0);
 	if (t == 0) {
@@ -50,6 +51,7 @@ char *network_receive_data( int sock, int length)
 		free(buf);
 		return 0;
 	}
+	*(buf + t + 1) = '\0';
 	return buf;
 }
 
