@@ -35,6 +35,10 @@ struct connection_struct {
 	int blocklen;
 	enum conn_fn_enum connection_function;
 	enum conn_data_state data_state;
+	int header_position;
+	char *header;
+	int data_position;
+	char *data;
 };
 
 struct connection_struct *connection_list_identify( int socket );
