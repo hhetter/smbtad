@@ -36,6 +36,7 @@
  * to a value and will be queried when a debug message
  * has to be send out.
  */
+#define DEBUG(x) if ( x >= _DBG ) 
 int _DBG;
 
 
