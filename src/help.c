@@ -25,8 +25,12 @@ void help_show_help()
 {
 	printf("SMB Traffic Analyzer daemon\n");
 	printf("\n");
-	printf("(C) 2008-2010 Holger Hetterich <ozzy@metal-district.de>\n");
+	printf("(C) 2008-2010 Holger Hetterich <ozzy@metal-district.de>	\n");
 	printf("\n");
-	printf("-i	--inet-port	Specifiy the port to be used.\n");
-
+	printf("-i	--inet-port	Specifiy the port to be used.	\n");
+	printf("			Default: 3490.			\n");
+	printf("-d      --debug-level	Specify the debug level (0-10).	\n");
+	printf("			Default: 0.			\n");
+	printf("-o	--interactive	Don't run as daemon.		\n");
+	printf("			(Runs as daemon by default)	\n");
 }
