@@ -20,13 +20,17 @@
  */
 
 
-/**
- * protcol_check_header is a void function. It will exit the whole
- * process, as if there is not a correct header found, we may have
- * a man in the middle attack.
- */
-void protocol_check_header( char *header );
+#define PROTOCOL_SUBRELEASE 0
 
+
+
+enum header_states {
+	HEADER_CHECK_OK,
+	HEADER_CHECK_INCOMPLETE,
+	HEADER_CHECK_VERSION_MISMATCH,
+};
+
+enum header_states protocol_check_header (char *header);
 
 /**
  * The following functions assume the header is correct

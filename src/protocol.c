@@ -23,16 +23,52 @@
 
 
 /**
- * protcol_check_header is a void function. It will exit the whole
- * process, as if there is not a correct header found, we may have
- * a man in the middle attack.
+ * protcol_check_header 
+ * returns HEADER_CHECK_OK 			if the check is OK
+ * returns HEADER_CHECK_INCOMPLETE 		if the check reveals that
+ *						the header is not yet
+ * 						complete.
+ * returns HEADER_CHECK_VERSION_MISMATCH	if the header shows a
+ *						different sub-release of
+ *						the protocol
+ *
+ * the function exits the process if it doesn't see V2 at the beginning
+ * of the header
  */
-void protocol_check_header( char *header )
+enum header_states protocol_check_header( char *header )
 {
-	if (strncmp( header, "V2.", 3) != 0) {
-		syslog(LOG_DEBUG, "ERROR: Not a V2 protocol header!");
+	enum header_states status;
+
+	if (strlen(header) < 28) {
+		DEBUG(1) syslog(LOG_DEBUG,
+			"protocol_check_header: received header is only %i"
+			"bytes long. Assuming we haven't received it "
+			"completely.", strlen(header));
+		status = HEADER_CHECK_INCOMPLETE;
+		return status;
+	}
+	/* exit the process if we are about to receive 0 bytes */
+	if ( protocol_get_data_block_length(header) == 0) {
+		syslog(LOG_DEBUG, "ERROR: 0 bytes of data are about to"
+				"be received. stad2 is exiting.");
 		exit (1);
 	}
+	/* exit the process if we don't receive a V2 header */	
+	if (strncmp( header, "V2.", 3) != 0) {
+		syslog(LOG_DEBUG, "ERROR: Not a V2 protocol header! "
+				"stad2 is exiting.");
+		exit (1);
+	}
+
+	if ( protocol_get_subversion(header) != PROTOCOL_SUBRELEASE ) {
+		DEBUG(1) syslog(LOG_DEBUG,
+			"protocol_check_header: we have subrelease number "
+			"%i, the client has %i.");
+		status = HEADER_CHECK_VERSION_MISMATCH;
+		return status;
+	}
+
+	return HEADER_CHECK_OK;
 }
 
 
