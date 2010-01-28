@@ -35,6 +35,11 @@ void protocol_check_header( char *header )
 	}
 }
 
+
+/**
+ * Return the length of the data block to come given a header
+ * as input.
+ */
 int protocol_get_data_block_length( char *header )
 {
 	int retval;
@@ -42,6 +47,11 @@ int protocol_get_data_block_length( char *header )
 	return retval;
 }
 
+
+/**
+ * Return the sub-release number of the protocol in the V2
+ * familiy used from the VFS module.
+ */
 int protocol_get_subversion( char *header )
 {
 	int retval;
@@ -52,11 +62,18 @@ int protocol_get_subversion( char *header )
 	return retval;
 }
 
+/**
+ * Return 1 if the data is anonymized.
+ */
 int protocol_is_anonymized( char *header )
 {
 	if ( *(header+4)=='A' ) return 1; else return 0;
 }
 
+
+/**
+ * Return 1 if the data block is encrypted.
+ */
 int protocol_is_encrypted( char *header )
 {
 	if ( *(header+5)=='E' ) return 1; else return 0;
