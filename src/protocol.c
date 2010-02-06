@@ -39,11 +39,11 @@ enum header_states protocol_check_header( char *header )
 {
 	enum header_states status;
 
-	if (strlen(header) < 28) {
+	if (strlen(header) < 26) {
 		DEBUG(1) syslog(LOG_DEBUG,
 			"protocol_check_header: received header is only %i"
 			"bytes long. Assuming we haven't received it "
-			"completely.", strlen(header));
+			"completely.\n", strlen(header));
 		status = HEADER_CHECK_INCOMPLETE;
 		return status;
 	}
@@ -63,7 +63,7 @@ enum header_states protocol_check_header( char *header )
 	if ( protocol_get_subversion(header) != PROTOCOL_SUBRELEASE ) {
 		DEBUG(1) syslog(LOG_DEBUG,
 			"protocol_check_header: we have subrelease number "
-			"%i, the client has %i.");
+			"%i, the client has %i.\n");
 		status = HEADER_CHECK_VERSION_MISMATCH;
 		return status;
 	}
@@ -96,14 +96,6 @@ int protocol_get_subversion( char *header )
 	conv[1] = '\0';
 	retval = atoi(conv);
 	return retval;
-}
-
-/**
- * Return 1 if the data is anonymized.
- */
-int protocol_is_anonymized( char *header )
-{
-	if ( *(header+4)=='A' ) return 1; else return 0;
 }
 
 
