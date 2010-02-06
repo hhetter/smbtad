@@ -41,6 +41,14 @@ char *network_receive_header( int sock )
 	return buf;
 }
 
+
+/**
+ * receive a data block. return 0 if the connection
+ * was closed, or return the received buffer
+ * int sock 		The handle
+ * int length		The number of bytes to
+ * 			receive
+ */
 char *network_receive_data( int sock, int length)
 {
 	char *buf = malloc( sizeof(char) * (length+2) );
@@ -74,6 +82,10 @@ int network_accept_VFS_connection( config_t *c, struct sockaddr_in *remote)
 }
 
 
+/**
+ * Close a network connection.
+ * int i		The handle
+ */
 void network_close_connection(int i)
 {
 	struct connection_struct *connection = connection_list_identify(i);
@@ -82,6 +94,17 @@ void network_close_connection(int i)
 }
 
 
+/**
+ * Handle incoming data.
+ * int i 		The handle
+ *
+ * Receive the connection struct for the handle by identifying
+ * it, if it's SOCK_TYPE_DATA, receive either a header, or
+ * a data block. If the header has been received, set the
+ * connection_struct->data_state to CONN_READ_DATA to indicate
+ * that a data block will come. If a data block has been
+ * received, set the state to CONN_READ_HEADER
+ */
 int network_handle_data( int i )
 {
      	struct connection_struct *connection =
@@ -116,7 +139,10 @@ int network_handle_data( int i )
 }
 
 
-	 
+/**
+ * Create a listening internet socket on a port.
+ * int port		The port-number.
+ */	 
 int network_create_socket( int port )
 {
 	int sock_fd, new_fd;
@@ -153,7 +179,11 @@ int network_create_socket( int port )
 	return sock_fd;
 }
 
-
+/**
+ * Run select() on the server handle, and call
+ * the required functions to handle data.
+ * config_t *c		A configuration structure.
+ */
 void network_handle_connections( config_t *c )
 {
 	int i;
