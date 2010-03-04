@@ -40,6 +40,24 @@ if (NOT TALLOC_INCLUDE_DIR)
                  files installed.")
 ENDIF()
 
+#
+# include iniparser on demand
+#
+include(FindIniparser.cmake)
+FIND_PACKAGE(Iniparser)
+if (NOT INIPARSER_INCLUDE_DIR)
+        MESSAGE( STATUS "----> FYI: Unable to find iniparser libraries on your system")
+        MESSAGE( STATUS "---->      compiling my own version and link it statically.")
+        add_custom_target(
+                buildiniparser ALL
+                COMMAND "make"
+                WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/iniparser3.0b"
+                COMMENT "Building iniparser."
+                VERBATIM )
+        ADD_LIBRARY(iniparser STATIC IMPORTED)
+        set_target_properties(iniparser PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/iniparser3.0b/libiniparser.a)
+ENDIF()
+
 
 
 
