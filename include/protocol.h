@@ -39,5 +39,5 @@ enum header_states protocol_check_header (char *header);
 int protocol_get_data_block_length( char *header );
 int protocol_get_subversion( char *header );
 int protocol_is_anonymized( char *header );
-int protocol_is_encrypted( char *header );
+bool protocol_is_encrypted( char *header );
 

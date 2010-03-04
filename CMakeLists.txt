@@ -30,6 +30,19 @@ dl
 
 SET(PLATFORM_LINKFLAGS "-pthread")
 
+#
+# check for talloc
+#
+include(FindTalloc.cmake)
+FIND_PACKAGE(Talloc)
+if (NOT TALLOC_INCLUDE_DIR)
+        MESSAGE( FATAL_ERROR "ERROR: you will need talloc development
+                 files installed.")
+ENDIF()
+
+
+
+
 SET(CurrentExe "stad2")
 ADD_EXECUTABLE(${CurrentExe} 
 	src/main.c 

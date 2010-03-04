@@ -83,6 +83,65 @@ int protocol_get_data_block_length( char *header )
 	return retval;
 }
 
+/**
+ * Parse a single data block.
+ * char *data_pointer	This char shall point to the begin of the data block,
+ *			it is set by the function to the beginning of the
+ *			next data block.
+ * The function returns a data block. The memory must be freed by the caller.
+ */
+char *protocol_get_single_data_block( char *data_pointer )
+{
+	char length[6];
+	char *data;
+	int l;
+	memcpy( length, data_pointer, 4);
+	length[6] = '\0';
+	l = atoi(length);
+	data = malloc(sizeof(char) * (l+1));
+	memcpy( data, data_pointer + 5, l);
+	data[ l ] = '\0';
+        data_pointer = data_pointer + l + 5;
+	return data;
+}
+
+/**
+ * Parse a complete data block
+ * 
+*/
+struct cache_entry *protocol_parse_data_block( char *data_pointer )
+{
+	char *go_through = data_pointer;
+
+	struct cache_entry *cache_en= malloc(sizeof(struct cache_entry));
+
+	/* first check how many common data blocks will come */
+	int common_blocks_num = atoi(
+		protocol_get_single_data_block( go_through ));
+
+	/* vfs_operation_identifier */
+	cache_en->vfs_op_id = atoi(
+		protocol_get_single_data_block( go_through ));
+
+	/* username */
+	cache_en->username = protocol_get_single_data_block( go_through );
+	/* user's SID */
+	cache_en->usersid = protocol_get_single_data_block( go_through );
+	/* share */
+	cache_en->share = protocol_get_single_data_block( go_through );
+	/* domain */
+	cache_en->domain = protocol_get_single_data_block( go_through );
+	/* timestamp */
+	cache_en->timestamp = protocol_get_single_data_block( go_through );
+
+	/* now check if there are more common data blocks to come */
+	/* we will ignore them, if we don't handle more common data */
+	/* in this version of the protocol */
+	for (i = 0; i < (common_blocks_num - SMBTA_COMMON_DATA_COUNT); i++) {
+		char *dump = protocol_get_single_data_block( go_through );
+		free(dump);
+	}
+
 
 /**
  * Return the sub-release number of the protocol in the V2
@@ -102,8 +161,8 @@ int protocol_get_subversion( char *header )
 /**
  * Return 1 if the data block is encrypted.
  */
-int protocol_is_encrypted( char *header )
+bool protocol_is_encrypted( char *header )
 {
-	if ( *(header+5)=='E' ) return 1; else return 0;
+	if ( *(header+5)=='E' ) return True; else return False;
 }
 
