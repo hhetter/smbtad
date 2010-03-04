@@ -119,6 +119,14 @@ struct cache_entry *protocol_parse_data_block( char *data_pointer )
 	int common_blocks_num = atoi(
 		protocol_get_single_data_block( go_through ));
 
+	/**
+	 * don't run a newer smbtad with an older VFS module
+	 */
+	if (common_blocks_num < SMBTA_COMMON_DATA_COUNT) {
+		DEBUG(10, "Protocol error! Too less common data blocks!\n");
+		exit(1);
+	}
+
 	/* vfs_operation_identifier */
 	cache_en->vfs_op_id = atoi(
 		protocol_get_single_data_block( go_through ));
@@ -142,7 +150,20 @@ struct cache_entry *protocol_parse_data_block( char *data_pointer )
 		free(dump);
 	}
 
+	/* depending on the VFS identifier, we now fill the data */
+	switch(vfs_op_id) {
+	case vfs_id_pread:
+	case vfs_id_pwrite:
+	case vfs_id_read:
+	case vfs_id_write:
+		char *filename = protocol_get_single_data_block( go_through );
+		(struct rw_data *) (cache_en->data)->filename=filename;
+		char *len = protocol_get_single_data_block( go_through );
+		(struct rw_data *) (cache_en->data)->len=atoi(len);
+		cache_add( cache_en );
+		break;
 
+		
 /**
  * Return the sub-release number of the protocol in the V2
  * familiy used from the VFS module.
