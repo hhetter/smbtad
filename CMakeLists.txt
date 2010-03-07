@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 PROJECT(stad C)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
-set(APPLICATION_NAME "stad2")
+set(APPLICATION_NAME "smbtad")
 set(APPLICATION_VERSION "0.0.1")
 
 set(CPACK_PACKAGE_VERSION_MAJOR "0")
@@ -61,7 +61,7 @@ ENDIF()
 
 
 
-SET(CurrentExe "stad2")
+SET(CurrentExe "smbtad")
 ADD_EXECUTABLE(${CurrentExe} 
 	src/main.c 
 	src/configuration.c 
@@ -77,5 +77,5 @@ TARGET_LINK_LIBRARIES(${CurrentExe} ${Libraries})
 
 
 
-INSTALL(TARGETS stad2 DESTINATION bin)
+INSTALL(TARGETS smbtad DESTINATION bin)
 
