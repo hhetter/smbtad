@@ -20,24 +20,18 @@
  */
 
 
-#define PROTOCOL_SUBRELEASE 0
+struct cache_entry {
+	enum vfs_id vfs_op_id;
+	char *username;
+	char *usersid;
+	char *share;
+	char *domain;
+	char *timestamp;
 
-
-
-enum header_states {
-	HEADER_CHECK_OK,
-	HEADER_CHECK_INCOMPLETE,
-	HEADER_CHECK_VERSION_MISMATCH,
+	void *data;
+	struct cache_entry *next;
 };
 
-enum header_states protocol_check_header (char *header);
 
-/**
- * The following functions assume the header is correct
- *
- */
-int protocol_get_data_block_length( char *header );
-int protocol_get_subversion( char *header );
-int protocol_is_anonymized( char *header );
-int protocol_is_encrypted( char *header );
+int cache_add( struct cache_entry *entry );
 

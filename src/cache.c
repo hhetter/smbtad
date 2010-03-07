@@ -7,8 +7,8 @@
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
+ * the Firee Software Foundation; either version 3 of the License, or
+ * (at yur option) any later version.
  *  
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,25 +19,23 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "../include/includes.h"
 
-#define PROTOCOL_SUBRELEASE 0
+struct cache_entry *cache_start = NULL;
+struct cache_entry *cache_end = NULL;
 
+int cache_add( struct cache_entry *entry ) {
+	
+	if (cache_start == NULL) {
+		cache_start = entry;
+		entry->next = NULL;
+		cache_end = entry;
+		return 0;
+	}
 
-
-enum header_states {
-	HEADER_CHECK_OK,
-	HEADER_CHECK_INCOMPLETE,
-	HEADER_CHECK_VERSION_MISMATCH,
-};
-
-enum header_states protocol_check_header (char *header);
-
-/**
- * The following functions assume the header is correct
- *
- */
-int protocol_get_data_block_length( char *header );
-int protocol_get_subversion( char *header );
-int protocol_is_anonymized( char *header );
-int protocol_is_encrypted( char *header );
+	cache_end->next = entry;
+	entry->next = NULL;
+	cache_end = entry;
+	return 0;
+}
 

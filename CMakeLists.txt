@@ -70,7 +70,8 @@ ADD_EXECUTABLE(${CurrentExe}
 	src/connection_list.c 
 	src/network.c 
 	src/log.c
-	src/protocol.c )
+	src/protocol.c
+	src/cache.c)
 TARGET_LINK_LIBRARIES(${CurrentExe} ${Libraries})
 
 

@@ -19,6 +19,7 @@
 #include <sys/select.h>
 #include <dlfcn.h>
 
+#include "vfs_smb_traffic_analyzer.h"
 #include "configuration.h"
 #include "help.h"
 #include "daemon.h"
@@ -26,6 +27,7 @@
 #include "connection_list.h"
 #include "network.h"
 #include "protocol.h"
+#include "cache.h"
 
 /**
  * Debug Levels:

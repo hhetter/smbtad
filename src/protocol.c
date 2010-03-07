@@ -21,7 +21,6 @@
 
 #include "../include/includes.h"
 
-
 /**
  * protcol_check_header 
  * returns HEADER_CHECK_OK 			if the check is OK
@@ -107,12 +106,13 @@ char *protocol_get_single_data_block( char *data_pointer )
 
 /**
  * Parse a complete data block
- * 
-*/
+ * organize the parsed data in a cache_entry,
+ * and return a pointer to the struct
+ */
 struct cache_entry *protocol_parse_data_block( char *data_pointer )
 {
 	char *go_through = data_pointer;
-
+	int i;
 	struct cache_entry *cache_en= malloc(sizeof(struct cache_entry));
 
 	/* first check how many common data blocks will come */
@@ -122,8 +122,8 @@ struct cache_entry *protocol_parse_data_block( char *data_pointer )
 	/**
 	 * don't run a newer smbtad with an older VFS module
 	 */
-	if (common_blocks_num < SMBTA_COMMON_DATA_COUNT) {
-		DEBUG(10, "Protocol error! Too less common data blocks!\n");
+	if (common_blocks_num < atoi(SMBTA_COMMON_DATA_COUNT)) {
+		DEBUG(0) syslog(LOG_DEBUG, "Protocol error! Too less common data blocks!\n");
 		exit(1);
 	}
 
@@ -145,24 +145,30 @@ struct cache_entry *protocol_parse_data_block( char *data_pointer )
 	/* now check if there are more common data blocks to come */
 	/* we will ignore them, if we don't handle more common data */
 	/* in this version of the protocol */
-	for (i = 0; i < (common_blocks_num - SMBTA_COMMON_DATA_COUNT); i++) {
+	for (i = 0; i < (common_blocks_num - atoi(SMBTA_COMMON_DATA_COUNT)); i++) {
 		char *dump = protocol_get_single_data_block( go_through );
 		free(dump);
 	}
 
 	/* depending on the VFS identifier, we now fill the data */
-	switch(vfs_op_id) {
+	switch(cache_en->vfs_op_id) {
 	case vfs_id_pread:
 	case vfs_id_pwrite:
 	case vfs_id_read:
-	case vfs_id_write:
-		char *filename = protocol_get_single_data_block( go_through );
-		(struct rw_data *) (cache_en->data)->filename=filename;
-		char *len = protocol_get_single_data_block( go_through );
-		(struct rw_data *) (cache_en->data)->len=atoi(len);
-		cache_add( cache_en );
+	case vfs_id_write: ;
+		struct rw_data *data = malloc(sizeof(struct rw_data));
+		data->filename = protocol_get_single_data_block( go_through );
+		data->len = atoi(protocol_get_single_data_block( go_through ));
+		cache_en->data = data;
+		return cache_en;
 		break;
+	}
 
+	/* oops, this should never be reached
+	 * return NULL in error.
+	 */
+	return NULL;
+}
 		
 /**
  * Return the sub-release number of the protocol in the V2
@@ -170,7 +176,7 @@ struct cache_entry *protocol_parse_data_block( char *data_pointer )
  */
 int protocol_get_subversion( char *header )
 {
-	int retval;
+		int retval;
 	char conv[4];
 	conv[0] = header[3];
 	conv[1] = '\0';
@@ -182,8 +188,8 @@ int protocol_get_subversion( char *header )
 /**
  * Return 1 if the data block is encrypted.
  */
-bool protocol_is_encrypted( char *header )
+int protocol_is_encrypted( char *header )
 {
-	if ( *(header+5)=='E' ) return True; else return False;
+	if ( *(header+5)=='E' ) return 1; else return 0;
 }
 
