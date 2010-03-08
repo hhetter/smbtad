@@ -131,7 +131,7 @@ int network_handle_data( int i )
 				break;
 			}
 			connection->data_state = CONN_READ_HEADER;
-			free(body);
+			cache_add(body, connection->blocklen);
 			break;
 
 		}

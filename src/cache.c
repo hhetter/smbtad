@@ -24,17 +24,23 @@
 struct cache_entry *cache_start = NULL;
 struct cache_entry *cache_end = NULL;
 
-int cache_add( struct cache_entry *entry ) {
+int cache_add( char *data, int len ) {
 	
 	if (cache_start == NULL) {
+		struct cache_entry *entry =
+			malloc(sizeof(struct cache_entry));
+		entry->data = data;
+		entry->length = len;
 		cache_start = entry;
 		entry->next = NULL;
 		cache_end = entry;
 		return 0;
 	}
-
+	struct cache_entry *entry = malloc(sizeof(struct cache_entry));
 	cache_end->next = entry;
 	entry->next = NULL;
+	entry->data = data;
+	entry->length = len;
 	cache_end = entry;
 	return 0;
 }

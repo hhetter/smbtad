@@ -21,17 +21,11 @@
 
 
 struct cache_entry {
-	enum vfs_id vfs_op_id;
-	char *username;
-	char *usersid;
-	char *share;
-	char *domain;
-	char *timestamp;
-
-	void *data;
+	char *data;
+	int length;
 	struct cache_entry *next;
 };
 
 
-int cache_add( struct cache_entry *entry );
+int cache_add( char *data, int len );
 
