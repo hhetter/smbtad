@@ -45,3 +45,21 @@ int cache_add( char *data, int len ) {
 	return 0;
 }
 
+int cache_store( )
+{
+	/* backup the start and make it possible to
+	 * allocate a new cache beginning
+	 */
+	struct cache_entry *begin = cache_start;
+	cache_start = NULL;
+	cache_end = NULL;
+
+	while (begin != NULL) {
+		char *a = cache_make_database_string( begin );
+		cache_commit_to_db( a );
+		struct cache_entry *dummy = begin;
+		begin = begin->next;
+		free(dummy->data);
+		free(dummy);
+	}
+}
