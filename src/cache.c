@@ -33,14 +33,17 @@ struct cache_entry *cache_end = NULL;
  */
 int cache_add( char *data, int len ) {
 
+	
         struct cache_entry *entry = malloc(sizeof(struct cache_entry));	
 	if (entry == NULL) return -1;
+	pthread_mutex_lock(&cache_mutex);
 	if (cache_start == NULL) {
 		entry->data = data;
 		entry->length = len;
 		cache_start = entry;
 		entry->next = NULL;
 		cache_end = entry;
+		pthread_mutex_unlock(&cache_mutex);
 		return 0;
 	}
 	cache_end->next = entry;
@@ -48,6 +51,7 @@ int cache_add( char *data, int len ) {
 	entry->data = data;
 	entry->length = len;
 	cache_end = entry;
+	pthread_mutex_unlock(&cache_mutex);
 	return 0;
 }
 

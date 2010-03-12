@@ -27,6 +27,9 @@ int main(int argc, char *argv[])
 
 
 	config_t conf;
+	
+	pthread_t thread;
+	pthread_create(&thread,NULL,(void *)&cache_manager,NULL);
 
 	pthread_mutex_init(&cache_mutex, NULL);
 	
