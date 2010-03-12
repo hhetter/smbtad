@@ -65,7 +65,7 @@ int database_create( char *filename )
 	rc = sqlite3_exec( db, \
 		"CREATE TABLE close (CREATE_COMMONS, filename varchar, result integer)",NULL,0,&zErrormsg);
 
-	sqlite3_close( rc );
+	sqlite3_close( db );
 	return 0;
 }
 

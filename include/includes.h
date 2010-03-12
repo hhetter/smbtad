@@ -19,7 +19,7 @@
 #include <sys/select.h>
 #include <dlfcn.h>
 #include <sqlite3.h>
-
+#include "../iniparser3.0b/src/iniparser.h"
 #include "vfs_smb_traffic_analyzer.h"
 #include "configuration.h"
 #include "help.h"
@@ -43,4 +43,5 @@
 #define DEBUG(x) if ( x >= _DBG ) 
 int _DBG;
 
+static pthread_mutex_t cache_mutex;
 

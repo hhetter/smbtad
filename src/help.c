@@ -33,4 +33,5 @@ void help_show_help()
 	printf("			Default: 0.			\n");
 	printf("-o	--interactive	Don't run as daemon.		\n");
 	printf("			(Runs as daemon by default)	\n");
+	printf("-c      --config-file	Use configuration file given.	\n");
 }

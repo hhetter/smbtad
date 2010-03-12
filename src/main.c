@@ -27,6 +27,8 @@ int main(int argc, char *argv[])
 
 
 	config_t conf;
+
+	pthread_mutex_init(&cache_mutex, NULL);
 	
 	/* parse command line */
 	if ( configuration_parse_cmdline( &conf, argc, argv ) <0 ) exit(1);

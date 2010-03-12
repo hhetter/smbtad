@@ -25,6 +25,7 @@ sqlite3
 pthread
 rt
 dl
+iniparser
 )
 
 

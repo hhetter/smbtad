@@ -24,6 +24,9 @@
 struct cache_entry *cache_start = NULL;
 struct cache_entry *cache_end = NULL;
 
+
+
+
 /*
  * adds an entry to the cache
  * returns -1 in case of an error
@@ -59,6 +62,8 @@ char *cache_make_database_string( struct cache_entry *entry)
 	char *vfs_id = NULL;
 	char *go_through = entry->data;
 	char *str = NULL;
+	char *filename = NULL;
+	char *len = NULL;
         /* first check how many common data blocks will come */
         int common_blocks_num = atoi(
         protocol_get_single_data_block( go_through ));
@@ -119,34 +124,34 @@ char *cache_make_database_string( struct cache_entry *entry)
         timestamp = protocol_get_single_data_block( go_through );
 
 	/* now receive the VFS function depending arguments */
-	switch( vfs_op) {
+	switch( op_id) {
 	case vfs_id_read:
-	case vfs_id_pread:
-		char *filename = protocol_get_single_data_block( go_through );
-		char *len = protocol_get_single_data_block( go_through);
+	case vfs_id_pread: ;
+		filename = protocol_get_single_data_block( go_through );
+		len = protocol_get_single_data_block( go_through);
 		asprintf(str, "INSERT INTO %s ("
 			"username, usersid, share, domain, timestamp,"
 			"filename, length) VALUES ("
 			"%s,%s,%s,%s,%s,"
 			"%s,%s);",
 			vfs_id,username,usersid,share,domain,timestamp,
-			filename,length);
+			filename,len);
 		free(filename);
-		free(length);
+		free(len);
 		break;
 	case vfs_id_write:
-	case vfs_id_pwrite:
-                char *filename = protocol_get_single_data_block( go_through );
-                char *len = protocol_get_single_data_block( go_through);
+	case vfs_id_pwrite: ;
+                filename = protocol_get_single_data_block( go_through );
+                len = protocol_get_single_data_block( go_through);
                 asprintf(str, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
                         "filename, length) VALUES ("
                         "%s,%s,%s,%s,%s,"
                         "%s,%s);",
                         vfs_id,username,usersid,share,domain,timestamp,
-                        filename,length);
+                        filename,len);
 		free(filename);
-		free(length);
+		free(len);
                 break;
 	}
 
@@ -179,9 +184,11 @@ void cache_manager( )
 	/* backup the start and make it possible to
 	 * allocate a new cache beginning
 	 */
+	pthread_mutex_lock(&cache_mutex);
 	struct cache_entry *begin = cache_start;
 	cache_start = NULL;
 	cache_end = NULL;
+	pthread_mutex_unlock(&cache_mutex);
 
 	while (1 == 1) {
                 /* wait half a second; we don't need to check the       */

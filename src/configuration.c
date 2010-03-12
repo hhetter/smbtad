@@ -30,9 +30,33 @@ void configuration_define_defaults( config_t *c )
 	c->daemon = 1;
 	c->config_file = NULL;
 	c->debug_level = 0;
+	c->dbname = strdup( "/var/lib/staddb");
 	_DBG = 0;
 }
 
+int configuration_load_config_file( config_t *c)
+{
+	dictionary *Mydict;
+	Mydict=iniparser_load( c->config_file);
+	char *cc;
+
+	if ( Mydict == NULL ) return -1;
+
+	cc = iniparser_getstring( Mydict, "network:port_number",NULL);
+	if (cc != NULL) c->port = atoi(cc);
+
+        cc = iniparser_getstring(Mydict,"database:sqlite_filename",NULL);
+        if ( cc != NULL ) {
+                free(c->dbname);
+                c->dbname= strdup( cc);
+        }
+
+	cc = iniparser_getstring(Mydict,"general:debug_level",NULL);
+	if (cc != NULL) {
+		c->debug_level = atoi(cc);
+	}
+	return 0;
+}
 
 void configuration_status( config_t *c )
 {
@@ -75,11 +99,12 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 			{ "inet-port", 1, NULL, 'i' },
 			{ "interactive", 0, NULL, 'o' },
 			{ "debug-level",1, NULL, 'd' },
+			{ "config-file",1,NULL,'c'},
 			{ 0,0,0,0 }
 		};
 
 		i = getopt_long( argc, argv,
-			"d:i:o", long_options, &option_index );
+			"d:i:oc:", long_options, &option_index );
 
 		if ( i == -1 ) break;
 
@@ -94,6 +119,10 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 				c->debug_level = atoi( optarg );
 				_DBG = c->debug_level;
 				break;
+			case 'c':
+				c->config_file = strdup( optarg );
+				configuration_load_config_file(c);
+				break;
 			default	:
 				printf("ERROR: unkown option.\n\n");
 				help_show_help();
@@ -103,6 +132,7 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 
 return 0;
 }
+
 
 int configuration_check_configuration( config_t *c )
 {
