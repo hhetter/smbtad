@@ -71,7 +71,8 @@ ADD_EXECUTABLE(${CurrentExe}
 	src/network.c 
 	src/log.c
 	src/protocol.c
-	src/cache.c)
+	src/cache.c
+	src/database.c)
 TARGET_LINK_LIBRARIES(${CurrentExe} ${Libraries})
 
 

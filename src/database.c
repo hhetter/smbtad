@@ -19,6 +19,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "../include/includes.h"
 #define CREATE_COMMONS vfs_id integer,username varchar,usersid varchar,share varchar,domain varchar,timestamp DATE
 
 /*
@@ -64,4 +65,8 @@ int database_create( char *filename )
 	rc = sqlite3_exec( db, \
 		"CREATE TABLE close (CREATE_COMMONS, filename varchar, result integer)",NULL,0,&zErrormsg);
 
+	sqlite3_close( rc );
+	return 0;
 }
+
+

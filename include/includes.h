@@ -18,6 +18,7 @@
 #include <syslog.h>
 #include <sys/select.h>
 #include <dlfcn.h>
+#include <sqlite3.h>
 
 #include "vfs_smb_traffic_analyzer.h"
 #include "configuration.h"
@@ -28,6 +29,7 @@
 #include "network.h"
 #include "protocol.h"
 #include "cache.h"
+#include "database.h"
 
 /**
  * Debug Levels:
