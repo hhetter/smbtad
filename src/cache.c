@@ -68,22 +68,26 @@ char *cache_make_database_string( struct cache_entry *entry)
 	char *str = NULL;
 	char *filename = NULL;
 	char *len = NULL;
+	char *mode = NULL;
+	char *result = NULL;
+	char *path = NULL;
+	char *source = NULL;
+	char *destination = NULL;
+	int i;
         /* first check how many common data blocks will come */
         int common_blocks_num = atoi(
-        protocol_get_single_data_block( go_through ));
-
+        protocol_get_single_data_block( &go_through ));
         /**
          * don't run a newer smbtad with an older VFS module
          */
-        if (common_blocks_num < atoi(SMBTA_COMMON_DATA_COUNT)) {
+        if (common_blocks_num < 6) {
                 DEBUG(0) syslog(LOG_DEBUG, "FATAL: Protocol error! Too less common data blocks!\n");
                 exit(1);
         }
 
         /* vfs_operation_identifier */
         int op_id = atoi(
-                protocol_get_single_data_block( go_through ));
-
+                protocol_get_single_data_block( &go_through ));
 	switch(op_id) {
 	case vfs_id_read:
 	case vfs_id_pread:
@@ -114,26 +118,28 @@ char *cache_make_database_string( struct cache_entry *entry)
 	}
 
 	/* in case we received a vfs_id that we don't support, return NULL */
-	if (vfs_id == NULL) return NULL;
-
+	if (vfs_id == NULL) {
+		syslog(LOG_DEBUG,"UNSUPPORTED");
+		return NULL;
+	}
         /* username */
-        username = protocol_get_single_data_block( go_through );
+        username = protocol_get_single_data_block( &go_through );
         /* user's SID */
-        usersid = protocol_get_single_data_block( go_through );
+        usersid = protocol_get_single_data_block( &go_through );
         /* share */
-        share = protocol_get_single_data_block( go_through );
+        share = protocol_get_single_data_block( &go_through );
         /* domain */
-        domain = protocol_get_single_data_block( go_through );
+        domain = protocol_get_single_data_block( &go_through );
         /* timestamp */
-        timestamp = protocol_get_single_data_block( go_through );
+        timestamp = protocol_get_single_data_block( &go_through );
 
 	/* now receive the VFS function depending arguments */
 	switch( op_id) {
 	case vfs_id_read:
 	case vfs_id_pread: ;
-		filename = protocol_get_single_data_block( go_through );
-		len = protocol_get_single_data_block( go_through);
-		asprintf(str, "INSERT INTO %s ("
+		filename = protocol_get_single_data_block( &go_through );
+		len = protocol_get_single_data_block( &go_through);
+		i = asprintf(&str, "INSERT INTO %s ("
 			"username, usersid, share, domain, timestamp,"
 			"filename, length) VALUES ("
 			"%s,%s,%s,%s,%s,"
@@ -145,9 +151,9 @@ char *cache_make_database_string( struct cache_entry *entry)
 		break;
 	case vfs_id_write:
 	case vfs_id_pwrite: ;
-                filename = protocol_get_single_data_block( go_through );
-                len = protocol_get_single_data_block( go_through);
-                asprintf(str, "INSERT INTO %s ("
+                filename = protocol_get_single_data_block( &go_through );
+                len = protocol_get_single_data_block( &go_through);
+                i = asprintf(&str, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
                         "filename, length) VALUES ("
                         "%s,%s,%s,%s,%s,"
@@ -157,6 +163,78 @@ char *cache_make_database_string( struct cache_entry *entry)
 		free(filename);
 		free(len);
                 break;
+	case vfs_id_mkdir: ;
+		path = protocol_get_single_data_block( &go_through);
+		mode = protocol_get_single_data_block( &go_through);
+		result=protocol_get_single_data_block( &go_through);
+		i = asprintf(&str, "INSERT INTO %s ("
+			"username, usersid, share, domain, timestamp,"
+			"path, mode, result) VALUES ("
+			"%s,%s,%s,%s,%s,"
+			"%s,%s,%s);",
+			vfs_id,username,usersid,share,domain,timestamp,
+			path, mode, result);
+		free(path);
+		free(mode);
+		free(result);
+		break;
+	case vfs_id_chdir: ;
+		path = protocol_get_single_data_block( &go_through);
+		result = protocol_get_single_data_block( &go_through);
+		i = asprintf(&str, "INSERT INTO %s ("
+			"username, usersid, share, daomin, timestamp,"
+			"path, result) VALUES ("
+			"%s,%s,%s,%s,%s,"
+			"%s,%s);",
+			vfs_id,username,usersid,share,domain,timestamp,
+			path,result);
+		free(path);
+		free(result);
+		break;
+	case vfs_id_open: ;
+		filename = protocol_get_single_data_block(&go_through);
+		mode = protocol_get_single_data_block(&go_through);
+		result = protocol_get_single_data_block(&go_through);
+                i = asprintf(&str, "INSERT INTO %s ("
+                        "username, usersid, share, domain, timestamp,"
+                        "filename, mode, result) VALUES ("
+                        "%s,%s,%s,%s,%s,"
+                        "%s,%s,%s);",
+                        vfs_id,username,usersid,share,domain,timestamp,
+                        filename, mode, result);
+		free(filename);
+		free(mode);
+		free(result);
+		break;
+	case vfs_id_close: ;
+		filename = protocol_get_single_data_block(&go_through);
+		result = protocol_get_single_data_block(&go_through);
+                i = asprintf(&str, "INSERT INTO %s ("
+                        "username, usersid, share, daomin, timestamp,"
+                        "filename, result) VALUES ("
+                        "%s,%s,%s,%s,%s,"
+                        "%s,%s);",
+                        vfs_id,username,usersid,share,domain,timestamp,
+                        filename,result);
+		free(filename);
+		free(result);
+		break;
+	case vfs_id_rename: ;
+		source = protocol_get_single_data_block(&go_through);
+		destination = protocol_get_single_data_block(&go_through);
+		result = protocol_get_single_data_block(&go_through);
+                i = asprintf(&str, "INSERT INTO %s ("
+                        "username, usersid, share, domain, timestamp,"
+                        "source, destination, result) VALUES ("
+                        "%s,%s,%s,%s,%s,"
+                        "%s,%s,%s);",
+                        vfs_id,username,usersid,share,domain,timestamp,
+                        source,destination,result);
+		free(source);
+		free(destination);
+		free(result);
+		break;
+
 	}
 
 	/* free everything no longer needed */
@@ -184,24 +262,24 @@ void cache_manager( )
 
         pthread_detach(pthread_self());
 	
-
 	/* backup the start and make it possible to
 	 * allocate a new cache beginning
 	 */
-	pthread_mutex_lock(&cache_mutex);
-	struct cache_entry *begin = cache_start;
-	cache_start = NULL;
-	cache_end = NULL;
-	pthread_mutex_unlock(&cache_mutex);
 
 	while (1 == 1) {
                 /* wait half a second; we don't need to check the       */
                 /* feed-list all the time.                              */
                 nanosleep(&mywait,NULL);
+        	pthread_mutex_lock(&cache_mutex);
+        	struct cache_entry *begin = cache_start;
+       		cache_start = NULL;
+        	cache_end = NULL;
+        	pthread_mutex_unlock(&cache_mutex);
 		/* store all existing entries into the database */
 		while (begin != NULL) {
 			char *a = cache_make_database_string( begin );
-			printf("%s\n",a);
+			syslog(LOG_DEBUG,"STR: %s\n",a);
+
 			free(a);
 			struct cache_entry *dummy = begin;
 			begin = begin->next;

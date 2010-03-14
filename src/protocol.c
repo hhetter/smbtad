@@ -89,18 +89,20 @@ int protocol_get_data_block_length( char *header )
  *			next data block.
  * The function returns a data block. The memory must be freed by the caller.
  */
-char *protocol_get_single_data_block( char *data_pointer )
+char *protocol_get_single_data_block( char **data_pointer )
 {
 	char length[6];
 	char *data;
 	int l;
-	memcpy( length, data_pointer, 4);
-	length[6] = '\0';
+	memcpy( length, *data_pointer, 4);
+	length[4] = '\0';
+	syslog(LOG_DEBUG,"LEN:%s\n",length);
 	l = atoi(length);
 	data = malloc(sizeof(char) * (l+1));
-	memcpy( data, data_pointer + 5, l);
+	memcpy( data, *data_pointer + 4, l);
 	data[ l ] = '\0';
-        data_pointer = data_pointer + l + 5;
+	syslog(LOG_DEBUG,"DATA:%s\n",data);
+        *data_pointer = *data_pointer + l + 4;
 	return data;
 }
 
