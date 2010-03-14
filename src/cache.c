@@ -125,21 +125,21 @@ char *cache_make_database_string( struct cache_entry *entry)
 		return NULL;
 	}
         /* username */
-        username = protocol_get_single_data_block( &go_through );
+        username = protocol_get_single_data_block_quoted( &go_through );
         /* user's SID */
-        usersid = protocol_get_single_data_block( &go_through );
+        usersid = protocol_get_single_data_block_quoted( &go_through );
         /* share */
-        share = protocol_get_single_data_block( &go_through );
+        share = protocol_get_single_data_block_quoted( &go_through );
         /* domain */
-        domain = protocol_get_single_data_block( &go_through );
+        domain = protocol_get_single_data_block_quoted( &go_through );
         /* timestamp */
-        timestamp = protocol_get_single_data_block( &go_through );
+        timestamp = protocol_get_single_data_block_quoted( &go_through );
 
 	/* now receive the VFS function depending arguments */
 	switch( op_id) {
 	case vfs_id_read:
 	case vfs_id_pread: ;
-		filename = protocol_get_single_data_block( &go_through );
+		filename = protocol_get_single_data_block_quoted( &go_through );
 		len = protocol_get_single_data_block( &go_through);
 		i = asprintf(&str, "INSERT INTO %s ("
 			"username, usersid, share, domain, timestamp,"
@@ -153,7 +153,7 @@ char *cache_make_database_string( struct cache_entry *entry)
 		break;
 	case vfs_id_write:
 	case vfs_id_pwrite: ;
-                filename = protocol_get_single_data_block( &go_through );
+                filename = protocol_get_single_data_block_quoted( &go_through );
                 len = protocol_get_single_data_block( &go_through);
                 i = asprintf(&str, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
@@ -166,8 +166,8 @@ char *cache_make_database_string( struct cache_entry *entry)
 		free(len);
                 break;
 	case vfs_id_mkdir: ;
-		path = protocol_get_single_data_block( &go_through);
-		mode = protocol_get_single_data_block( &go_through);
+		path = protocol_get_single_data_block_quoted( &go_through);
+		mode = protocol_get_single_data_block_quoted( &go_through);
 		result=protocol_get_single_data_block( &go_through);
 		i = asprintf(&str, "INSERT INTO %s ("
 			"username, usersid, share, domain, timestamp,"
@@ -181,7 +181,7 @@ char *cache_make_database_string( struct cache_entry *entry)
 		free(result);
 		break;
 	case vfs_id_chdir: ;
-		path = protocol_get_single_data_block( &go_through);
+		path = protocol_get_single_data_block_quoted( &go_through);
 		result = protocol_get_single_data_block( &go_through);
 		i = asprintf(&str, "INSERT INTO %s ("
 			"username, usersid, share, domain, timestamp,"
@@ -194,8 +194,8 @@ char *cache_make_database_string( struct cache_entry *entry)
 		free(result);
 		break;
 	case vfs_id_open: ;
-		filename = protocol_get_single_data_block(&go_through);
-		mode = protocol_get_single_data_block(&go_through);
+		filename = protocol_get_single_data_block_quoted(&go_through);
+		mode = protocol_get_single_data_block_quoted(&go_through);
 		result = protocol_get_single_data_block(&go_through);
                 i = asprintf(&str, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
@@ -209,7 +209,7 @@ char *cache_make_database_string( struct cache_entry *entry)
 		free(result);
 		break;
 	case vfs_id_close: ;
-		filename = protocol_get_single_data_block(&go_through);
+		filename = protocol_get_single_data_block_quoted(&go_through);
 		result = protocol_get_single_data_block(&go_through);
                 i = asprintf(&str, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
@@ -222,8 +222,8 @@ char *cache_make_database_string( struct cache_entry *entry)
 		free(result);
 		break;
 	case vfs_id_rename: ;
-		source = protocol_get_single_data_block(&go_through);
-		destination = protocol_get_single_data_block(&go_through);
+		source = protocol_get_single_data_block_quoted(&go_through);
+		destination = protocol_get_single_data_block_quoted(&go_through);
 		result = protocol_get_single_data_block(&go_through);
                 i = asprintf(&str, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
@@ -278,7 +278,7 @@ void cache_manager(sqlite3 *database )
         	cache_end = NULL;
         	pthread_mutex_unlock(&cache_mutex);
 		/* store all existing entries into the database */
-		sqlite3_exec(database, "BEGIN", 0, 0, 0);
+		sqlite3_exec(database, "BEGIN TRANSACTION;", 0, 0, 0);
 		while (begin != NULL) {
 			char *a = cache_make_database_string( begin );
 			syslog(LOG_DEBUG,"STR: %s\n",a);
@@ -289,6 +289,6 @@ void cache_manager(sqlite3 *database )
 			free(dummy->data);
 			free(dummy);
 		}
-		sqlite3_exec(database, "COMMIT", 0, 0, 0); 
+		sqlite3_exec(database, "COMMIT;", 0, 0, 0); 
 	}
 }

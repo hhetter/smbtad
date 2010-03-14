@@ -106,6 +106,31 @@ char *protocol_get_single_data_block( char **data_pointer )
 	return data;
 }
 
+/**
+ * Parse a single data block and return a quoted string.
+ * char *data_pointer   This char shall point to the begin of the data block,
+ *                      it is set by the function to the beginning of the
+ *                      next data block.
+ * The function returns a data block. The memory must be freed by the caller.
+ */
+char *protocol_get_single_data_block_quoted( char **data_pointer )
+{
+        char length[6];
+        char *data;
+        int l;
+        memcpy( length, *data_pointer, 4);
+        length[4] = '\0';
+        syslog(LOG_DEBUG,"LEN:%s\n",length);
+        l = atoi(length);
+        data = malloc(sizeof(char) * (l+4));
+	data[0] = '\"';
+        memcpy( data+1, *data_pointer + 4, l);
+        data[ l+1] = '\"';
+	data[ l+2] = '\0';
+        syslog(LOG_DEBUG,"DATA:%s\n",data);
+        *data_pointer = *data_pointer + l + 4;
+        return data;
+}
 
 /**
  * Parse a complete data block

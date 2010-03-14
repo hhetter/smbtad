@@ -20,7 +20,8 @@
  */
 
 #include "../include/includes.h"
-#define CREATE_COMMONS vfs_id integer,username varchar,usersid varchar,share varchar,domain varchar,timestamp DATE
+#define CREATE_COMMONS "vfs_id integer,username varchar,usersid varchar,share varchar,domain varchar,timestamp DATE,"
+
 
 /*
  * Create a database and setup the required tables
@@ -42,28 +43,44 @@ sqlite3 *database_create( char *filename )
 
 	/* write/pwrite */
 	rc = sqlite3_exec( db, \
-		"CREATE TABLE write ( CREATE_COMMONS, filename varchar, length integer )",NULL,0,&zErrormsg);
+		"CREATE TABLE write ("
+		 CREATE_COMMONS
+		"filename varchar, length integer )",NULL,0,&zErrormsg);
 	/* read/pread */
 	rc = sqlite3_exec( db, \
-		"CREATE TABLE read ( CREATE_COMMONS, filename, varchar, length integer )",NULL,0,&zErrormsg);
+		"CREATE TABLE read ("
+		 CREATE_COMMONS
+		"filename, varchar, length integer )",NULL,0,&zErrormsg);
 	/* mkdir */
 	rc = sqlite3_exec( db, \
-		"CREATE TABLE mkdir ( CREATE_COMMONS, path varchar, mode varchar, result integer )",NULL,0,&zErrormsg);
+		"CREATE TABLE mkdir ("
+		 CREATE_COMMONS
+		"path varchar, mode varchar, result integer )",NULL,0,&zErrormsg);
 	/* rmdir */
 	rc = sqlite3_exec( db, \
-		"CREATE TABLE rmdir ( CREATE_COMMONS, path varchar, mode varchar, result integer )",NULL,0,&zErrormsg);
+		"CREATE TABLE rmdir ("
+		 CREATE_COMMONS
+		"path varchar, mode varchar, result integer )",NULL,0,&zErrormsg);
 	/* rename */
 	rc = sqlite3_exec( db, \
-		"CREATE TABLE rename ( CREATE_COMMONS, source varchar, destination varchar, result integer)",NULL,0,&zErrormsg);
+		"CREATE TABLE rename ("
+		CREATE_COMMONS
+		"source varchar, destination varchar, result integer)",NULL,0,&zErrormsg);
 	/* chdir */
 	rc = sqlite3_exec( db, \
-		"CREATE TABLE chdir ( CREATE_COMMONS, path varchar, result integer)", NULL,0, &zErrormsg);
+		"CREATE TABLE chdir ("
+		 CREATE_COMMONS
+		"path varchar, result integer)", NULL,0, &zErrormsg);
 	/* open */
 	rc = sqlite3_exec( db, \
-		"CREATE TABLE open ( CREATE_COMMONS, filename varchar, mode varchar, result integer)",NULL,0,&zErrormsg);
+		"CREATE TABLE open ("
+		 CREATE_COMMONS
+		"filename varchar, mode varchar, result integer)",NULL,0,&zErrormsg);
 	/* close */
 	rc = sqlite3_exec( db, \
-		"CREATE TABLE close (CREATE_COMMONS, filename varchar, result integer)",NULL,0,&zErrormsg);
+		"CREATE TABLE close ("
+		CREATE_COMMONS
+		"filename varchar, result integer)",NULL,0,&zErrormsg);
 
 	return db;
 }

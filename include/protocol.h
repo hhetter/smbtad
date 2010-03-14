@@ -41,3 +41,4 @@ int protocol_get_subversion( char *header );
 int protocol_is_anonymized( char *header );
 int protocol_is_encrypted( char *header );
 char *protocol_get_single_data_block( char **go );
+char *protocol_get_single_data_block_quoted( char **go );
