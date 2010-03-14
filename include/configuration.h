@@ -39,6 +39,8 @@ typedef struct configuration_data {
 
 	/* file to use for the database */
 	char *dbname;
+	/* the db handle */
+	sqlite3 *dbhandle;
 
 } config_t;
 

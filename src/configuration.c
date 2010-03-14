@@ -31,6 +31,7 @@ void configuration_define_defaults( config_t *c )
 	c->config_file = NULL;
 	c->debug_level = 0;
 	c->dbname = strdup( "/var/lib/staddb");
+	c->dbhandle = NULL;
 	_DBG = 0;
 }
 

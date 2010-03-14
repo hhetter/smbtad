@@ -23,6 +23,6 @@
 /*
  * Create a database and setup the required tables
  */
-int database_create( char *filename );
+sqlite3 *database_create( char *filename );
 
 

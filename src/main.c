@@ -34,11 +34,13 @@ int main(int argc, char *argv[])
 	
 	/* parse command line */
 	if ( configuration_parse_cmdline( &conf, argc, argv ) <0 ) exit(1);
+	/* set the db */
+	conf.dbhandle = database_create(conf.dbname);
 
 	/* become a daemon, depending on configuration	*/
 	daemon_daemonize( &conf );
 
-       	pthread_create(&thread,NULL,(void *)&cache_manager,NULL);
+       	pthread_create(&thread,NULL,(void *)&cache_manager,(void *) conf.dbhandle);
 
 	/* enter the main network function. */
 	network_handle_connections( &conf );

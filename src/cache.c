@@ -184,7 +184,7 @@ char *cache_make_database_string( struct cache_entry *entry)
 		path = protocol_get_single_data_block( &go_through);
 		result = protocol_get_single_data_block( &go_through);
 		i = asprintf(&str, "INSERT INTO %s ("
-			"username, usersid, share, daomin, timestamp,"
+			"username, usersid, share, domain, timestamp,"
 			"path, result) VALUES ("
 			"%s,%s,%s,%s,%s,"
 			"%s,%s);",
@@ -212,7 +212,7 @@ char *cache_make_database_string( struct cache_entry *entry)
 		filename = protocol_get_single_data_block(&go_through);
 		result = protocol_get_single_data_block(&go_through);
                 i = asprintf(&str, "INSERT INTO %s ("
-                        "username, usersid, share, daomin, timestamp,"
+                        "username, usersid, share, domain, timestamp,"
                         "filename, result) VALUES ("
                         "%s,%s,%s,%s,%s,"
                         "%s,%s);",
@@ -256,7 +256,7 @@ char *cache_make_database_string( struct cache_entry *entry)
  * in case of yes, it walks through the list of data, enables
  * a new cache, and stores the data in the DB
  */
-void cache_manager( )
+void cache_manager(sqlite3 *database )
 {
 	struct timespec mywait;
         mywait.tv_sec=0;
@@ -278,15 +278,17 @@ void cache_manager( )
         	cache_end = NULL;
         	pthread_mutex_unlock(&cache_mutex);
 		/* store all existing entries into the database */
+		sqlite3_exec(database, "BEGIN", 0, 0, 0);
 		while (begin != NULL) {
 			char *a = cache_make_database_string( begin );
 			syslog(LOG_DEBUG,"STR: %s\n",a);
-
+			sqlite3_exec(database, a,0,0,0);
 			free(a);
 			struct cache_entry *dummy = begin;
 			begin = begin->next;
 			free(dummy->data);
 			free(dummy);
 		}
+		sqlite3_exec(database, "COMMIT", 0, 0, 0); 
 	}
 }

@@ -28,4 +28,4 @@ struct cache_entry {
 
 
 int cache_add( char *data, int len );
-void cache_manager();
+void cache_manager( sqlite3 *db);

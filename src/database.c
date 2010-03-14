@@ -25,7 +25,7 @@
 /*
  * Create a database and setup the required tables
  */
-int database_create( char *filename )
+sqlite3 *database_create( char *filename )
 {
 
 	sqlite3 *db;
@@ -37,7 +37,7 @@ int database_create( char *filename )
                         "plugin-sqlite3 : ERROR: Can't open Database :"
                         " %s, exiting.\n",
                         sqlite3_errmsg(db));
-                return -1;
+                return NULL;
         }
 
 	/* write/pwrite */
@@ -65,8 +65,7 @@ int database_create( char *filename )
 	rc = sqlite3_exec( db, \
 		"CREATE TABLE close (CREATE_COMMONS, filename varchar, result integer)",NULL,0,&zErrormsg);
 
-	sqlite3_close( db );
-	return 0;
+	return db;
 }
 
 
