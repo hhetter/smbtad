@@ -121,6 +121,7 @@ int network_handle_data( int i )
 			connection->data_state = CONN_READ_DATA;
 			connection->blocklen =
 				protocol_get_data_block_length( header );
+			connection->encryped = protocol_is_encryped( header );
 			free(header);
 			break;
 		case CONN_READ_DATA: ;

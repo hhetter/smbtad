@@ -121,7 +121,7 @@ char *cache_make_database_string( struct cache_entry *entry)
 
 	/* in case we received a vfs_id that we don't support, return NULL */
 	if (vfs_id == NULL) {
-		syslog(LOG_DEBUG,"UNSUPPORTED");
+		syslog(LOG_DEBUG,"Unsupported VFS function!");
 		return NULL;
 	}
         /* username */

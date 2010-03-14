@@ -39,6 +39,7 @@ struct connection_struct {
 	char *header;
 	int data_position;
 	char *data;
+	int encrypted;
 };
 
 struct connection_struct *connection_list_identify( int socket );

@@ -49,13 +49,13 @@ enum header_states protocol_check_header( char *header )
 	/* exit the process if we are about to receive 0 bytes */
 	if ( protocol_get_data_block_length(header) == 0) {
 		syslog(LOG_DEBUG, "ERROR: 0 bytes of data are about to"
-				"be received. stad2 is exiting.");
+				"be received. smbta is exiting.");
 		exit (1);
 	}
 	/* exit the process if we don't receive a V2 header */	
 	if (strncmp( header, "V2.", 3) != 0) {
 		syslog(LOG_DEBUG, "ERROR: Not a V2 protocol header! "
-				"stad2 is exiting.");
+				"smbtad is exiting.");
 		exit (1);
 	}
 
@@ -68,6 +68,26 @@ enum header_states protocol_check_header( char *header )
 	}
 
 	return HEADER_CHECK_OK;
+}
+
+/**
+ * AES decrypt a data block.
+ * returns the encrypted data block, and frees the given block
+ */
+char *protocol_decrypt( char *body, int len, const char *thekey)
+{
+	AES_KEY key;
+	if (thekey == NULL) return NULL;
+	AES_set_decrypt_key(thekey, 128, &key);
+	char *data = malloc(sizeof( char ) * (len +4));
+	int s1 = ( len / 16 );
+	for (int i = 0; i < s1; i++) {
+		for (int y = 0; y<16; y++) {
+			AES_decrypt(body + (i*16)+y, data+(i*16)+y, &key);
+		}
+	}
+	free(body);
+	return data;
 }
 
 
@@ -96,12 +116,10 @@ char *protocol_get_single_data_block( char **data_pointer )
 	int l;
 	memcpy( length, *data_pointer, 4);
 	length[4] = '\0';
-	syslog(LOG_DEBUG,"LEN:%s\n",length);
 	l = atoi(length);
 	data = malloc(sizeof(char) * (l+1));
 	memcpy( data, *data_pointer + 4, l);
 	data[ l ] = '\0';
-	syslog(LOG_DEBUG,"DATA:%s\n",data);
         *data_pointer = *data_pointer + l + 4;
 	return data;
 }
@@ -120,23 +138,15 @@ char *protocol_get_single_data_block_quoted( char **data_pointer )
         int l;
         memcpy( length, *data_pointer, 4);
         length[4] = '\0';
-        syslog(LOG_DEBUG,"LEN:%s\n",length);
         l = atoi(length);
         data = malloc(sizeof(char) * (l+4));
 	data[0] = '\"';
         memcpy( data+1, *data_pointer + 4, l);
         data[ l+1] = '\"';
 	data[ l+2] = '\0';
-        syslog(LOG_DEBUG,"DATA:%s\n",data);
         *data_pointer = *data_pointer + l + 4;
         return data;
 }
-
-/**
- * Parse a complete data block
- * organize the parsed data in a cache_entry,
- * and return a pointer to the struct
- */
 
 
 /**
