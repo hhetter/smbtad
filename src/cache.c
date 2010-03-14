@@ -75,8 +75,9 @@ char *cache_make_database_string( struct cache_entry *entry)
 	char *destination = NULL;
 	int i;
         /* first check how many common data blocks will come */
-        int common_blocks_num = atoi(
-        protocol_get_single_data_block( &go_through ));
+	str = protocol_get_single_data_block(&go_through);
+	int common_blocks_num = atoi(str);
+	free(str);
         /**
          * don't run a newer smbtad with an older VFS module
          */
@@ -86,8 +87,9 @@ char *cache_make_database_string( struct cache_entry *entry)
         }
 
         /* vfs_operation_identifier */
-        int op_id = atoi(
-                protocol_get_single_data_block( &go_through ));
+	str = protocol_get_single_data_block(&go_through);
+	int op_id = atoi(str);
+	free(str);
 	switch(op_id) {
 	case vfs_id_read:
 	case vfs_id_pread:
