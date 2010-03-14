@@ -73,7 +73,9 @@ ADD_EXECUTABLE(${CurrentExe}
 	src/log.c
 	src/protocol.c
 	src/cache.c
-	src/database.c)
+	src/database.c
+	src/crypto/aes.c
+	src/crypto/rijndael-alg-fst.c)
 TARGET_LINK_LIBRARIES(${CurrentExe} ${Libraries})
 
 
