@@ -77,16 +77,17 @@ enum header_states protocol_check_header( char *header )
 char *protocol_decrypt( char *body, int len, const char *thekey)
 {
 	AES_KEY key;
+	int i,y;
 	if (thekey == NULL) return NULL;
 	AES_set_decrypt_key(thekey, 128, &key);
 	char *data = malloc(sizeof( char ) * (len +4));
 	int s1 = ( len / 16 );
-	for (int i = 0; i < s1; i++) {
-		for (int y = 0; y<16; y++) {
-			AES_decrypt(body + (i*16)+y, data+(i*16)+y, &key);
-		}
+	for ( i = 0; i < s1; i++) {
+		AES_decrypt(body + (i*16), data+(i*16), &key);
 	}
 	free(body);
+	data[len+1]= '\0';
+	syslog(LOG_DEBUG,"DATA DEC: %s\n",data);
 	return data;
 }
 

@@ -32,8 +32,30 @@ void configuration_define_defaults( config_t *c )
 	c->debug_level = 0;
 	c->dbname = strdup( "/var/lib/staddb");
 	c->dbhandle = NULL;
+	c->keyfile =NULL;
 	_DBG = 0;
 }
+
+int configuration_load_key_from_file( config_t *c)
+{
+        FILE *keyfile;
+        char *key = malloc(sizeof(char) * 17);
+        int l;
+        keyfile = fopen(c->keyfile, "r");
+        if (keyfile == NULL) {
+                return -1;
+        }
+        l = fscanf(keyfile, "%s", key);
+        if (strlen(key) != 16) {
+                printf("Key file in wrong format\n");
+                fclose(keyfile);
+                exit(0);
+        }
+        strcpy( c->key, key);
+	syslog(LOG_DEBUG,"KEY LOADEDi\n");
+}
+
+
 
 int configuration_load_config_file( config_t *c)
 {
@@ -55,6 +77,10 @@ int configuration_load_config_file( config_t *c)
 	cc = iniparser_getstring(Mydict,"general:debug_level",NULL);
 	if (cc != NULL) {
 		c->debug_level = atoi(cc);
+	}
+	cc = iniparser_getstring(Mydict,"general:keyfile",NULL);
+	if (cc != NULL) {
+		configuration_load_key_from_file( c);
 	}
 	return 0;
 }
@@ -101,11 +127,12 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 			{ "interactive", 0, NULL, 'o' },
 			{ "debug-level",1, NULL, 'd' },
 			{ "config-file",1,NULL,'c'},
+			{ "key-file",1,NULL,'k'},
 			{ 0,0,0,0 }
 		};
 
 		i = getopt_long( argc, argv,
-			"d:i:oc:", long_options, &option_index );
+			"d:i:oc:k:", long_options, &option_index );
 
 		if ( i == -1 ) break;
 
@@ -123,6 +150,10 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 			case 'c':
 				c->config_file = strdup( optarg );
 				configuration_load_config_file(c);
+				break;
+			case 'k':
+				c->keyfile = strdup( optarg);
+				configuration_load_key_from_file(c);
 				break;
 			default	:
 				printf("ERROR: unkown option.\n\n");

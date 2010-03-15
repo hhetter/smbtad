@@ -41,6 +41,10 @@ typedef struct configuration_data {
 	char *dbname;
 	/* the db handle */
 	sqlite3 *dbhandle;
+	/* AES Keyfile */
+	char *keyfile;
+	/* AES Key */
+	unsigned char key[20];
 
 } config_t;
 

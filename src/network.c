@@ -31,13 +31,14 @@ char *network_receive_header( int sock )
 {
 	char *buf = malloc( sizeof(char) * 30 );
 	size_t t;
-	t = recv( sock, buf, 28, 0);
+	t = recv( sock, buf, 26, 0);
 	if ( t == 0 ) {
 		/* connection closed */
 		free(buf);
 		return NULL;
 	}
-	*(buf + t + 1) = '\0';
+	*(buf + t) = '\0';
+	syslog(LOG_DEBUG, "RECEIVED HEADER %s\n",buf);
 	return buf;
 }
 
@@ -105,7 +106,7 @@ void network_close_connection(int i)
  * that a data block will come. If a data block has been
  * received, set the state to CONN_READ_HEADER
  */
-int network_handle_data( int i )
+int network_handle_data( int i, config_t *c )
 {
      	struct connection_struct *connection =
 		connection_list_identify(i);
@@ -114,6 +115,7 @@ int network_handle_data( int i )
 		case CONN_READ_HEADER: ;
 			char *header = network_receive_header(i);
 			if (header == NULL) {
+				syslog(LOG_DEBUG, "CONNECTION CLOSED!\n");
 				network_close_connection(i);
 				break;
 			}
@@ -121,7 +123,7 @@ int network_handle_data( int i )
 			connection->data_state = CONN_READ_DATA;
 			connection->blocklen =
 				protocol_get_data_block_length( header );
-			connection->encryped = protocol_is_encryped( header );
+			connection->encrypted = protocol_is_encrypted( header );
 			free(header);
 			break;
 		case CONN_READ_DATA: ;
@@ -130,6 +132,10 @@ int network_handle_data( int i )
 			if (body == NULL) {
 				network_close_connection(i);
 				break;
+			}
+			if ( connection->encrypted == 1) {
+				syslog(LOG_DEBUG,"RECEIVED %s\n",body);
+				body = protocol_decrypt(body, connection->blocklen, c->key);
 			}
 			connection->data_state = CONN_READ_HEADER;
 			cache_add(body, connection->blocklen);
@@ -221,7 +227,7 @@ void network_handle_connections( config_t *c )
 				int sr;
 				sr = network_accept_VFS_connection(c, &remote);
 			} else 	if (FD_ISSET(i, &read_fd_set))
-					network_handle_data(i);
+					network_handle_data(i,c);
 		}
 	}
 }

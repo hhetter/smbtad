@@ -19,6 +19,9 @@
 #include <sys/select.h>
 #include <dlfcn.h>
 #include <sqlite3.h>
+
+#include "aes.h"
+#include "rijndael-alg-fst.h"
 #include "../iniparser3.0b/src/iniparser.h"
 #include "vfs_smb_traffic_analyzer.h"
 #include "configuration.h"
