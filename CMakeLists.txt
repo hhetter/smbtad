@@ -15,7 +15,7 @@ include(CPack)
 #include(CPackConfig.cmake)
 INCLUDE(${CMAKE_SOURCE_DIR}/FindSqlite3.cmake)
 SET(CMAKE_BUILD_TYPE "Debug")
-SET(CMAKE_C_FLAGS_DEBUG "-g")
+SET(CMAKE_C_FLAGS_DEBUG "-g -Wall")
 #SET(CMAKE_VERBOSE_MAKEFILE ON)
 FIND_PACKAGE(Sqlite3 REQUIRED)
 SET(CMAKE_INSTALL_PREFIX /usr)
@@ -26,6 +26,7 @@ pthread
 rt
 dl
 iniparser
+talloc
 )
 
 

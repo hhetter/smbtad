@@ -40,9 +40,9 @@ enum header_states protocol_check_header( char *header )
 
 	if (strlen(header) < 26) {
 		DEBUG(1) syslog(LOG_DEBUG,
-			"protocol_check_header: received header is only %i"
+			"protocol_check_header: received header is only %u"
 			"bytes long. Assuming we haven't received it "
-			"completely.\n", strlen(header));
+			"completely.\n", (unsigned int) strlen(header));
 		status = HEADER_CHECK_INCOMPLETE;
 		return status;
 	}
@@ -61,8 +61,7 @@ enum header_states protocol_check_header( char *header )
 
 	if ( protocol_get_subversion(header) != PROTOCOL_SUBRELEASE ) {
 		DEBUG(1) syslog(LOG_DEBUG,
-			"protocol_check_header: we have subrelease number "
-			"%i, the client has %i.\n");
+			"protocol_check_header: subrelease mismatch !\n ");
 		status = HEADER_CHECK_VERSION_MISMATCH;
 		return status;
 	}
@@ -74,20 +73,19 @@ enum header_states protocol_check_header( char *header )
  * AES decrypt a data block.
  * returns the encrypted data block, and frees the given block
  */
-char *protocol_decrypt( char *body, int len, const char *thekey)
+char *protocol_decrypt( TALLOC_CTX *ctx, char *body, int len, const unsigned char *thekey)
 {
 	AES_KEY key;
-	int i,y;
+	int i;
 	if (thekey == NULL) return NULL;
 	AES_set_decrypt_key(thekey, 128, &key);
-	char *data = malloc(sizeof( char ) * (len +4));
+	char *data = talloc_array( ctx, char, len+4); // malloc(sizeof( char ) * (len +4));
 	int s1 = ( len / 16 );
 	for ( i = 0; i < s1; i++) {
-		AES_decrypt(body + (i*16), data+(i*16), &key);
+		AES_decrypt((unsigned char *) body + (i*16), (unsigned char *) data+(i*16), &key);
 	}
 	free(body);
 	data[len+1]= '\0';
-	syslog(LOG_DEBUG,"DATA DEC: %s\n",data);
 	return data;
 }
 
@@ -110,7 +108,7 @@ int protocol_get_data_block_length( char *header )
  *			next data block.
  * The function returns a data block. The memory must be freed by the caller.
  */
-char *protocol_get_single_data_block( char **data_pointer )
+char *protocol_get_single_data_block( TALLOC_CTX *ctx, char **data_pointer )
 {
 	char length[6];
 	char *data;
@@ -118,7 +116,7 @@ char *protocol_get_single_data_block( char **data_pointer )
 	memcpy( length, *data_pointer, 4);
 	length[4] = '\0';
 	l = atoi(length);
-	data = malloc(sizeof(char) * (l+1));
+	data = talloc_array( ctx, char, l+1); //malloc(sizeof(char) * (l+1));
 	memcpy( data, *data_pointer + 4, l);
 	data[ l ] = '\0';
         *data_pointer = *data_pointer + l + 4;
@@ -132,7 +130,7 @@ char *protocol_get_single_data_block( char **data_pointer )
  *                      next data block.
  * The function returns a data block. The memory must be freed by the caller.
  */
-char *protocol_get_single_data_block_quoted( char **data_pointer )
+char *protocol_get_single_data_block_quoted( TALLOC_CTX *ctx, char **data_pointer )
 {
         char length[6];
         char *data;
@@ -140,7 +138,7 @@ char *protocol_get_single_data_block_quoted( char **data_pointer )
         memcpy( length, *data_pointer, 4);
         length[4] = '\0';
         l = atoi(length);
-        data = malloc(sizeof(char) * (l+4));
+        data = talloc_array( ctx,char, l+4 ); // malloc(sizeof(char) * (l+4));
 	data[0] = '\"';
         memcpy( data+1, *data_pointer + 4, l);
         data[ l+1] = '\"';

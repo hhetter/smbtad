@@ -18,7 +18,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
-
 #include "../include/includes.h"
 
 
@@ -27,9 +26,9 @@
  * should we receive 0 bytes, connection was closed,
  * we return NULL
  */
-char *network_receive_header( int sock )
+char *network_receive_header( TALLOC_CTX *ctx, int sock )
 {
-	char *buf = malloc( sizeof(char) * 30 );
+	char *buf = talloc_array( ctx, char, 30); // malloc( sizeof(char) * 30 );
 	size_t t;
 	t = recv( sock, buf, 26, 0);
 	if ( t == 0 ) {
@@ -38,7 +37,6 @@ char *network_receive_header( int sock )
 		return NULL;
 	}
 	*(buf + t) = '\0';
-	syslog(LOG_DEBUG, "RECEIVED HEADER %s\n",buf);
 	return buf;
 }
 
@@ -50,9 +48,9 @@ char *network_receive_header( int sock )
  * int length		The number of bytes to
  * 			receive
  */
-char *network_receive_data( int sock, int length)
+char *network_receive_data( TALLOC_CTX *ctx, int sock, int length)
 {
-	char *buf = malloc( sizeof(char) * (length+2) );
+	char *buf = talloc_array( ctx, char, length +2); // malloc( sizeof(char) * (length+2) );
 	size_t t;
 	t = recv( sock, buf, length, 0);
 	if (t == 0) {
@@ -71,7 +69,7 @@ char *network_receive_data( int sock, int length)
  */
 int network_accept_VFS_connection( config_t *c, struct sockaddr_in *remote)
 {
-	int t=sizeof(*remote);
+	socklen_t t=sizeof(*remote);
 	int sr;
 	if ( (sr = accept(c->vfs_socket,
 			(struct sockaddr *) remote, &t)) == -1) {
@@ -108,14 +106,14 @@ void network_close_connection(int i)
  */
 int network_handle_data( int i, config_t *c )
 {
+	char *context = talloc( NULL, char);
      	struct connection_struct *connection =
 		connection_list_identify(i);
         if (connection->connection_function == SOCK_TYPE_DATA) {
 		switch(connection->data_state) {
 		case CONN_READ_HEADER: ;
-			char *header = network_receive_header(i);
+			char *header = network_receive_header( context, i);
 			if (header == NULL) {
-				syslog(LOG_DEBUG, "CONNECTION CLOSED!\n");
 				network_close_connection(i);
 				break;
 			}
@@ -124,18 +122,16 @@ int network_handle_data( int i, config_t *c )
 			connection->blocklen =
 				protocol_get_data_block_length( header );
 			connection->encrypted = protocol_is_encrypted( header );
-			free(header);
 			break;
 		case CONN_READ_DATA: ;
 			char *body = 
-				network_receive_data(i, connection->blocklen);
+				network_receive_data(context, i, connection->blocklen);
 			if (body == NULL) {
 				network_close_connection(i);
 				break;
 			}
 			if ( connection->encrypted == 1) {
-				syslog(LOG_DEBUG,"RECEIVED %s\n",body);
-				body = protocol_decrypt(body, connection->blocklen, c->key);
+				body = protocol_decrypt(context, body, connection->blocklen, c->key);
 			}
 			connection->data_state = CONN_READ_HEADER;
 			cache_add(body, connection->blocklen);
@@ -143,6 +139,8 @@ int network_handle_data( int i, config_t *c )
 
 		}
 	}
+	talloc_free(context);
+	return 0;
 }
 
 
@@ -152,11 +150,8 @@ int network_handle_data( int i, config_t *c )
  */	 
 int network_create_socket( int port )
 {
-	int sock_fd, new_fd;
+	int sock_fd;
 	struct sockaddr_in6 my_addr;
-	struct sockaddr_in6 their_addr;
-	socklen_t sin_size;
-	struct sigaction sa;
 
 	if ( (sock_fd = socket(AF_INET6, SOCK_STREAM,0)) == -1 ) {
 		syslog( LOG_DEBUG, "ERROR: socket creation failed." );
@@ -195,7 +190,6 @@ void network_handle_connections( config_t *c )
 {
 	int i;
 	int z=0;
-	int sr;
 	int t;
 	struct sockaddr_in remote;
 	t=sizeof(remote);

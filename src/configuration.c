@@ -47,12 +47,13 @@ int configuration_load_key_from_file( config_t *c)
         }
         l = fscanf(keyfile, "%s", key);
         if (strlen(key) != 16) {
-                printf("Key file in wrong format\n");
+                printf("ERROR: Key file in wrong format\n");
                 fclose(keyfile);
-                exit(0);
+                exit(1);
         }
-        strcpy( c->key, key);
+        strcpy( (char *) c->key, key);
 	syslog(LOG_DEBUG,"KEY LOADEDi\n");
+	return 0;
 }
 
 
@@ -108,7 +109,6 @@ void configuration_status( config_t *c )
 int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 {
 	int i;
-	int digit_optind;
 
 	configuration_define_defaults( c );
 
@@ -172,4 +172,5 @@ int configuration_check_configuration( config_t *c )
 		printf("ERROR: debug level has to be between 0 and 10.\n");
 		return -1;
 	}
+	return 0;
 }

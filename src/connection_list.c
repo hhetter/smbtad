@@ -48,6 +48,7 @@ int connection_list_add( int socket,
 		new_entry->data_state = CONN_READ_HEADER;
 		new_entry->next = NULL;
 	}
+	return 0;
 }
 
 
@@ -71,6 +72,7 @@ int connection_list_remove( int socket )
 	Prev = Searcher;
 	Searcher = Searcher->next;
 	}
+	return 0;
 }
 
 void connection_list_recreate_fs_sets( 	fd_set *active_read_fd_set,

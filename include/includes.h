@@ -1,7 +1,7 @@
 #include "version.h"
-
 #define _XOPEN_SOURCE
 #define _SVID_SOURCE || _BSD_SOURCE || _XOPEN_SOURCE >= 500
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -19,6 +19,7 @@
 #include <sys/select.h>
 #include <dlfcn.h>
 #include <sqlite3.h>
+#include <talloc.h>
 
 #include "aes.h"
 #include "rijndael-alg-fst.h"
@@ -46,5 +47,4 @@
 #define DEBUG(x) if ( x >= _DBG ) 
 int _DBG;
 
-static pthread_mutex_t cache_mutex;
 

@@ -21,4 +21,4 @@
 
 
 
-void daemonize( config_t *c );
+void daemon_daemonize( config_t *c );

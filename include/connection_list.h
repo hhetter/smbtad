@@ -46,5 +46,9 @@ struct connection_struct *connection_list_identify( int socket );
 int connection_list_add( int socket, enum conn_fn_enum conn_fn );
 int connection_list_remove( int socket );
 int connection_list_max();
-void connection_list_recreate_fd_sets( 	fd_set *active_read_fd_set,
-					fd_set *active_write_fd_set);
+void connection_list_recreate_fs_sets(  fd_set *active_read_fd_set,
+                                        fd_set *active_write_fd_set,
+                                        fd_set *read_fd_set,
+                                        fd_set *write_fd_set);
+
+

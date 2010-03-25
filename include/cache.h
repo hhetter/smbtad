@@ -26,6 +26,6 @@ struct cache_entry {
 	struct cache_entry *next;
 };
 
-
+void cache_init();
 int cache_add( char *data, int len );
 void cache_manager( sqlite3 *db);

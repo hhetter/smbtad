@@ -21,11 +21,19 @@
 
 #include "../include/includes.h"
 
+
 struct cache_entry *cache_start = NULL;
 struct cache_entry *cache_end = NULL;
 
 
+pthread_mutex_t cache_mutex;
 
+
+/*
+ * init the cache system */
+void cache_init( ) {
+        pthread_mutex_init(&cache_mutex, NULL);
+}
 
 /*
  * adds an entry to the cache
@@ -56,8 +64,11 @@ int cache_add( char *data, int len ) {
 }
 
 
-char *cache_make_database_string( struct cache_entry *entry)
+char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 {
+	char *data = talloc( NULL, char);
+	char *retstr = NULL;
+
 	char *username = NULL;
 	char *domain = NULL;
 	char *share = NULL;
@@ -73,11 +84,9 @@ char *cache_make_database_string( struct cache_entry *entry)
 	char *path = NULL;
 	char *source = NULL;
 	char *destination = NULL;
-	int i;
         /* first check how many common data blocks will come */
-	str = protocol_get_single_data_block(&go_through);
+	str = protocol_get_single_data_block( data, &go_through);
 	int common_blocks_num = atoi(str);
-	free(str);
         /**
          * don't run a newer smbtad with an older VFS module
          */
@@ -87,166 +96,152 @@ char *cache_make_database_string( struct cache_entry *entry)
         }
 
         /* vfs_operation_identifier */
-	str = protocol_get_single_data_block(&go_through);
+	str = protocol_get_single_data_block( data, &go_through);
 	int op_id = atoi(str);
-	free(str);
 	switch(op_id) {
 	case vfs_id_read:
 	case vfs_id_pread:
-		vfs_id = strdup("read");
+		vfs_id = talloc_strdup( data, "read");
 		break;
 	case vfs_id_write:
 	case vfs_id_pwrite:
-		vfs_id = strdup("write");
+		vfs_id = talloc_strdup(data, "write");
 		break;
 	case vfs_id_mkdir:
-		vfs_id = strdup("mkdir");
+		vfs_id = talloc_strdup(data, "mkdir");
 		break;
 	case vfs_id_chdir:
-		vfs_id = strdup("chdir");
+		vfs_id = talloc_strdup(data, "chdir");
 		break;
 	case vfs_id_rename:
-		vfs_id = strdup("rename");
+		vfs_id = talloc_strdup(data, "rename");
 		break;
 	case vfs_id_rmdir:
-		vfs_id = strdup("rmdir");
+		vfs_id = talloc_strdup(data, "rmdir");
 		break;
 	case vfs_id_open:
-		vfs_id = strdup("open");
+		vfs_id = talloc_strdup(data, "open");
 		break;
 	case vfs_id_close:
-		vfs_id = strdup("close");
+		vfs_id = talloc_strdup(data, "close");
 		break;
 	}
 
 	/* in case we received a vfs_id that we don't support, return NULL */
 	if (vfs_id == NULL) {
 		syslog(LOG_DEBUG,"Unsupported VFS function!");
+		TALLOC_FREE(data);
 		return NULL;
 	}
         /* username */
-        username = protocol_get_single_data_block_quoted( &go_through );
+        username = protocol_get_single_data_block_quoted( data, &go_through );
         /* user's SID */
-        usersid = protocol_get_single_data_block_quoted( &go_through );
+        usersid = protocol_get_single_data_block_quoted( data, &go_through );
         /* share */
-        share = protocol_get_single_data_block_quoted( &go_through );
+        share = protocol_get_single_data_block_quoted( data, &go_through );
         /* domain */
-        domain = protocol_get_single_data_block_quoted( &go_through );
+        domain = protocol_get_single_data_block_quoted( data, &go_through );
         /* timestamp */
-        timestamp = protocol_get_single_data_block_quoted( &go_through );
+        timestamp = protocol_get_single_data_block_quoted( data, &go_through );
 
 	/* now receive the VFS function depending arguments */
 	switch( op_id) {
 	case vfs_id_read:
 	case vfs_id_pread: ;
-		filename = protocol_get_single_data_block_quoted( &go_through );
-		len = protocol_get_single_data_block( &go_through);
-		i = asprintf(&str, "INSERT INTO %s ("
+		filename = protocol_get_single_data_block_quoted( data, &go_through );
+		len = protocol_get_single_data_block( data, &go_through);
+		retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
 			"username, usersid, share, domain, timestamp,"
 			"filename, length) VALUES ("
 			"%s,%s,%s,%s,%s,"
 			"%s,%s);",
 			vfs_id,username,usersid,share,domain,timestamp,
 			filename,len);
-		free(filename);
-		free(len);
 		break;
 	case vfs_id_write:
 	case vfs_id_pwrite: ;
-                filename = protocol_get_single_data_block_quoted( &go_through );
-                len = protocol_get_single_data_block( &go_through);
-                i = asprintf(&str, "INSERT INTO %s ("
+                filename = protocol_get_single_data_block_quoted( data,&go_through );
+                len = protocol_get_single_data_block( data,&go_through);
+                retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
                         "filename, length) VALUES ("
                         "%s,%s,%s,%s,%s,"
                         "%s,%s);",
                         vfs_id,username,usersid,share,domain,timestamp,
                         filename,len);
-		free(filename);
-		free(len);
                 break;
 	case vfs_id_mkdir: ;
-		path = protocol_get_single_data_block_quoted( &go_through);
-		mode = protocol_get_single_data_block_quoted( &go_through);
-		result=protocol_get_single_data_block( &go_through);
-		i = asprintf(&str, "INSERT INTO %s ("
+		path = protocol_get_single_data_block_quoted( data,&go_through);
+		mode = protocol_get_single_data_block_quoted( data,&go_through);
+		result=protocol_get_single_data_block( data,&go_through);
+		retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
 			"username, usersid, share, domain, timestamp,"
 			"path, mode, result) VALUES ("
 			"%s,%s,%s,%s,%s,"
 			"%s,%s,%s);",
 			vfs_id,username,usersid,share,domain,timestamp,
 			path, mode, result);
-		free(path);
-		free(mode);
-		free(result);
 		break;
 	case vfs_id_chdir: ;
-		path = protocol_get_single_data_block_quoted( &go_through);
-		result = protocol_get_single_data_block( &go_through);
-		i = asprintf(&str, "INSERT INTO %s ("
+		path = protocol_get_single_data_block_quoted( data,&go_through);
+		result = protocol_get_single_data_block( data,&go_through);
+		retstr = talloc_asprintf( ctx, "INSERT INTO %s ("
 			"username, usersid, share, domain, timestamp,"
 			"path, result) VALUES ("
 			"%s,%s,%s,%s,%s,"
 			"%s,%s);",
 			vfs_id,username,usersid,share,domain,timestamp,
 			path,result);
-		free(path);
-		free(result);
 		break;
 	case vfs_id_open: ;
-		filename = protocol_get_single_data_block_quoted(&go_through);
-		mode = protocol_get_single_data_block_quoted(&go_through);
-		result = protocol_get_single_data_block(&go_through);
-                i = asprintf(&str, "INSERT INTO %s ("
+		filename = protocol_get_single_data_block_quoted(data,&go_through);
+		mode = protocol_get_single_data_block_quoted(data,&go_through);
+		result = protocol_get_single_data_block(data,&go_through);
+                retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
                         "filename, mode, result) VALUES ("
                         "%s,%s,%s,%s,%s,"
                         "%s,%s,%s);",
                         vfs_id,username,usersid,share,domain,timestamp,
                         filename, mode, result);
-		free(filename);
-		free(mode);
-		free(result);
 		break;
 	case vfs_id_close: ;
-		filename = protocol_get_single_data_block_quoted(&go_through);
-		result = protocol_get_single_data_block(&go_through);
-                i = asprintf(&str, "INSERT INTO %s ("
+		filename = protocol_get_single_data_block_quoted(data,&go_through);
+		result = protocol_get_single_data_block(data,&go_through);
+                retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
                         "filename, result) VALUES ("
                         "%s,%s,%s,%s,%s,"
                         "%s,%s);",
                         vfs_id,username,usersid,share,domain,timestamp,
                         filename,result);
-		free(filename);
-		free(result);
 		break;
 	case vfs_id_rename: ;
-		source = protocol_get_single_data_block_quoted(&go_through);
-		destination = protocol_get_single_data_block_quoted(&go_through);
-		result = protocol_get_single_data_block(&go_through);
-                i = asprintf(&str, "INSERT INTO %s ("
+		source = protocol_get_single_data_block_quoted(data,&go_through);
+		destination = protocol_get_single_data_block_quoted(data,&go_through);
+		result = protocol_get_single_data_block(data,&go_through);
+                retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
                         "source, destination, result) VALUES ("
                         "%s,%s,%s,%s,%s,"
                         "%s,%s,%s);",
                         vfs_id,username,usersid,share,domain,timestamp,
                         source,destination,result);
-		free(source);
-		free(destination);
-		free(result);
 		break;
 
 	}
 
 	/* free everything no longer needed */
+	TALLOC_FREE(data);
+/*
 	free(username);
 	free(usersid);
 	free(share);
 	free(domain);
 	free(timestamp);
 	free(vfs_id);
-	return str;
+*/
+	return retstr;
 }
 
 	
@@ -271,7 +266,7 @@ void cache_manager(sqlite3 *database )
 	while (1 == 1) {
                 /* wait half a second; we don't need to check the       */
                 /* feed-list all the time.                              */
-                nanosleep(&mywait,NULL);
+                sleep( 500*1000 ); // nanosleep(&mywait,NULL);
         	pthread_mutex_lock(&cache_mutex);
         	struct cache_entry *begin = cache_start;
        		cache_start = NULL;
@@ -280,10 +275,10 @@ void cache_manager(sqlite3 *database )
 		/* store all existing entries into the database */
 		sqlite3_exec(database, "BEGIN TRANSACTION;", 0, 0, 0);
 		while (begin != NULL) {
-			char *a = cache_make_database_string( begin );
+			char *a = cache_make_database_string(NULL, begin );
 			syslog(LOG_DEBUG,"STR: %s\n",a);
 			sqlite3_exec(database, a,0,0,0);
-			free(a);
+			TALLOC_FREE(a);
 			struct cache_entry *dummy = begin;
 			begin = begin->next;
 			free(dummy->data);

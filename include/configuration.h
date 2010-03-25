@@ -49,3 +49,5 @@ typedef struct configuration_data {
 } config_t;
 
 int configuration_check_configuration( config_t *c );
+int configuration_parse_cmdline( config_t *c, int argc, char *argv[] );
+

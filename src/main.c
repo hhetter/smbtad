@@ -22,6 +22,7 @@
 #include "../include/includes.h"
 
 
+
 int main(int argc, char *argv[])
 {
 
@@ -30,7 +31,7 @@ int main(int argc, char *argv[])
 	
 	pthread_t thread;
 
-	pthread_mutex_init(&cache_mutex, NULL);
+	cache_init();
 	
 	/* parse command line */
 	if ( configuration_parse_cmdline( &conf, argc, argv ) <0 ) exit(1);

@@ -19,7 +19,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-
+#include <talloc.h>
 void network_handle_connections( config_t *c );
-char *network_receive_header( int sock);
+char *network_receive_header( TALLOC_CTX *ctx, int sock);
 
