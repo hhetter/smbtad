@@ -266,7 +266,7 @@ void cache_manager(sqlite3 *database )
 	while (1 == 1) {
                 /* wait half a second; we don't need to check the       */
                 /* feed-list all the time.                              */
-                sleep( 500*1000 ); // nanosleep(&mywait,NULL);
+                sleep(1); // nanosleep(&mywait,NULL);
         	pthread_mutex_lock(&cache_mutex);
         	struct cache_entry *begin = cache_start;
        		cache_start = NULL;
