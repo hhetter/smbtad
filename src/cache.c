@@ -42,11 +42,13 @@ void cache_init( ) {
 int cache_add( char *data, int len ) {
 
 	
-        struct cache_entry *entry = malloc(sizeof(struct cache_entry));	
+        struct cache_entry *entry;	
 	if (entry == NULL) return -1;
 	pthread_mutex_lock(&cache_mutex);
 	if (cache_start == NULL) {
-		entry->data = data;
+		cache_start = talloc(NULL, struct cache_entry);
+		entry = cache_start;
+		entry->data = talloc_steal( cache_start, data);
 		entry->length = len;
 		cache_start = entry;
 		entry->next = NULL;
@@ -54,9 +56,10 @@ int cache_add( char *data, int len ) {
 		pthread_mutex_unlock(&cache_mutex);
 		return 0;
 	}
+	entry = talloc(cache_start, struct cache_entry);
 	cache_end->next = entry;
 	entry->next = NULL;
-	entry->data = data;
+	entry->data = talloc_steal( cache_start, data);
 	entry->length = len;
 	cache_end = entry;
 	pthread_mutex_unlock(&cache_mutex);
@@ -264,26 +267,24 @@ void cache_manager(sqlite3 *database )
 	 */
 
 	while (1 == 1) {
-                /* wait half a second; we don't need to check the       */
+                /* wait a second; we don't need to check the       */
                 /* feed-list all the time.                              */
                 sleep(1); // nanosleep(&mywait,NULL);
         	pthread_mutex_lock(&cache_mutex);
-        	struct cache_entry *begin = cache_start;
+        	struct cache_entry *go_through = cache_start;
+		struct cache_entry *backup = cache_start;
        		cache_start = NULL;
         	cache_end = NULL;
         	pthread_mutex_unlock(&cache_mutex);
 		/* store all existing entries into the database */
 		sqlite3_exec(database, "BEGIN TRANSACTION;", 0, 0, 0);
-		while (begin != NULL) {
-			char *a = cache_make_database_string(NULL, begin );
-			syslog(LOG_DEBUG,"STR: %s\n",a);
+		while (go_through != NULL) {
+			char *a = cache_make_database_string(NULL, go_through );
 			sqlite3_exec(database, a,0,0,0);
 			TALLOC_FREE(a);
-			struct cache_entry *dummy = begin;
-			begin = begin->next;
-			free(dummy->data);
-			free(dummy);
+			go_through = go_through->next;
 		}
+		if (backup != NULL) TALLOC_FREE(backup);
 		sqlite3_exec(database, "COMMIT;", 0, 0, 0); 
 	}
 }
