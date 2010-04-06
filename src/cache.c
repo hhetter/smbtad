@@ -43,7 +43,6 @@ int cache_add( char *data, int len ) {
 
 	
         struct cache_entry *entry;	
-	if (entry == NULL) return -1;
 	pthread_mutex_lock(&cache_mutex);
 	if (cache_start == NULL) {
 		cache_start = talloc(NULL, struct cache_entry);
