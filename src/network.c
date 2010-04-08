@@ -33,7 +33,7 @@ char *network_receive_header( TALLOC_CTX *ctx, int sock )
 	t = recv( sock, buf, 26, 0);
 	if ( t == 0 ) {
 		/* connection closed */
-		free(buf);
+		TALLOC_FREE(buf);
 		return NULL;
 	}
 	*(buf + t) = '\0';
