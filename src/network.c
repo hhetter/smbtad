@@ -48,18 +48,17 @@ char *network_receive_header( TALLOC_CTX *ctx, int sock )
  * int length		The number of bytes to
  * 			receive
  */
-char *network_receive_data( TALLOC_CTX *ctx, int sock, int length)
+void network_receive_data( char *buf, int sock, int length, int *rlen)
 {
-	char *buf = talloc_array( ctx, char, length +2); // malloc( sizeof(char) * (length+2) );
 	size_t t;
 	t = recv( sock, buf, length, 0);
+	
 	if (t == 0) {
 		/* connection closed */
 		TALLOC_FREE(buf);
-		return NULL;
 	}
 	*(buf + t + 1) = '\0';
-	return buf;
+	*rlen = *rlen + t;
 }
 
 
@@ -124,19 +123,42 @@ int network_handle_data( int i, config_t *c )
 			connection->encrypted = protocol_is_encrypted( header );
 			break;
 		case CONN_READ_DATA: ;
-			char *body = 
-				network_receive_data(context, i, connection->blocklen);
-			if (body == NULL) {
+			connection->body = talloc_array( context, char, connection->blocklen +2); 
+			connection->body_position = 0;
+			network_receive_data(connection->body, i, connection->blocklen,
+						&connection->body_position);
+			if ( connection->body_position == 0) {
 				network_close_connection(i);
 				break;
 			}
+			if (connection->body_position != connection->blocklen) {
+				syslog(LOG_DEBUG,"%i bytes receives, len %i",connection->body_position,
+					connection->blocklen);
+				connection->data_state = CONN_READ_DATA_ONGOING;
+				break;
+			}
+			/* we have the full data block, encrypt if needed */
 			if ( connection->encrypted == 1) {
-				body = protocol_decrypt(context, body, connection->blocklen, c->key);
+				connection->body = protocol_decrypt(context, connection->body,
+					connection->blocklen, c->key);
+			}
+
+			connection->data_state = CONN_READ_HEADER;
+			cache_add(connection->body, connection->blocklen);
+			break;
+		case CONN_READ_DATA_ONGOING: ;
+			network_receive_data(connection->body, i, connection->blocklen,
+					&connection->body_position);
+			if (connection->body_position != connection->blocklen) break;
+			/* we finally have the full data block, encrypt if needed */
+			if ( connection->encrypted == 1) {
+				connection->body = protocol_decrypt(context, connection->body,
+					connection->blocklen, c->key);
 			}
 			connection->data_state = CONN_READ_HEADER;
-			cache_add(body, connection->blocklen);
+			cache_add(connection->body, connection->blocklen);
 			break;
-
+			
 		}
 	}
 	talloc_free(context);

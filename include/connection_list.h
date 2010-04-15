@@ -26,7 +26,8 @@ enum conn_fn_enum {
 
 enum conn_data_state {
 	CONN_READ_HEADER,
-	CONN_READ_DATA 
+	CONN_READ_DATA,
+	CONN_READ_DATA_ONGOING 
 };
 
 struct connection_struct {
@@ -37,8 +38,8 @@ struct connection_struct {
 	enum conn_data_state data_state;
 	int header_position;
 	char *header;
-	int data_position;
-	char *data;
+	int body_position;
+	char *body;
 	int encrypted;
 };
 
