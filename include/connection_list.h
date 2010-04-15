@@ -19,6 +19,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <talloc.h>
+
 enum conn_fn_enum {
 	SOCK_TYPE_DATA,
 	SOCK_TYPE_DB_QUERY
@@ -41,7 +43,7 @@ struct connection_struct {
 	int body_position;
 	char *body;
 	int encrypted;
-	char *CTX;
+	TALLOC_CTX *CTX;
 };
 
 struct connection_struct *connection_list_identify( int socket );
