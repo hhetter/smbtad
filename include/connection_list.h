@@ -41,6 +41,7 @@ struct connection_struct {
 	int body_position;
 	char *body;
 	int encrypted;
+	char *CTX;
 };
 
 struct connection_struct *connection_list_identify( int socket );

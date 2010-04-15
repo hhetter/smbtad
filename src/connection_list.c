@@ -39,6 +39,7 @@ int connection_list_add( int socket,
 		new_entry->next = NULL;
 		new_entry->connection_function = conn_fn;
 		new_entry->data_state = CONN_READ_HEADER;
+		new_entry->CTX = NULL;
 		return 0;
 	} else {
 		new_entry->mysocket = socket;
@@ -47,6 +48,7 @@ int connection_list_add( int socket,
 		new_entry->connection_function = conn_fn;
 		new_entry->data_state = CONN_READ_HEADER;
 		new_entry->next = NULL;
+		new_entry->CTX = NULL;
 	}
 	return 0;
 }

@@ -105,9 +105,11 @@ void network_close_connection(int i)
  */
 int network_handle_data( int i, config_t *c )
 {
-	char *context = talloc( NULL, char);
+	
      	struct connection_struct *connection =
 		connection_list_identify(i);
+	if (connection->CTX == NULL) connection->CTX = talloc(NULL, char);
+	char *context = connection->CTX;
         if (connection->connection_function == SOCK_TYPE_DATA) {
 		switch(connection->data_state) {
 		case CONN_READ_HEADER: ;
@@ -145,6 +147,7 @@ int network_handle_data( int i, config_t *c )
 
 			connection->data_state = CONN_READ_HEADER;
 			cache_add(connection->body, connection->blocklen);
+			TALLOC_FREE(context);
 			break;
 		case CONN_READ_DATA_ONGOING: ;
 			network_receive_data(connection->body + connection->body_position, i, connection->blocklen - connection->body_position,
@@ -157,11 +160,11 @@ int network_handle_data( int i, config_t *c )
 			}
 			connection->data_state = CONN_READ_HEADER;
 			cache_add(connection->body, connection->blocklen);
+			TALLOC_FREE(context);
 			break;
 			
 		}
 	}
-	talloc_free(context);
 	return 0;
 }
 
