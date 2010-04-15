@@ -21,5 +21,5 @@
 
 #include <talloc.h>
 void network_handle_connections( config_t *c );
-char *network_receive_header( TALLOC_CTX *ctx, int sock);
+
 

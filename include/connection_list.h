@@ -28,6 +28,7 @@ enum conn_fn_enum {
 
 enum conn_data_state {
 	CONN_READ_HEADER,
+	CONN_READ_HEADER_ONGOING,
 	CONN_READ_DATA,
 	CONN_READ_DATA_ONGOING 
 };

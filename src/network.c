@@ -26,18 +26,16 @@
  * should we receive 0 bytes, connection was closed,
  * we return NULL
  */
-char *network_receive_header( TALLOC_CTX *ctx, int sock )
+void network_receive_header( char *buf, int sock,int length, int *rlen )
 {
-	char *buf = talloc_array( ctx, char, 30); // malloc( sizeof(char) * 30 );
 	size_t t;
-	t = recv( sock, buf, 26, 0);
+	t = recv( sock, buf, length, 0);
 	if ( t == 0 ) {
 		/* connection closed */
 		TALLOC_FREE(buf);
-		return NULL;
 	}
 	*(buf + t) = '\0';
-	return buf;
+	*rlen = *rlen + t;
 }
 
 
@@ -111,17 +109,37 @@ int network_handle_data( int i, config_t *c )
         if (connection->connection_function == SOCK_TYPE_DATA) {
 		switch(connection->data_state) {
 		case CONN_READ_HEADER: ;
-			char *header = network_receive_header( connection->CTX, i);
-			if (header == NULL) {
+			connection->header = talloc_array( connection->CTX, char, 29);
+			connection->header_position = 0;
+			network_receive_header( connection->header, i,26,
+				&connection->header_position);
+			if (connection->header_position == 0) {
 				network_close_connection(i);
 				break;
 			}
-			protocol_check_header(header);
+
+			if (connection->header_position != 26) {
+				connection->data_state = CONN_READ_HEADER_ONGOING;
+				break;
+			}
+			protocol_check_header(connection->header);
 			connection->data_state = CONN_READ_DATA;
 			connection->blocklen =
-				protocol_get_data_block_length( header );
-			connection->encrypted = protocol_is_encrypted( header );
+				protocol_get_data_block_length( connection->header );
+			connection->encrypted = protocol_is_encrypted( connection->header );
 			break;
+		case CONN_READ_HEADER_ONGOING:
+			network_receive_data(connection->header + connection->header_position, i, 26 - connection->header_position,
+				&connection->header_position);
+			if (connection->header_position != 26) break;
+			/* full header */
+			protocol_check_header(connection->header);
+                        connection->data_state = CONN_READ_DATA;
+                        connection->blocklen =
+                                protocol_get_data_block_length( connection->header );
+                        connection->encrypted = protocol_is_encrypted( connection->header );
+                        break;
+
 		case CONN_READ_DATA: ;
 			connection->body = talloc_array( connection->CTX, char, connection->blocklen +2); 
 			connection->body_position = 0;
