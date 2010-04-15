@@ -55,8 +55,8 @@ char *network_receive_data( TALLOC_CTX *ctx, int sock, int length)
 	t = recv( sock, buf, length, 0);
 	if (t == 0) {
 		/* connection closed */
-		free(buf);
-		return 0;
+		TALLOC_FREE(buf);
+		return NULL;
 	}
 	*(buf + t + 1) = '\0';
 	return buf;
