@@ -147,7 +147,7 @@ int network_handle_data( int i, config_t *c )
 			cache_add(connection->body, connection->blocklen);
 			break;
 		case CONN_READ_DATA_ONGOING: ;
-			network_receive_data(connection->body, i, connection->blocklen,
+			network_receive_data(connection->body + connection->body_position, i, connection->blocklen - connection->body_position,
 					&connection->body_position);
 			if (connection->body_position != connection->blocklen) break;
 			/* we finally have the full data block, encrypt if needed */
