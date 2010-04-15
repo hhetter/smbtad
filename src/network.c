@@ -32,7 +32,8 @@ void network_receive_header( char *buf, int sock,int length, int *rlen )
 	t = recv( sock, buf, length, 0);
 	if ( t == 0 ) {
 		/* connection closed */
-		TALLOC_FREE(buf);
+		*rlen = 0;
+		return;
 	}
 	*(buf + t) = '\0';
 	*rlen = *rlen + t;
@@ -53,7 +54,8 @@ void network_receive_data( char *buf, int sock, int length, int *rlen)
 	
 	if (t == 0) {
 		/* connection closed */
-		TALLOC_FREE(buf);
+		*rlen = 0;
+		return;
 	}
 	*(buf + t + 1) = '\0';
 	*rlen = *rlen + t;
