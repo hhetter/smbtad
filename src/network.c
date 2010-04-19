@@ -92,7 +92,8 @@ int network_handle_data( int i, config_t *c )
         if (connection->connection_function == SOCK_TYPE_DATA) {
 		switch(connection->data_state) {
 		case CONN_READ_HEADER: ;
-			connection->header = talloc_array( connection->CTX, char, 29);
+			connection->header =
+				talloc_array(connection->CTX, char, 29);
 			connection->header_position = 0;
 			network_receive_data( connection->header, i,26,
 				&connection->header_position);
@@ -102,46 +103,60 @@ int network_handle_data( int i, config_t *c )
 			}
 
 			if (connection->header_position != 26) {
-				connection->data_state = CONN_READ_HEADER_ONGOING;
+				connection->data_state = 
+					CONN_READ_HEADER_ONGOING;
 				break;
 			}
 			protocol_check_header(connection->header);
 			connection->data_state = CONN_READ_DATA;
 			connection->blocklen =
-				protocol_get_data_block_length( connection->header );
-			connection->encrypted = protocol_is_encrypted( connection->header );
+				protocol_get_data_block_length(connection->header);
+			connection->encrypted = 
+				protocol_is_encrypted(connection->header);
 			break;
 		case CONN_READ_HEADER_ONGOING:
-			network_receive_data(connection->header + connection->header_position, i, 26 - connection->header_position,
+			network_receive_data(
+				connection->header + connection->header_position,
+				i,
+				26 - connection->header_position,
 				&connection->header_position);
+
 			if (connection->header_position != 26) break;
 			/* full header */
 			protocol_check_header(connection->header);
                         connection->data_state = CONN_READ_DATA;
                         connection->blocklen =
-                                protocol_get_data_block_length( connection->header );
-                        connection->encrypted = protocol_is_encrypted( connection->header );
+                                protocol_get_data_block_length(connection->header);
+                        connection->encrypted =
+				protocol_is_encrypted(connection->header);
                         break;
 
 		case CONN_READ_DATA: ;
-			connection->body = talloc_array( connection->CTX, char, connection->blocklen +2); 
+			connection->body = 
+				talloc_array(connection->CTX,
+						char,
+						connection->blocklen +2); 
 			connection->body_position = 0;
-			network_receive_data(connection->body, i, connection->blocklen,
-						&connection->body_position);
+			network_receive_data(connection->body,
+					i,
+					connection->blocklen,
+					&connection->body_position);
+
 			if ( connection->body_position == 0) {
 				network_close_connection(i);
 				break;
 			}
 			if (connection->body_position != connection->blocklen) {
-				syslog(LOG_DEBUG,"%i bytes receives, len %i",connection->body_position,
-					connection->blocklen);
 				connection->data_state = CONN_READ_DATA_ONGOING;
 				break;
 			}
 			/* we have the full data block, encrypt if needed */
 			if ( connection->encrypted == 1) {
-				connection->body = protocol_decrypt(connection->CTX, connection->body,
-					connection->blocklen, c->key);
+				connection->body =
+					protocol_decrypt(connection->CTX,
+						connection->body,
+						connection->blocklen,
+						c->key);
 			}
 
 			connection->data_state = CONN_READ_HEADER;
@@ -149,13 +164,20 @@ int network_handle_data( int i, config_t *c )
 			TALLOC_FREE(connection->CTX);
 			break;
 		case CONN_READ_DATA_ONGOING: ;
-			network_receive_data(connection->body + connection->body_position, i, connection->blocklen - connection->body_position,
-					&connection->body_position);
-			if (connection->body_position != connection->blocklen) break;
+			network_receive_data(
+				connection->body + connection->body_position,
+				i,
+				connection->blocklen - connection->body_position,
+				&connection->body_position);
+			if (connection->body_position != connection->blocklen)
+				break;
 			/* we finally have the full data block, encrypt if needed */
 			if ( connection->encrypted == 1) {
-				connection->body = protocol_decrypt(connection->CTX, connection->body,
-					connection->blocklen, c->key);
+				connection->body =
+					protocol_decrypt(connection->CTX,
+						connection->body,
+						connection->blocklen,
+						c->key);
 			}
 			connection->data_state = CONN_READ_HEADER;
 			cache_add(connection->body, connection->blocklen);
