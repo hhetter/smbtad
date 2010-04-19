@@ -22,25 +22,6 @@
 
 
 /**
- * receive the protocol header, always fixed size.
- * should we receive 0 bytes, connection was closed,
- * we return NULL
- */
-void network_receive_header( char *buf, int sock,int length, int *rlen )
-{
-	size_t t;
-	t = recv( sock, buf, length, 0);
-	if ( t == 0 ) {
-		/* connection closed */
-		*rlen = 0;
-		return;
-	}
-	*(buf + t) = '\0';
-	*rlen = *rlen + t;
-}
-
-
-/**
  * receive a data block. return 0 if the connection
  * was closed, or return the received buffer
  * int sock 		The handle
@@ -57,7 +38,7 @@ void network_receive_data( char *buf, int sock, int length, int *rlen)
 		*rlen = 0;
 		return;
 	}
-	*(buf + t + 1) = '\0';
+	*(buf + t) = '\0';
 	*rlen = *rlen + t;
 }
 
@@ -113,7 +94,7 @@ int network_handle_data( int i, config_t *c )
 		case CONN_READ_HEADER: ;
 			connection->header = talloc_array( connection->CTX, char, 29);
 			connection->header_position = 0;
-			network_receive_header( connection->header, i,26,
+			network_receive_data( connection->header, i,26,
 				&connection->header_position);
 			if (connection->header_position == 0) {
 				network_close_connection(i);
