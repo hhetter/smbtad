@@ -24,6 +24,8 @@
 typedef struct configuration_data {
 	/* Number of the port to use */
 	int port;
+	/* portnumber for clients who query */
+	int query_port;
 	/* the maintenance timer strings */
 	char maint_timer[200];
 	char maint_timer_conf[200];
@@ -36,7 +38,7 @@ typedef struct configuration_data {
 
 	/* run time configuration */
 	int vfs_socket;
-
+	int query_socket;
 	/* file to use for the database */
 	char *dbname;
 	/* the db handle */

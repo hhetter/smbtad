@@ -34,4 +34,6 @@ void help_show_help()
 	printf("-o	--interactive	Don't run as daemon.		\n");
 	printf("			(Runs as daemon by default)	\n");
 	printf("-c      --config-file	Use configuration file given.	\n");
+	printf("-q	--query-port	Specify the port to be used for \n");
+	printf("			clients.			\n");
 }

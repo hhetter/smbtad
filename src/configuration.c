@@ -33,6 +33,7 @@ void configuration_define_defaults( config_t *c )
 	c->dbname = strdup( "/var/lib/staddb");
 	c->dbhandle = NULL;
 	c->keyfile =NULL;
+	c->query_port = 3391;
 	_DBG = 0;
 }
 
@@ -67,6 +68,9 @@ int configuration_load_config_file( config_t *c)
 	if ( Mydict == NULL ) return -1;
 
 	cc = iniparser_getstring( Mydict, "network:port_number",NULL);
+	if (cc != NULL) c->port = atoi(cc);
+
+	cc = iniparser_getstring( Mydict, "network:query_port",NULL);
 	if (cc != NULL) c->port = atoi(cc);
 
         cc = iniparser_getstring(Mydict,"database:sqlite_filename",NULL);
@@ -124,6 +128,7 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 
 		static struct option long_options[] = {\
 			{ "inet-port", 1, NULL, 'i' },
+			{ "query-port",1, NULL, 'q' },
 			{ "interactive", 0, NULL, 'o' },
 			{ "debug-level",1, NULL, 'd' },
 			{ "config-file",1,NULL,'c'},
@@ -132,7 +137,7 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 		};
 
 		i = getopt_long( argc, argv,
-			"d:i:oc:k:", long_options, &option_index );
+			"d:i:oc:k:q:", long_options, &option_index );
 
 		if ( i == -1 ) break;
 
@@ -146,6 +151,9 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 			case 'd':
 				c->debug_level = atoi( optarg );
 				_DBG = c->debug_level;
+				break;
+			case 'q':
+				c->query_port = atoi( optarg);
 				break;
 			case 'c':
 				c->config_file = strdup( optarg );

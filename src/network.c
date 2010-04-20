@@ -246,7 +246,7 @@ void network_handle_connections( config_t *c )
 	FD_ZERO(&active_write_fd_set );
 
 	c->vfs_socket = network_create_socket( c->port );
-
+	c->query_socket = network_create_socket( c->query_port );
 	connection_list_add( c->vfs_socket, SOCK_TYPE_DATA );
 
 	for (;;) {
