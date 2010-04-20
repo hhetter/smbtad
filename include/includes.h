@@ -33,6 +33,7 @@
 #include "network.h"
 #include "protocol.h"
 #include "cache.h"
+#include "query_list.h"
 #include "database.h"
 
 /**

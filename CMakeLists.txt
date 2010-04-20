@@ -74,6 +74,7 @@ ADD_EXECUTABLE(${CurrentExe}
 	src/log.c
 	src/protocol.c
 	src/cache.c
+	src/query_list.c
 	src/database.c
 	src/crypto/aes.c
 	src/crypto/rijndael-alg-fst.c)

@@ -44,7 +44,7 @@ void network_receive_data( char *buf, int sock, int length, int *rlen)
 
 
 /**
- * Accept an incoming connection from the VFS module,
+ * Accept an incoming connection
  * and add it to the list of connections.
  */
 int network_accept_connection( config_t *c, struct sockaddr_in *remote, int type)
@@ -89,7 +89,8 @@ int network_handle_data( int i, config_t *c )
 	
      	struct connection_struct *connection =
 		connection_list_identify(i);
-        if (connection->connection_function == SOCK_TYPE_DATA) {
+        if (connection->connection_function == SOCK_TYPE_DATA ||
+	    connection->connection_function == SOCK_TYPE_DB_QUERY) {
 		switch(connection->data_state) {
 		case CONN_READ_HEADER: ;
 			connection->header =
@@ -160,7 +161,10 @@ int network_handle_data( int i, config_t *c )
 			}
 
 			connection->data_state = CONN_READ_HEADER;
-			cache_add(connection->body, connection->blocklen);
+			if (connection->connection_function == SOCK_TYPE_DATA) 
+				cache_add(connection->body, connection->blocklen);
+			if (connection->connection_function == SOCK_TYPE_DB_QUERY)
+				query_add(connection->body, connection->blocklen);
 			TALLOC_FREE(connection->CTX);
 			break;
 		case CONN_READ_DATA_ONGOING: ;
@@ -180,7 +184,10 @@ int network_handle_data( int i, config_t *c )
 						c->key);
 			}
 			connection->data_state = CONN_READ_HEADER;
-			cache_add(connection->body, connection->blocklen);
+			if (connection->connection_function == SOCK_TYPE_DATA)
+				cache_add(connection->body, connection->blocklen);
+			if (connection->connection_function == SOCK_TYPE_DB_QUERY)
+				query_add(connection->body, connection->blocklen);
 			TALLOC_FREE(connection->CTX);
 			break;
 			
@@ -267,9 +274,15 @@ void network_handle_connections( config_t *c )
 			if (FD_ISSET(i,&read_fd_set)) {
 				int sr;
 				if ( i == c->vfs_socket)
-					sr = network_accept_connection(c, &remote, SOCK_TYPE_DATA);
+					sr = network_accept_connection(
+						c,
+						&remote,
+						SOCK_TYPE_DATA);
 				if ( i == c->query_socket)
-					sr = network_accept_connection(c, &remote, SOCK_TYPE_QUERY);
+					sr = network_accept_connection(
+						c,
+						&remote,
+						SOCK_TYPE_DB_QUERY);
 			} else 	if (FD_ISSET(i, &read_fd_set))
 					network_handle_data(i,c);
 		}
