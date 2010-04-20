@@ -23,7 +23,7 @@
 
 enum conn_fn_enum {
 	SOCK_TYPE_DATA,
-	SOCK_TYPE_DB_QUERY
+	SOCK_TYPE_QUERY
 };
 
 enum conn_data_state {

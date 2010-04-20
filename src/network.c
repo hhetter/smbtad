@@ -47,7 +47,7 @@ void network_receive_data( char *buf, int sock, int length, int *rlen)
  * Accept an incoming connection from the VFS module,
  * and add it to the list of connections.
  */
-int network_accept_VFS_connection( config_t *c, struct sockaddr_in *remote)
+int network_accept_connection( config_t *c, struct sockaddr_in *remote, int type)
 {
 	socklen_t t=sizeof(*remote);
 	int sr;
@@ -56,7 +56,7 @@ int network_accept_VFS_connection( config_t *c, struct sockaddr_in *remote)
 		syslog(LOG_DEBUG,"ERROR: accept failed.");
 		return -1;
 	}
-	connection_list_add(sr, SOCK_TYPE_DATA);
+	connection_list_add(sr, type);
 	return sr;
 }
 
@@ -247,6 +247,7 @@ void network_handle_connections( config_t *c )
 
 	c->vfs_socket = network_create_socket( c->port );
 	c->query_socket = network_create_socket( c->query_port );
+
 	connection_list_add( c->vfs_socket, SOCK_TYPE_DATA );
 
 	for (;;) {
@@ -263,9 +264,12 @@ void network_handle_connections( config_t *c )
 			exit(1);
 		}
 		for( i = 0; i < connection_list_max() + 1; ++i) {
-			if (FD_ISSET(i,&read_fd_set) && i == c->vfs_socket) {
+			if (FD_ISSET(i,&read_fd_set)) {
 				int sr;
-				sr = network_accept_VFS_connection(c, &remote);
+				if ( i == c->vfs_socket)
+					sr = network_accept_connection(c, &remote, SOCK_TYPE_DATA);
+				if ( i == c->query_socket)
+					sr = network_accept_connection(c, &remote, SOCK_TYPE_QUERY);
 			} else 	if (FD_ISSET(i, &read_fd_set))
 					network_handle_data(i,c);
 		}
