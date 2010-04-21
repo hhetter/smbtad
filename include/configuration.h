@@ -39,6 +39,9 @@ typedef struct configuration_data {
 	/* run time configuration */
 	int vfs_socket;
 	int query_socket;
+	char *current_query_result;
+	int current_query_result_len;
+	int result_socket;
 	/* file to use for the database */
 	char *dbname;
 	/* the db handle */

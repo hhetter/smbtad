@@ -164,7 +164,7 @@ int network_handle_data( int i, config_t *c )
 			if (connection->connection_function == SOCK_TYPE_DATA) 
 				cache_add(connection->body, connection->blocklen);
 			if (connection->connection_function == SOCK_TYPE_DB_QUERY)
-				query_add(connection->body, connection->blocklen);
+				query_add(connection->body, connection->blocklen,i);
 			TALLOC_FREE(connection->CTX);
 			break;
 		case CONN_READ_DATA_ONGOING: ;
@@ -187,7 +187,7 @@ int network_handle_data( int i, config_t *c )
 			if (connection->connection_function == SOCK_TYPE_DATA)
 				cache_add(connection->body, connection->blocklen);
 			if (connection->connection_function == SOCK_TYPE_DB_QUERY)
-				query_add(connection->body, connection->blocklen);
+				query_add(connection->body, connection->blocklen,i);
 			TALLOC_FREE(connection->CTX);
 			break;
 			
@@ -285,6 +285,17 @@ void network_handle_connections( config_t *c )
 						SOCK_TYPE_DB_QUERY);
 			} else 	if (FD_ISSET(i, &read_fd_set))
 					network_handle_data(i,c);
+			if (FD_ISSET(i,&write_fd_set)) {
+				if (c->current_query_result != NULL &&
+					c->result_socket == i) {
+					send(i,
+						c->current_query_result,
+						c->current_query_result_len,0);
+					free(c->current_query_result);
+					c->current_query_result = NULL;
+				}
+				
+			}
 		}
 	}
 }

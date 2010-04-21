@@ -34,6 +34,8 @@ void configuration_define_defaults( config_t *c )
 	c->dbhandle = NULL;
 	c->keyfile =NULL;
 	c->query_port = 3391;
+	c->current_query_result = NULL;
+	
 	_DBG = 0;
 }
 

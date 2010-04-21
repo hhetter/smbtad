@@ -19,7 +19,6 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-
 struct cache_entry {
 	char *data;
 	int length;
@@ -28,4 +27,4 @@ struct cache_entry {
 
 void cache_init();
 int cache_add( char *data, int len );
-void cache_manager( sqlite3 *db);
+void cache_manager( struct configuration_data *config);

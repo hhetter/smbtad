@@ -21,7 +21,6 @@
 
 #include "../include/includes.h"
 
-
 struct cache_entry *cache_start = NULL;
 struct cache_entry *cache_end = NULL;
 
@@ -253,11 +252,11 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
  * in case of yes, it walks through the list of data, enables
  * a new cache, and stores the data in the DB
  */
-void cache_manager(sqlite3 *database )
+void cache_manager(struct configuration_data *config )
 {
 
         pthread_detach(pthread_self());
-	
+	sqlite3 *database = config->dbhandle;
 	/* backup the start and make it possible to
 	 * allocate a new cache beginning
 	 */
@@ -282,5 +281,10 @@ void cache_manager(sqlite3 *database )
 		}
 		if (backup != NULL) TALLOC_FREE(backup);
 		sqlite3_exec(database, "COMMIT;", 0, 0, 0); 
+		/* now run queries if there is one waiting */
+		if (config->current_query_result == NULL) {
+			config->current_query_result = query_list_run_query( database,
+				&config->current_query_result_len, &config->result_socket);
+		}
 	}
 }
