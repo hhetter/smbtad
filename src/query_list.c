@@ -91,6 +91,7 @@ char *query_list_run_query( sqlite3 *database, int *body_length, int *sock) {
 			FullLength=FullLength + strlen(z) + 1 +4;
 		colcount = colcount + 1;
 		}			
+	colcount = 0;
 	}
 	sqlite3_finalize( stmt );
 	*sock = backup->sock;
