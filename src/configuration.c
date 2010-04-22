@@ -34,7 +34,7 @@ pthread_mutex_t *configuration_get_lock(void) {
  */
 void configuration_define_defaults( config_t *c )
 {
-	c->port = 3390;
+	c->port = 3940;
 	strcpy( c->maint_timer, "01:00:00" );
 	strcpy( c->maint_timer_conf, "01,00:00:00" );
 	c->daemon = 1;
@@ -43,7 +43,7 @@ void configuration_define_defaults( config_t *c )
 	c->dbname = strdup( "/var/lib/staddb");
 	c->dbhandle = NULL;
 	c->keyfile =NULL;
-	c->query_port = 3391;
+	c->query_port = 3941;
 	c->current_query_result = NULL;
 	
 	_DBG = 0;

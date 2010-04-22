@@ -86,7 +86,7 @@ void network_close_connection(int i)
  */
 int network_handle_data( int i, config_t *c )
 {
-	
+	printf("handling data!");	
      	struct connection_struct *connection =
 		connection_list_identify(i);
         if (connection->connection_function == SOCK_TYPE_DATA ||
@@ -256,7 +256,7 @@ void network_handle_connections( config_t *c )
 	c->query_socket = network_create_socket( c->query_port );
 
 	connection_list_add( c->vfs_socket, SOCK_TYPE_DATA );
-
+	connection_list_add( c->query_socket, SOCK_TYPE_DB_QUERY);
 	for (;;) {
 		z = 0;
 		connection_list_recreate_fs_sets(
@@ -277,14 +277,14 @@ void network_handle_connections( config_t *c )
 					sr = network_accept_connection(
 						c,
 						&remote,
-						SOCK_TYPE_DATA);
-				if ( i == c->query_socket)
+						SOCK_TYPE_DATA); 
+				else if ( i == c->query_socket)
 					sr = network_accept_connection(
 						c,
 						&remote,
 						SOCK_TYPE_DB_QUERY);
-			} else 	if (FD_ISSET(i, &read_fd_set))
-					network_handle_data(i,c);
+				else network_handle_data(i,c);
+			} 
 			if (FD_ISSET(i,&write_fd_set)) {
 				pthread_mutex_t *cfg_lock = configuration_get_lock();
 				int a = pthread_mutex_trylock(cfg_lock);
