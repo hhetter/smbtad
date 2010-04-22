@@ -21,7 +21,17 @@
 
 #include "../include/includes.h"
 
-/* Initialize default values of the configuration.			*/
+
+pthread_mutex_t config_mutex;
+
+pthread_mutex_t *configuration_get_lock(void) {
+	return &config_mutex;
+}
+
+
+/* Initialize default values of the configuration.
+ * Also initialize the configuration mutex.
+ */
 void configuration_define_defaults( config_t *c )
 {
 	c->port = 3390;
@@ -37,6 +47,7 @@ void configuration_define_defaults( config_t *c )
 	c->current_query_result = NULL;
 	
 	_DBG = 0;
+	pthread_mutex_init(&config_mutex,NULL);
 }
 
 int configuration_load_key_from_file( config_t *c)

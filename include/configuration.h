@@ -52,7 +52,7 @@ typedef struct configuration_data {
 	unsigned char key[20];
 
 } config_t;
-
+pthread_mutex_t *configuration_get_lock();
 int configuration_check_configuration( config_t *c );
 int configuration_parse_cmdline( config_t *c, int argc, char *argv[] );
 
