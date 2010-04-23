@@ -42,6 +42,20 @@ void network_receive_data( char *buf, int sock, int length, int *rlen)
 	*rlen = *rlen + t;
 }
 
+/**
+ * Create a v2 header.
+ * TALLLOC_CTX *ctx             Talloc context to work on
+ * const char *state_flags      State flag string
+ * int len                      length of the data block
+ */
+static char *network_create_header( TALLOC_CTX *ctx,
+        const char *state_flags, size_t data_len)
+{
+        char *header = talloc_asprintf( ctx, "V2.%s%017u",
+                                        state_flags, (unsigned int) data_len);
+        return header;
+}
+
 
 /**
  * Accept an incoming connection
@@ -89,7 +103,6 @@ void network_close_connection(int i)
  */
 int network_handle_data( int i, config_t *c )
 {
-	printf("handling data!");	
      	struct connection_struct *connection =
 		connection_list_identify(i);
         if (connection->connection_function == SOCK_TYPE_DATA ||
@@ -289,11 +302,19 @@ void network_handle_connections( config_t *c )
 				else network_handle_data(i,c);
 			}
 		}
-
+		/*
+		 * send a query result to a client, if our runtime
+		 * data structure has a prepared result in the queue
+		 */
 		pthread_mutex_t *cfg_lock = configuration_get_lock();
 		int a = pthread_mutex_trylock(cfg_lock);
 		if ( a == 0 && c->current_query_result != NULL &&
 			FD_ISSET( c->result_socket, &write_fd_set)) {
+			char *header = network_create_header( NULL,
+				c->current_query_result,
+				c->current_query_result_len);
+			send(i, header, strlen(header),0);
+			TALLOC_FREE(header);
 			send(i,	c->current_query_result,
 				c->current_query_result_len,0);
 			free(c->current_query_result);
