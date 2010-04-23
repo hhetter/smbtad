@@ -287,21 +287,19 @@ void network_handle_connections( config_t *c )
 						&remote,
 						SOCK_TYPE_DB_QUERY);
 				else network_handle_data(i,c);
-			} 
-			if (FD_ISSET(i,&write_fd_set)) {
-				pthread_mutex_t *cfg_lock = configuration_get_lock();
-				int a = pthread_mutex_trylock(cfg_lock);
-				if ( a == 0 && c->current_query_result != NULL &&
-					c->result_socket == i) {
-					send(i,
-						c->current_query_result,
-						c->current_query_result_len,0);
-					free(c->current_query_result);
-					c->current_query_result = NULL;
-				}
-				pthread_mutex_unlock(cfg_lock);
-				
 			}
 		}
+
+		pthread_mutex_t *cfg_lock = configuration_get_lock();
+		int a = pthread_mutex_trylock(cfg_lock);
+		if ( a == 0 && c->current_query_result != NULL &&
+			FD_ISSET( c->result_socket, &write_fd_set)) {
+			send(i,	c->current_query_result,
+				c->current_query_result_len,0);
+			free(c->current_query_result);
+			c->current_query_result = NULL;
+		}
+		pthread_mutex_unlock(cfg_lock);
+				
 	}
 }
