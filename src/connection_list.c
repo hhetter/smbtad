@@ -87,6 +87,7 @@ void connection_list_recreate_fs_sets( 	fd_set *active_read_fd_set,
 
 	while (Searcher != NULL) {
 		FD_SET(Searcher->mysocket, active_read_fd_set);
+		FD_SET(Searcher->mysocket, active_write_fd_set);
 		Searcher = Searcher->next;
 	}
 
