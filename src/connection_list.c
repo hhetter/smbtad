@@ -68,8 +68,8 @@ int connection_list_remove( int socket )
 				return 0;
 			}
 
-		Prev->next = Searcher->next;
-		free(Searcher);
+			Prev->next = Searcher->next;
+			free(Searcher);
 		}
 	Prev = Searcher;
 	Searcher = Searcher->next;
