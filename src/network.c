@@ -313,9 +313,9 @@ void network_handle_connections( config_t *c )
 			char *header = network_create_header( NULL,
 				c->current_query_result,
 				c->current_query_result_len);
-			send(i, header, strlen(header),0);
+			send(c->result_socket, header, strlen(header),0);
 			TALLOC_FREE(header);
-			send(i,	c->current_query_result,
+			send(c->result_socket,	c->current_query_result,
 				c->current_query_result_len,0);
 			free(c->current_query_result);
 			c->current_query_result = NULL;
