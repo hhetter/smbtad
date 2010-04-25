@@ -311,7 +311,7 @@ void network_handle_connections( config_t *c )
 		if ( a == 0 && c->current_query_result != NULL &&
 			FD_ISSET( c->result_socket, &write_fd_set)) {
 			char *header = network_create_header( NULL,
-				c->current_query_result,
+				"0000",
 				c->current_query_result_len);
 			send(c->result_socket, header, strlen(header),0);
 			TALLOC_FREE(header);
