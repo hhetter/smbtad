@@ -28,7 +28,7 @@
  * int length		The number of bytes to
  * 			receive
  */
-void network_receive_data( char *buf, int sock, int length, int *rlen)
+int network_receive_data( char *buf, int sock, int length, int *rlen)
 {
 	size_t t;
 	t = recv( sock, buf, length, 0);
@@ -36,10 +36,11 @@ void network_receive_data( char *buf, int sock, int length, int *rlen)
 	if (t == 0) {
 		/* connection closed */
 		*rlen = 0;
-		return;
+		return 0;
 	}
 	*(buf + t) = '\0';
 	*rlen = *rlen + t;
+	return t;
 }
 
 /**
@@ -103,6 +104,7 @@ void network_close_connection(int i)
  */
 int network_handle_data( int i, config_t *c )
 {
+	int l;
      	struct connection_struct *connection =
 		connection_list_identify(i);
         if (connection->connection_function == SOCK_TYPE_DATA ||
@@ -112,9 +114,9 @@ int network_handle_data( int i, config_t *c )
 			connection->header =
 				talloc_array(connection->CTX, char, 29);
 			connection->header_position = 0;
-			network_receive_data( connection->header, i,26,
+			l = network_receive_data( connection->header, i,26,
 				&connection->header_position);
-			if (connection->header_position == 0) {
+			if ( l == 0) {
 				network_close_connection(i);
 				break;
 			}
@@ -132,12 +134,15 @@ int network_handle_data( int i, config_t *c )
 				protocol_is_encrypted(connection->header);
 			break;
 		case CONN_READ_HEADER_ONGOING:
-			network_receive_data(
+			l = network_receive_data(
 				connection->header + connection->header_position,
 				i,
 				26 - connection->header_position,
 				&connection->header_position);
-
+			if ( l == 0 ) {
+				network_close_connection(i);
+				break;
+			}
 			if (connection->header_position != 26) break;
 			/* full header */
 			protocol_check_header(connection->header);
@@ -154,12 +159,11 @@ int network_handle_data( int i, config_t *c )
 						char,
 						connection->blocklen +2); 
 			connection->body_position = 0;
-			network_receive_data(connection->body,
+			l = network_receive_data(connection->body,
 					i,
 					connection->blocklen,
 					&connection->body_position);
-
-			if ( connection->body_position == 0) {
+			if ( l == 0 ) {
 				network_close_connection(i);
 				break;
 			}
@@ -184,11 +188,15 @@ int network_handle_data( int i, config_t *c )
 			TALLOC_FREE(connection->CTX);
 			break;
 		case CONN_READ_DATA_ONGOING: ;
-			network_receive_data(
+			l = network_receive_data(
 				connection->body + connection->body_position,
 				i,
 				connection->blocklen - connection->body_position,
 				&connection->body_position);
+			if ( l == 0) {
+				network_close_connection(i);
+				break;
+			}
 			if (connection->body_position != connection->blocklen)
 				break;
 			/* we finally have the full data block, encrypt if needed */

@@ -70,6 +70,7 @@ int connection_list_remove( int socket )
 
 			Prev->next = Searcher->next;
 			free(Searcher);
+			syslog(LOG_DEBUG,"Connection Removed");
 		}
 	Prev = Searcher;
 	Searcher = Searcher->next;
