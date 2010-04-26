@@ -67,7 +67,10 @@ int connection_list_remove( int socket )
 				free(Searcher);
 				return 0;
 			}
+			
 			Prev->next = Searcher->next;
+			if (Searcher == connection_list_end)
+				connection_list_end=Prev;
 			free(Searcher);
 			return 0;
 		}
