@@ -97,8 +97,18 @@ char *query_list_run_query( sqlite3 *database, int *body_length, int *sock) {
 	*sock = backup->sock;
 	free(backup->data);
 	free(backup);
-	*body_length = FullLength;
 	
+	/* When the result was NULL, we return an identifier */
+	if (FullLength == 0) {
+		char *str = strdup("No Results.");
+		char *strg = malloc(sizeof(char)*100);
+		sprintf(strg, "%04i%s",(int) strlen(str),str);
+		*body_length= 4+ strlen(str)+1;
+		free(FullAlloc);
+		return(strg);
+	}
+
+	*body_length = FullLength;
 	return FullAlloc;
 }
 
