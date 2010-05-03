@@ -74,10 +74,10 @@ char *query_list_run_query( sqlite3 *database, int *body_length, int *sock) {
 		&zErrmsg);			
 	columns = sqlite3_column_count( stmt );
 	FullAlloc = (char *) malloc(sizeof(char));
-
 	while(sqlite3_step(stmt) == SQLITE_ROW) {
 		while (colcount < columns) {
 			z=(char *) sqlite3_column_text(stmt, colcount);
+			if (z == NULL) break;
 			FullAlloc = (char *) realloc(FullAlloc, sizeof(char) *
 				(FullLength + strlen(z) + strlen("0000") + 2));
 			char lenstr[5];
