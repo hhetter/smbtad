@@ -50,7 +50,7 @@ sqlite3 *database_create( char *filename )
 	rc = sqlite3_exec( db, \
 		"CREATE TABLE read ("
 		 CREATE_COMMONS
-		"filename, varchar, length integer )",NULL,0,&zErrormsg);
+		"filename varchar, length integer )",NULL,0,&zErrormsg);
 	/* mkdir */
 	rc = sqlite3_exec( db, \
 		"CREATE TABLE mkdir ("
