@@ -51,11 +51,12 @@ void query_init( ) {
 char *query_list_run_query( sqlite3 *database, int *body_length, int *sock) {
 
 	sqlite3_stmt *stmt = NULL;
-	int o, columns, colcount=0;
+	int o, columns, colcount, rowcount = 0;
 	const char *zErrmsg = NULL;
 	char *z;
 	char *FullAlloc;
-	unsigned int FullLength = 0;
+	char RowData[30];
+	unsigned int FullLength = 20; // we leave this space for the rowcount
 
 	if ( query_start == NULL) {
 		*body_length = -1;
@@ -92,7 +93,10 @@ char *query_list_run_query( sqlite3 *database, int *body_length, int *sock) {
 		colcount = colcount + 1;
 		}			
 	colcount = 0;
+	rowcount = rowcount + 1;
 	}
+	sprintf(RowData,"0020%20i",rowcount);
+	memcpy(FullAlloc, RowData, 20);
 	sqlite3_finalize( stmt );
 	*sock = backup->sock;
 	free(backup->data);
