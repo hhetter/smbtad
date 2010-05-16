@@ -61,7 +61,7 @@ char *query_list_run_query( sqlite3 *database, int *body_length, int *sock) {
 	 * and send the number of rows as the very
 	 * first item.
 	 */	
-	char *RowString = "0006000000";
+	char *RowString = malloc(sizeof(char) * strlen("0006000000"));;
 	unsigned int FullLength=strlen(RowString)+1;
 
 
