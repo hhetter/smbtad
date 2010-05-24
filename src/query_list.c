@@ -51,19 +51,11 @@ void query_init( ) {
 char *query_list_run_query( sqlite3 *database, int *body_length, int *sock) {
 
 	sqlite3_stmt *stmt = NULL;
-	int o, columns, rowcount, colcount=0;
+	int o, columns, colcount=0;
 	const char *zErrmsg = NULL;
 	char *z;
 	char *FullAlloc;
-
-	/* To transfer the number of rows
-	 * we leave space with the allocation
-	 * and send the number of rows as the very
-	 * first item.
-	 */	
-	char RowString = "0006000000";
-	unsigned int FullLength=strlen(RowString)+1;
-
+	unsigned int FullLength = 0;
 
 	if ( query_start == NULL) {
 		*body_length = -1;
@@ -100,14 +92,12 @@ char *query_list_run_query( sqlite3 *database, int *body_length, int *sock) {
 		colcount = colcount + 1;
 		}			
 	colcount = 0;
-	rowcount ++;
 	}
 	sqlite3_finalize( stmt );
 	*sock = backup->sock;
 	free(backup->data);
 	free(backup);
-	sprintf(RowString,"0006%06i",rowcount);
-	memcpy(FullAlloc,RowString,10);
+	
 	/* When the result was NULL, we return an identifier */
 	if (FullLength == 0) {
 		char *str = strdup("No Results.");
