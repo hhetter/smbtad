@@ -77,7 +77,8 @@ ADD_EXECUTABLE(${CurrentExe}
 	src/query_list.c
 	src/database.c
 	src/crypto/aes.c
-	src/crypto/rijndael-alg-fst.c)
+	src/crypto/rijndael-alg-fst.c
+	src/monitor-list.c)
 TARGET_LINK_LIBRARIES(${CurrentExe} ${Libraries})
 
 

@@ -35,7 +35,7 @@
 #include "cache.h"
 #include "query_list.h"
 #include "database.h"
-
+#include "monitor-list.h"
 /**
  * Debug Levels:
  * 0 -> only fatal errors which lead to terminate stad
