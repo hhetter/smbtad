@@ -149,6 +149,10 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 	switch( op_id) {
 	case vfs_id_read:
 	case vfs_id_pread: ;
+		if (len == 0) {
+			retstr=NULL;
+			break;
+		}
 		filename = protocol_get_single_data_block_quoted( data, &go_through );
 		len = protocol_get_single_data_block( data, &go_through);
 		retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
@@ -161,7 +165,11 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 		break;
 	case vfs_id_write:
 	case vfs_id_pwrite: ;
-                filename = protocol_get_single_data_block_quoted( data,&go_through );
+		if (len == 0) {
+			retstr=NULL;
+			break;
+		}
+                filename= protocol_get_single_data_block_quoted( data,&go_through );
                 len = protocol_get_single_data_block( data,&go_through);
                 retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
@@ -275,7 +283,7 @@ void cache_manager(struct configuration_data *config )
 		sqlite3_exec(database, "BEGIN TRANSACTION;", 0, 0, 0);
 		while (go_through != NULL) {
 			char *a = cache_make_database_string(NULL, go_through );
-			sqlite3_exec(database, a,0,0,0);
+			if (a!= NULL) sqlite3_exec(database, a,0,0,0);
 			TALLOC_FREE(a);
 			go_through = go_through->next;
 		}
