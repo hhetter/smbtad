@@ -149,12 +149,12 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 	switch( op_id) {
 	case vfs_id_read:
 	case vfs_id_pread: ;
-		if (len == 0) {
+		filename = protocol_get_single_data_block_quoted( data, &go_through );
+		len = protocol_get_single_data_block( data, &go_through);
+                if (len == 0) {
 			retstr=NULL;
 			break;
 		}
-		filename = protocol_get_single_data_block_quoted( data, &go_through );
-		len = protocol_get_single_data_block( data, &go_through);
 		retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
 			"username, usersid, share, domain, timestamp,"
 			"filename, length) VALUES ("
@@ -165,13 +165,13 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 		break;
 	case vfs_id_write:
 	case vfs_id_pwrite: ;
-		if (len == 0) {
-			retstr=NULL;
-			break;
-		}
                 filename= protocol_get_single_data_block_quoted( data,&go_through );
                 len = protocol_get_single_data_block( data,&go_through);
-                retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
+                if (len == 0) {
+			retstr=NULL;
+			break;
+                }
+		retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
                         "filename, length) VALUES ("
                         "%s,%s,%s,%s,%s,"
