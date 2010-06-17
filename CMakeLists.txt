@@ -71,7 +71,6 @@ ADD_EXECUTABLE(${CurrentExe}
 	src/daemon.c
 	src/connection_list.c 
 	src/network.c 
-	src/log.c
 	src/protocol.c
 	src/cache.c
 	src/query_list.c
