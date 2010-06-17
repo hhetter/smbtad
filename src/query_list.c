@@ -124,6 +124,10 @@ int query_add( char *data, int len, int sock ) {
 	pthread_mutex_lock(&query_mutex);
 	if (query_start == NULL) {
 		query_start = (struct query_entry *) malloc( sizeof( struct query_entry));
+		if (query_start == NULL) {
+			syslog(LOG_DEBUG,"ERROR: could not allocate!");
+			exit(1);
+		}
 		entry = query_start;
 		entry->data = strdup(data);
 		entry->length = len;
@@ -135,6 +139,10 @@ int query_add( char *data, int len, int sock ) {
 		return 0;
 	}
 	entry = (struct query_entry *) malloc(sizeof(struct query_entry));
+	if (entry != NULL) {
+		syslog(LOG_DEBUG,"ERROR: could not allocate!");
+		exit(1);
+	}
 	query_end->next = entry;
 	entry->next = NULL;
 	entry->data = strdup(data);

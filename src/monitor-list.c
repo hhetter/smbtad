@@ -49,7 +49,7 @@ int monitor_list_add( char *data,int sock) {
                 return 0;
         }
         entry = (struct monitor_item *) malloc(sizeof(struct monitor_item));
-	if (monlist_start == NULL) {
+	if (entry == NULL) {
 		syslog(LOG_DEBUG,"ERROR: could not allocate memory!");
 		exit(1);
 	}
