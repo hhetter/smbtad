@@ -34,6 +34,10 @@ int monitor_list_add( char *data,int sock) {
         struct monitor_item *entry;
         if (monlist_start == NULL) {
                 monlist_start = (struct monitor_item *) malloc( sizeof( struct monitor_item));
+		if (monlist_start == NULL) {
+			syslog(LOG_DEBUG,"ERROR: could not allocate memory!");
+			exit(1);
+		}
                 entry = monlist_start;
                 entry->data = strdup(data);
                 monlist_start = entry;
@@ -45,6 +49,10 @@ int monitor_list_add( char *data,int sock) {
                 return 0;
         }
         entry = (struct monitor_item *) malloc(sizeof(struct monitor_item));
+	if (monlist_start == NULL) {
+		syslog(LOG_DEBUG,"ERROR: could not allocate memory!");
+		exit(1);
+	}
         monlist_end->next = entry;
         entry->next = NULL;
         entry->data = strdup(data);
