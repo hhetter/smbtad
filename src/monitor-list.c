@@ -46,7 +46,7 @@ int monitor_list_add( char *data,int sock) {
                 entry->sock = sock;
 		entry->id = monitor_id;
 		monitor_id ++;
-                return 0;
+                return entry->id;
         }
         entry = (struct monitor_item *) malloc(sizeof(struct monitor_item));
 	if (entry == NULL) {
@@ -60,7 +60,7 @@ int monitor_list_add( char *data,int sock) {
         entry->sock = sock;
 	entry->id = monitor_id;
 	monitor_id++;
-        return 0;
+        return entry->id;
 }
 
 int monitor_list_delete( int id ) {
