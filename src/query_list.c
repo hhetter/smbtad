@@ -121,6 +121,13 @@ int query_add( char *data, int len, int sock ) {
 
 	
         struct query_entry *entry;	
+
+	/* incoming monitor request? handle this here */
+	if (strncmp(data,"~~",2)==0) {
+		monitor_list_add(data,sock);
+		return 0;
+	}
+
 	pthread_mutex_lock(&query_mutex);
 	if (query_start == NULL) {
 		query_start = (struct query_entry *) malloc( sizeof( struct query_entry));

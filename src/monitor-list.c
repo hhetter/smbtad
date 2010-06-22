@@ -46,6 +46,7 @@ int monitor_list_add( char *data,int sock) {
                 entry->sock = sock;
 		entry->id = monitor_id;
 		monitor_id ++;
+		entry->state = MONITOR_IDENTIFY;
                 return entry->id;
         }
         entry = (struct monitor_item *) malloc(sizeof(struct monitor_item));
@@ -60,6 +61,7 @@ int monitor_list_add( char *data,int sock) {
         entry->sock = sock;
 	entry->id = monitor_id;
 	monitor_id++;
+	entry->state = MONITOR_IDENTIFY;
         return entry->id;
 }
 
@@ -70,7 +72,6 @@ int monitor_list_delete( int id ) {
 	while (entry != NULL) {
 		if (entry->id == id) {
 			free(entry->data);
-			free(entry->monitor_item_data);
 			before->next=entry->next;
 			free(entry);
 			return 0;
@@ -86,7 +87,6 @@ void monitor_list_delete_all() {
 	while (entry != NULL) {
 		n=entry->next;
 		free(entry->data);
-		free(entry->monitor_item_data);
 		free(entry);
 		entry = n;
 	}

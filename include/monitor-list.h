@@ -19,19 +19,17 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+enum monitor_states { MONITOR_IDENTIFY = 0, MONITOR_PROCESS, MONITOR_STOP, MONITOR_ERROR };
 
 struct monitor_item {
 	char *data;
 	int length;
 	int sock;
 	int id;
-	void *monitor_item_data;
+	enum monitor_states state;
 	struct monitor_item *next;
 };
 
 
-struct monitor_item_data_total {
-	unsigned int sum;
-};
 
 int monitor_list_add( char *data,int sock);
