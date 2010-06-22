@@ -108,3 +108,28 @@ void monitor_list_list() {
 	}
 }
 
+struct monitor_item *monitor_list_get_next_by_socket(int sock,
+		struct monitor_item *item)
+{
+	struct monitor_item *entry=item;
+	while (entry != NULL) {
+		if (entry->sock==sock) return entry;
+		entry = entry->next;
+	}
+	return NULL;
+}
+
+
+void monitor_list_process(int sock) {
+	struct monitor_item *entry = monlist_start;
+
+	if (monlist_start==NULL) return;
+
+	entry = monitor_list_get_next_by_socket(sock,
+		entry);
+
+	switch(entry->state) {
+	case MONITOR_IDENTIFY:
+		/* Identification: send the id to the client */
+	}
+}
