@@ -19,7 +19,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-enum monitor_states { MONITOR_IDENTIFY = 0, MONITOR_PROCESS, MONITOR_STOP, MONITOR_ERROR };
+enum monitor_states { MONITOR_IDENTIFY = 0, MONITOR_INITIALIZE, MONITOR_PROCESS, MONITOR_STOP, MONITOR_ERROR };
 
 struct monitor_item {
 	char *data;

@@ -131,5 +131,29 @@ void monitor_list_process(int sock) {
 	switch(entry->state) {
 	case MONITOR_IDENTIFY:
 		/* Identification: send the id to the client */
+		entry->state = MONITOR_INITIALIZE;
+		break;
+	case MONITOR_INITIALIZE:
+		/* do everything required to correctly run the */
+		/* monitor. */
+		entry->state = MONITOR_PROCESS;
+		break;
+	case MONITOR_PROCESS:
+		/* process the monitor, create a result and send */
+		/* the result. */
+		break;
+	case MONITOR_STOP:
+		/* delete a monitor from the monitor_list */
+		break;
+	case MONITOR_ERROR:
+		/* send an error message to the client, and delete */
+		/* the monitor from the list */
+		break;
+/*	case default:
+		syslog(LOG_DEBUG,"ERROR: Unkown monitor state!");
+		exit(1);
+		break;
+*/
 	}
+
 }
