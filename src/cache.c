@@ -289,7 +289,14 @@ void cache_manager(struct configuration_data *config )
 		}
 		if (backup != NULL) TALLOC_FREE(backup);
 		sqlite3_exec(database, "COMMIT;", 0, 0, 0); 
-		/* now run queries if there is one waiting */
+
+		/* run a query and add the result to the sendlist */
+		int res_len;
+		int res_socket;
+		char *res = query_list_run_query(database,
+			&res_len, &res_socket);
+		sendlist_add(res,res_socket,res_len);
+/*
 		pthread_mutex_t *cfg_mutex = configuration_get_lock();
 		pthread_mutex_lock(cfg_mutex);
 		if (config->current_query_result == NULL) {
@@ -297,5 +304,6 @@ void cache_manager(struct configuration_data *config )
 				&config->current_query_result_len, &config->result_socket);
 		}
 		pthread_mutex_unlock(cfg_mutex);
+*/
 	}
 }

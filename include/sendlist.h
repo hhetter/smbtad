@@ -22,11 +22,10 @@
 
 struct sendlist_item {
 	char *data;
-	int length;
+	int len;
 	int sock;
 	struct sendlist_item *next;
 };
 
 
-
-int sendlist_add( char *data,int sock);
+int sendlist_add( char *data,int sock, int length);
