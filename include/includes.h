@@ -36,6 +36,8 @@
 #include "query_list.h"
 #include "database.h"
 #include "monitor-list.h"
+#include "sendlist.h"
+
 /**
  * Debug Levels:
  * 0 -> only fatal errors which lead to terminate stad
