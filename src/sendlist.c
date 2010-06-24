@@ -29,7 +29,7 @@ struct sendlist_item *sendlist_end = NULL;
  * adds an entry to the send list
  * returns -1 in case of an error
  */
-int sendlist_add( char *data,int sock) {
+int sendlist_add( char *data,int sock, int length) {
         struct sendlist_item *entry;
         if (sendlist_start == NULL) {
                 sendlist_start = (struct sendlist_item *) malloc( sizeof( struct sendlist_item));
@@ -43,6 +43,7 @@ int sendlist_add( char *data,int sock) {
                 entry->next = NULL;
                 sendlist_end = entry;
                 entry->sock = sock;
+		entry->len = length;
                 return 0;
         }
         entry = (struct sendlist_item *) malloc(sizeof(struct sendlist_item));
@@ -55,6 +56,7 @@ int sendlist_add( char *data,int sock) {
         entry->data = strdup(data);
         sendlist_end = entry;
         entry->sock = sock;
+	entry->len = length;
         return 0;
 }
 
