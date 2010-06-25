@@ -25,7 +25,9 @@ struct sendlist_item *sendlist_start = NULL;
 struct sendlist_item *sendlist_end = NULL;
 
 
-
+void sendlist_init() {
+	pthread_mutex_init(&sendlist_lock, NULL);
+}
 
 
 /*
@@ -34,6 +36,7 @@ struct sendlist_item *sendlist_end = NULL;
  */
 int sendlist_add( char *data,int sock, int length) {
         struct sendlist_item *entry;
+	pthread_mutex_lock(&sendlist_lock);
         if (sendlist_start == NULL) {
                 sendlist_start = (struct sendlist_item *) malloc( sizeof( struct sendlist_item));
 		if (sendlist_start == NULL) {
@@ -50,6 +53,7 @@ int sendlist_add( char *data,int sock, int length) {
 		entry->send_len = 0;
 		entry->state = SENDLIST_STATUS_SEND_HEADER;
 		entry->header = NULL; 
+		pthread_mutex_unlock(&sendlist_lock);
                return 0;
         }
         entry = (struct sendlist_item *) malloc(sizeof(struct sendlist_item));
@@ -66,6 +70,7 @@ int sendlist_add( char *data,int sock, int length) {
 	entry->send_len = 0;
 	entry->state = SENDLIST_STATUS_SEND_HEADER;
 	entry->header = NULL;
+	pthread_mutex_unlock(&sendlist_lock);
         return 0;
 }
 
@@ -75,9 +80,12 @@ int sendlist_add( char *data,int sock, int length) {
  */
 int sendlist_send( fd_set *write_fd_set ) {
 	struct sendlist_item *entry;
+	pthread_mutex_lock(&sendlist_lock);
 	entry = sendlist_start;
-	if (entry == NULL) return 0;
-	if (!FD_ISSET(entry->sock, write_fd_set)) return 0;
+	if (entry == NULL || !FD_ISSET(entry->sock, write_fd_set)) {
+		pthread_mutex_unlock(&sendlist_lock);
+		return 0;
+	}
 
 	switch(entry->state) {
 	case SENDLIST_STATUS_SEND_HEADER:
@@ -88,6 +96,7 @@ int sendlist_send( fd_set *write_fd_set ) {
                 if (entry->send_len != strlen(entry->header)) {
                         /* Not transferred the full header yet */
                         entry->state = SENDLIST_STATUS_SEND_HEADER_ONGOING;
+			pthread_mutex_unlock(&sendlist_lock);
                         return 0;
                 }
                 entry->state = SENDLIST_STATUS_SEND_DATA;
@@ -96,21 +105,29 @@ int sendlist_send( fd_set *write_fd_set ) {
 		entry->send_len = entry->send_len + send(entry->sock,
 			entry->header + entry->send_len,
 			strlen(entry->header)-entry->send_len,0);
-		if (entry->send_len != strlen(entry->header)) return 0;
+		if (entry->send_len != strlen(entry->header)) {
+			pthread_mutex_unlock(&sendlist_lock);
+			return 0;
+		}
 		entry->state = SENDLIST_STATUS_SEND_DATA;
+		pthread_mutex_unlock(&sendlist_lock);
 		return 0;
 	case SENDLIST_STATUS_SEND_DATA:
 		entry->send_len = 0;
 		entry->send_len = send(entry->sock, entry->data, entry->len,0);
 		if (entry->send_len != entry->len) {
 			entry->state = SENDLIST_STATUS_SEND_DATA_ONGOING;
+			pthread_mutex_unlock(&sendlist_lock);
 			return 0;
 		}
 		break;
 	case SENDLIST_STATUS_SEND_DATA_ONGOING:
 		entry->send_len = entry->send_len + send(entry->sock, entry->data + entry->send_len,
 			entry->len-entry->send_len,0);
-		if (entry->send_len != entry->len) return 0;
+		if (entry->send_len != entry->len) {
+			pthread_mutex_unlock(&sendlist_lock);
+			return 0;
+		}
 		break;
 	}
 	/* succesfully sent the data, we can remove the item */
@@ -118,6 +135,7 @@ int sendlist_send( fd_set *write_fd_set ) {
 	free(entry->data);
 	sendlist_start=entry->next;
 	free(entry);
+	pthread_mutex_unlock(&sendlist_lock);
 	return 0;
 }
 

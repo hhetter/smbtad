@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 
 	cache_init();
 	query_init();
-	
+	sendlist_init();
 	/* parse command line */
 	if ( configuration_parse_cmdline( &conf, argc, argv ) <0 ) exit(1);
 	/* set the db */

@@ -35,6 +35,7 @@ struct sendlist_item {
 	struct sendlist_item *next;
 };
 
-
+pthread_mutex_t sendlist_lock;
+void sendlist_init();
 int sendlist_add( char *data,int sock, int length);
 int sendlist_send( fd_set *write_fd_set );
