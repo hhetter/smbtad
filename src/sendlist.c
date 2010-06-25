@@ -25,6 +25,9 @@ struct sendlist_item *sendlist_start = NULL;
 struct sendlist_item *sendlist_end = NULL;
 
 
+
+
+
 /*
  * adds an entry to the send list
  * returns -1 in case of an error
@@ -44,7 +47,10 @@ int sendlist_add( char *data,int sock, int length) {
                 sendlist_end = entry;
                 entry->sock = sock;
 		entry->len = length;
-                return 0;
+		entry->send_len = 0;
+		entry->state = SENDLIST_STATUS_SEND_HEADER;
+		entry->header = NULL; 
+               return 0;
         }
         entry = (struct sendlist_item *) malloc(sizeof(struct sendlist_item));
 	if (entry == NULL) {
@@ -57,9 +63,63 @@ int sendlist_add( char *data,int sock, int length) {
         sendlist_end = entry;
         entry->sock = sock;
 	entry->len = length;
+	entry->send_len = 0;
+	entry->state = SENDLIST_STATUS_SEND_HEADER;
+	entry->header = NULL;
         return 0;
 }
 
+/*
+ * get the first item of the sendlist, check if it's possible to send,
+ * send the item and remove the first item
+ */
+int sendlist_send( fd_set *write_fd_set ) {
+	struct sendlist_item *entry;
+	entry = sendlist_start;
+	if (entry == NULL) return 0;
+	if (!FD_ISSET(entry->sock, write_fd_set)) return 0;
+
+	switch(entry->state) {
+	case SENDLIST_STATUS_SEND_HEADER:
+		entry->header = network_create_header(NULL,
+                                "000000\0",
+                                entry->len);		
+		entry->send_len = send(entry->sock, entry->header + entry->send_len, strlen(entry->header)-entry->send_len,0);
+                if (entry->send_len != strlen(entry->header)) {
+                        /* Not transferred the full header yet */
+                        entry->state = SENDLIST_STATUS_SEND_HEADER_ONGOING;
+                        return 0;
+                }
+                entry->state = SENDLIST_STATUS_SEND_DATA;
+                return 0;
+	case SENDLIST_STATUS_SEND_HEADER_ONGOING:
+		entry->send_len = entry->send_len + send(entry->sock,
+			entry->header + entry->send_len,
+			strlen(entry->header)-entry->send_len,0);
+		if (entry->send_len != strlen(entry->header)) return 0;
+		entry->state = SENDLIST_STATUS_SEND_DATA;
+		return 0;
+	case SENDLIST_STATUS_SEND_DATA:
+		entry->send_len = 0;
+		entry->send_len = send(entry->sock, entry->data, entry->len,0);
+		if (entry->send_len != entry->len) {
+			entry->state = SENDLIST_STATUS_SEND_DATA_ONGOING;
+			return 0;
+		}
+		break;
+	case SENDLIST_STATUS_SEND_DATA_ONGOING:
+		entry->send_len = entry->send_len + send(entry->sock, entry->data + entry->send_len,
+			entry->len-entry->send_len,0);
+		if (entry->send_len != entry->len) return 0;
+		break;
+	}
+	/* succesfully sent the data, we can remove the item */
+	talloc_free(entry->header);
+	free(entry->data);
+	sendlist_start=entry->next;
+	free(entry);
+	return 0;
+}
 
 void sendlist_list() {
 	struct sendlist_item *entry = sendlist_start;

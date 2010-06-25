@@ -49,7 +49,7 @@ int network_receive_data( char *buf, int sock, int length, int *rlen)
  * const char *state_flags      State flag string
  * int len                      length of the data block
  */
-static char *network_create_header( TALLOC_CTX *ctx,
+char *network_create_header( TALLOC_CTX *ctx,
         const char *state_flags, size_t data_len)
 {
         char *header = talloc_asprintf( ctx, "V2.%s%017u",

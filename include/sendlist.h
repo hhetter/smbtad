@@ -19,13 +19,22 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+enum sendlist_item_state {
+	SENDLIST_STATUS_SEND_HEADER = 0,
+	SENDLIST_STATUS_SEND_HEADER_ONGOING,
+	SENDLIST_STATUS_SEND_DATA,
+	SENDLIST_STATUS_SEND_DATA_ONGOING};
 
 struct sendlist_item {
 	char *data;
 	int len;
 	int sock;
+	char *header;
+	int send_len;
+	enum sendlist_item_state state;
 	struct sendlist_item *next;
 };
 
 
 int sendlist_add( char *data,int sock, int length);
+int sendlist_send( fd_set *write_fd_set );
