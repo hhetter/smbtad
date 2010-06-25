@@ -152,7 +152,7 @@ void sendlist_list() {
 		c++;
 		entry=entry->next;
 	}
-	syslog(LOG_DEBUG,"%i entries in sendlist.");
+	syslog(LOG_DEBUG,"%i entries in sendlist.",c);
 }
 
 
