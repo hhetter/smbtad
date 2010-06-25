@@ -100,7 +100,7 @@ int sendlist_send( fd_set *write_fd_set ) {
                         return 0;
                 }
                 entry->state = SENDLIST_STATUS_SEND_DATA;
-                return 0;
+                break;
 	case SENDLIST_STATUS_SEND_HEADER_ONGOING:
 		entry->send_len = entry->send_len + send(entry->sock,
 			entry->header + entry->send_len,
@@ -110,8 +110,7 @@ int sendlist_send( fd_set *write_fd_set ) {
 			return 0;
 		}
 		entry->state = SENDLIST_STATUS_SEND_DATA;
-		pthread_mutex_unlock(&sendlist_lock);
-		return 0;
+		break;
 	case SENDLIST_STATUS_SEND_DATA:
 		entry->send_len = 0;
 		entry->send_len = send(entry->sock, entry->data, entry->len,0);
