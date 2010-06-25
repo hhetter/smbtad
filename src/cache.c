@@ -295,7 +295,7 @@ void cache_manager(struct configuration_data *config )
 		int res_socket;
 		char *res = query_list_run_query(database,
 			&res_len, &res_socket);
-		sendlist_add(res,res_socket,res_len);
+		if (res != NULL) sendlist_add(res,res_socket,res_len);
 /*
 		pthread_mutex_t *cfg_mutex = configuration_get_lock();
 		pthread_mutex_lock(cfg_mutex);
