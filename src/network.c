@@ -314,21 +314,7 @@ void network_handle_connections( config_t *c )
 		 * send a query result to a client, if our runtime
 		 * data structure has a prepared result in the queue
 		 */
-		pthread_mutex_t *cfg_lock = configuration_get_lock();
-		int a = pthread_mutex_trylock(cfg_lock);
-		if ( a == 0 && c->current_query_result != NULL &&
-			FD_ISSET( c->result_socket, &write_fd_set)) {
-			char *header = network_create_header( NULL,
-				"000000\0",
-				c->current_query_result_len);
-			send(c->result_socket, header, strlen(header),0);
-			TALLOC_FREE(header);
-			send(c->result_socket,	c->current_query_result,
-				c->current_query_result_len,0);
-			free(c->current_query_result);
-			c->current_query_result = NULL;
-		}
-		pthread_mutex_unlock(cfg_lock);
+		sendlist_send(&write_fd_set);
 				
 	}
 }
