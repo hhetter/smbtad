@@ -147,10 +147,12 @@ void sendlist_list() {
 		syslog(LOG_DEBUG,"Empty sendlist.");
 		return;
 	}
+	int c = 0;
 	while (entry!=NULL) {
-		syslog(LOG_DEBUG,"%s",entry->data);
+		c++;
 		entry=entry->next;
 	}
+	syslog(LOG_DEBUG,"%i entries in sendlist.");
 }
 
 
