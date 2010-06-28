@@ -44,7 +44,8 @@ int sendlist_add( char *data,int sock, int length) {
 			exit(1);
 		}
                 entry = sendlist_start;
-                entry->data = strdup(data);
+                entry->data = (char *) malloc(sizeof(char)* length +1);
+		memcpy(entry->data, data,length);
                 sendlist_start = entry;
                 entry->next = NULL;
                 sendlist_end = entry;
@@ -63,7 +64,8 @@ int sendlist_add( char *data,int sock, int length) {
 	}
         sendlist_end->next = entry;
         entry->next = NULL;
-        entry->data = strdup(data);
+	entry->data = (char *) malloc(sizeof(char) * length +1 );
+	memcpy(entry->data,data,length);
         sendlist_end = entry;
         entry->sock = sock;
 	entry->len = length;
