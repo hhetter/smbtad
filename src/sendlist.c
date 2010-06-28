@@ -141,10 +141,12 @@ int sendlist_send( fd_set *write_fd_set ) {
 }
 
 void sendlist_list() {
+        pthread_mutex_lock(&sendlist_lock);
 	struct sendlist_item *entry = sendlist_start;
 	syslog(LOG_DEBUG,"------------ sendlist ----------");
 	if (entry == NULL) {
 		syslog(LOG_DEBUG,"Empty sendlist.");
+		pthread_mutex_unlock(&sendlist_lock);
 		return;
 	}
 	int c = 0;
@@ -153,6 +155,7 @@ void sendlist_list() {
 		entry=entry->next;
 	}
 	syslog(LOG_DEBUG,"%i entries in sendlist.",c);
+	pthread_mutex_unlock(&sendlist_lock);
 }
 
 
