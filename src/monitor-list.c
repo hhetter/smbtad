@@ -131,6 +131,11 @@ void monitor_list_process(int sock) {
 	switch(entry->state) {
 	case MONITOR_IDENTIFY:
 		/* Identification: send the id to the client */
+		char *data;
+		data = talloc_asprintf(NULL,"0010%010i",entry->id);
+		entry->len = strlen(data);
+		sendlist_add(data,entry->sock,entry->len);
+		talloc_free(data);
 		entry->state = MONITOR_INITIALIZE;
 		break;
 	case MONITOR_INITIALIZE:
