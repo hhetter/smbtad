@@ -146,7 +146,7 @@ int query_add( char *data, int len, int sock ) {
 		return 0;
 	}
 	entry = (struct query_entry *) malloc(sizeof(struct query_entry));
-	if (entry != NULL) {
+	if (entry == NULL) {
 		syslog(LOG_DEBUG,"ERROR: could not allocate!");
 		exit(1);
 	}
