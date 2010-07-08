@@ -129,28 +129,27 @@ void monitor_list_process(int sock) {
 		entry);
 
 	switch(entry->state) {
-	case MONITOR_IDENTIFY:
+	case MONITOR_IDENTIFY: ;
 		/* Identification: send the id to the client */
 		char *data;
 		data = talloc_asprintf(NULL,"0010%010i",entry->id);
-		entry->len = strlen(data);
-		sendlist_add(data,entry->sock,entry->len);
+		sendlist_add(data,entry->sock,strlen(data));
 		talloc_free(data);
 		entry->state = MONITOR_INITIALIZE;
 		break;
-	case MONITOR_INITIALIZE:
+	case MONITOR_INITIALIZE: ;
 		/* do everything required to correctly run the */
 		/* monitor. */
 		entry->state = MONITOR_PROCESS;
 		break;
-	case MONITOR_PROCESS:
+	case MONITOR_PROCESS: ;
 		/* process the monitor, create a result and send */
 		/* the result. */
 		break;
-	case MONITOR_STOP:
+	case MONITOR_STOP: ;
 		/* delete a monitor from the monitor_list */
 		break;
-	case MONITOR_ERROR:
+	case MONITOR_ERROR: ;
 		/* send an error message to the client, and delete */
 		/* the monitor from the list */
 		break;
