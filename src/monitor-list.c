@@ -45,6 +45,14 @@ int monitor_list_add( char *data,int sock) {
                 monlist_end = entry;
                 entry->sock = sock;
 		entry->id = monitor_id;
+		
+		entry->param = NULL;
+		entry->username = NULL;
+		entry->usersid = NULL;
+		entry->function = 255;
+		entry->share = NULL;
+		entry->domain = NULL;
+
 		monitor_id ++;
 		entry->state = MONITOR_IDENTIFY;
                 return entry->id;
@@ -60,6 +68,13 @@ int monitor_list_add( char *data,int sock) {
         monlist_end = entry;
         entry->sock = sock;
 	entry->id = monitor_id;
+        entry->param = NULL;
+        entry->username = NULL;
+        entry->usersid = NULL;
+        entry->function = 255;
+        entry->share = NULL;
+        entry->domain = NULL;
+
 	monitor_id++;
 	entry->state = MONITOR_IDENTIFY;
         return entry->id;
@@ -108,6 +123,45 @@ void monitor_list_list() {
 	}
 }
 
+char *monitor_list_parse_argument( char *data, int *pos)
+{
+	char convdummy[10];
+	char value[1000];
+	value = NULL;
+        strncpy(convdummy,data+*pos,4);
+        l = atoi(convdummy);
+        if (l == 0 || l > 999) {
+                syslog(LOG_DEBUG,"ERROR: failure argument in monitor request");
+                exit(1);
+        }
+	strncpy(value,data+*pos+4,l);
+	*pos = *pos + 4 + l;
+	return strdup(value);
+}
+
+
+
+
+int monitor_list_parse( struct monitor_item *entry)
+{
+	int c = 2;
+	entry->function = atoi(
+		monitor_list_parse_argument( entry->data, &c));
+	entry->param =
+		monitor_list_parse_argument( entry->data, &c);
+	entry->username =
+		monitor_list_parse_argument( entry->data, &c);
+	entry->usersid =
+		monitor_list_parse_argument( entry->data, &c);
+	entry->share =
+		monitor_list_parse_argument( entry->data, &c);
+	entry->domain =
+		monitor_list_parse_argument( entry->data, &c);
+}
+
+
+
+
 struct monitor_item *monitor_list_get_next_by_socket(int sock,
 		struct monitor_item *item)
 {
@@ -119,6 +173,55 @@ struct monitor_item *monitor_list_get_next_by_socket(int sock,
 	return NULL;
 }
 
+/* returns 1 if the filter applies to the incoming data,
+ * 0 if not
+ */
+int monitor_list_filter_apply( struct monitor_item *item, 
+	char *username,
+	char *usersid,
+	char *share,
+	char *domain)
+{
+	if (strcmp(entry->username,"*") != 0) {
+		if (strcmp(entry->username, username)!=0) return 0;
+	}
+	if (strcmp(entry->usersid,"*") != 0) {
+		if (strcmp(entry->usersid, usersid)!=0) return 0;
+	}
+	if (strcmp(entry->share,"*") != 0) {
+		if (strcmp(entry->share, share)!=0) return 0;
+	}
+	if (strcmp(entry->domain,"*") != 0) {
+		if (strcmp(entry->domain, domain)!=0) return 0;
+	}
+	return 1;
+}
+
+void monitor_list_update( int op_id,
+	char *username,
+	char *usersid,
+	char *share,
+	char *domain)
+{
+	struct monitor_item *entry = monlist_start;
+
+	while (entry != NULL) {
+		if (monitor_list_filter_apply(entry,
+			username,
+			usersid,
+			share,
+			domain) == 1) {
+			/* processing monitor */
+			switch(entry->function) {
+			case MONITOR_ADD:
+				/* simply add, for testing */
+				entry->local_data->sum =
+					entry->local_data->sum + 1;
+			}
+		}
+	}
+}
+			
 
 void monitor_list_process(int sock) {
 	struct monitor_item *entry = monlist_start;
@@ -140,11 +243,12 @@ void monitor_list_process(int sock) {
 	case MONITOR_INITIALIZE: ;
 		/* do everything required to correctly run the */
 		/* monitor. */
+		monitor_list_parse( entry );
 		entry->state = MONITOR_PROCESS;
 		break;
 	case MONITOR_PROCESS: ;
 		/* process the monitor, create a result and send */
-		/* the result. */
+		/* the result. This is done when receiving data */
 		break;
 	case MONITOR_STOP: ;
 		/* delete a monitor from the monitor_list */

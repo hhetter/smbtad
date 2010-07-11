@@ -19,17 +19,42 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+
+/**
+ * Monitor Protocol
+ * Data incoming from a monitor always begins with ~~
+ * This makes smbtad differ it from a SQL query
+ *
+ * ID and optional parameters      |        FILTER PATTERN
+ * ~~|LEN|MONITOR_FN_ENUM|LEN|PARAM|LEN|USERNAME|LEN|USERSID|LEN|SHARE|LEN|FILE|LEN|DOMAIN
+ *
+ */
+
+
+
+
 enum monitor_states { MONITOR_IDENTIFY = 0, MONITOR_INITIALIZE, MONITOR_PROCESS, MONITOR_STOP, MONITOR_ERROR };
 
 struct monitor_item {
 	char *data;
+
+	/* data delivered with the protocol */
+	monitor_fn_enum function;
+	char *param; /* optional parameter such as R RW W */
+	char *username;
+	char *usersid;
+	char *share;
+	char *file;
+	char *domain;
+
+
+	
 	int length;
 	int sock;
 	int id;
 	enum monitor_states state;
 	struct monitor_item *next;
 };
-
 
 
 int monitor_list_add( char *data,int sock);

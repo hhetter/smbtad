@@ -145,6 +145,9 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
         /* timestamp */
         timestamp = protocol_get_single_data_block_quoted( data, &go_through );
 
+	/* update and process every single monitor according to the new data */
+	monitor_list_update( op_id, username, usersid, share,domain);
+
 	/* now receive the VFS function depending arguments */
 	switch( op_id) {
 	case vfs_id_read:
@@ -242,14 +245,6 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 
 	/* free everything no longer needed */
 	TALLOC_FREE(data);
-/*
-	free(username);
-	free(usersid);
-	free(share);
-	free(domain);
-	free(timestamp);
-	free(vfs_id);
-*/
 	return retstr;
 }
 
