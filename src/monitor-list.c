@@ -20,7 +20,6 @@
  */
 
 #include "../include/includes.h"
-
 struct monitor_item *monlist_start = NULL;
 struct monitor_item *monlist_end = NULL;
 
@@ -52,7 +51,7 @@ int monitor_list_add( char *data,int sock) {
 		entry->function = 255;
 		entry->share = NULL;
 		entry->domain = NULL;
-
+		entry->local_data = NULL;
 		monitor_id ++;
 		entry->state = MONITOR_IDENTIFY;
                 return entry->id;
@@ -127,7 +126,7 @@ char *monitor_list_parse_argument( char *data, int *pos)
 {
 	char convdummy[10];
 	char value[1000];
-	value = NULL;
+	int l;
         strncpy(convdummy,data+*pos,4);
         l = atoi(convdummy);
         if (l == 0 || l > 999) {
@@ -157,6 +156,23 @@ int monitor_list_parse( struct monitor_item *entry)
 		monitor_list_parse_argument( entry->data, &c);
 	entry->domain =
 		monitor_list_parse_argument( entry->data, &c);
+
+	/*
+	 * initialize a memory block with the specific local data
+	 * the monitor requires
+	 */
+	switch(entry->function) {
+	case MONITOR_ADD: ;
+		entry->local_data = (struct monitor_local_data_adder *)
+			 malloc( sizeof(struct monitor_local_data_adder));
+		break;
+	default: ;
+		syslog(LOG_DEBUG,"ERROR: Wrong monitor state while parsing!\n");
+		exit(1);
+	
+	}
+
+	return 0;	
 }
 
 
@@ -176,7 +192,7 @@ struct monitor_item *monitor_list_get_next_by_socket(int sock,
 /* returns 1 if the filter applies to the incoming data,
  * 0 if not
  */
-int monitor_list_filter_apply( struct monitor_item *item, 
+int monitor_list_filter_apply( struct monitor_item *entry, 
 	char *username,
 	char *usersid,
 	char *share,
@@ -213,10 +229,15 @@ void monitor_list_update( int op_id,
 			domain) == 1) {
 			/* processing monitor */
 			switch(entry->function) {
-			case MONITOR_ADD:
+			case MONITOR_ADD: ;
+				struct monitor_local_data_adder
+					*data = entry->local_data;
+
 				/* simply add, for testing */
-				entry->local_data->sum =
-					entry->local_data->sum + 1;
+				data->sum = data->sum +1;
+				break;
+			default: ;
+
 			}
 		}
 	}

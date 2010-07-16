@@ -30,7 +30,7 @@
  *
  */
 
-
+#include "monitor-fn-enum.h"
 
 
 enum monitor_states { MONITOR_IDENTIFY = 0, MONITOR_INITIALIZE, MONITOR_PROCESS, MONITOR_STOP, MONITOR_ERROR };
@@ -39,7 +39,7 @@ struct monitor_item {
 	char *data;
 
 	/* data delivered with the protocol */
-	monitor_fn_enum function;
+	enum monitor_fn function;
 	char *param; /* optional parameter such as R RW W */
 	char *username;
 	char *usersid;
@@ -47,6 +47,8 @@ struct monitor_item {
 	char *file;
 	char *domain;
 
+	/* to be casted to a specific structure */
+	void *local_data;
 
 	
 	int length;
@@ -56,5 +58,20 @@ struct monitor_item {
 	struct monitor_item *next;
 };
 
+struct monitor_local_data_adder {
+	unsigned long int sum;
+};
+
+
 
 int monitor_list_add( char *data,int sock);
+
+void monitor_list_update( int op_id,
+        char *username,
+        char *usersid,
+        char *share,
+        char *domain);
+
+
+
+
