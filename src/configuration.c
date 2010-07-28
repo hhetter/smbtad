@@ -39,14 +39,13 @@ void configuration_define_defaults( config_t *c )
 	strcpy( c->maint_timer_conf, "01,00:00:00" );
 	c->daemon = 1;
 	c->config_file = NULL;
-	c->debug_level = 0;
+	c->dbg = 0; // debug level
 	c->dbname = strdup( "/var/lib/staddb");
 	c->dbhandle = NULL;
 	c->keyfile =NULL;
 	c->query_port = 3941;
 	c->current_query_result = NULL;
 	
-	_DBG = 0;
 	pthread_mutex_init(&config_mutex,NULL);
 }
 
@@ -94,7 +93,7 @@ int configuration_load_config_file( config_t *c)
 
 	cc = iniparser_getstring(Mydict,"general:debug_level",NULL);
 	if (cc != NULL) {
-		c->debug_level = atoi(cc);
+		c->dbg = atoi(cc);
 	}
 	cc = iniparser_getstring(Mydict,"general:keyfile",NULL);
 	if (cc != NULL) {
@@ -162,8 +161,7 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 				c->daemon = 0;
 				break;
 			case 'd':
-				c->debug_level = atoi( optarg );
-				_DBG = c->debug_level;
+				c->dbg = atoi( optarg );
 				break;
 			case 'q':
 				c->query_port = atoi( optarg);
@@ -189,9 +187,6 @@ return 0;
 
 int configuration_check_configuration( config_t *c )
 {
-	if ( c->debug_level <0 || c->debug_level>10 ) {
-		printf("ERROR: debug level has to be between 0 and 10.\n");
-		return -1;
-	}
+	// fixme: add checks
 	return 0;
 }

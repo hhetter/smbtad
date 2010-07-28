@@ -34,12 +34,17 @@ int network_receive_data( char *buf, int sock, int length, int *rlen)
 	t = recv( sock, buf, length, 0);
 	
 	if (t == 0) {
+		DEBUG(1) syslog(LOG_DEBUG,
+			"network_receive_data: recv 0 bytes "
+			"closing connection.");
 		/* connection closed */
 		*rlen = 0;
 		return 0;
 	}
 	*(buf + t) = '\0';
 	*rlen = *rlen + t;
+	DEBUG(1) syslog(LOG_DEBUG,
+		"network_receive_data: received %i bytes, >>%s<<",t,buf);
 	return t;
 }
 
@@ -53,7 +58,9 @@ char *network_create_header( TALLOC_CTX *ctx,
         const char *state_flags, size_t data_len)
 {
         char *header = talloc_asprintf( ctx, "V2.%s%017u",
-                                        state_flags, (unsigned int) data_len);
+		state_flags, (unsigned int) data_len);
+	DEBUG(1) syslog(LOG_DEBUG,
+		"network_create_header: created header :%s",header);
         return header;
 }
 
@@ -88,6 +95,8 @@ void network_close_connection(int i)
 	struct connection_struct *connection = connection_list_identify(i);
 	close(connection->mysocket);
 	connection_list_remove(connection->mysocket);
+	syslog(LOG_DEBUG,"network_close_connection: closed connection number "
+		"%i, socket %i",i,connection->mysocket);
 }
 
 
@@ -114,6 +123,8 @@ int network_handle_data( int i, config_t *c )
 			connection->header =
 				talloc_array(connection->CTX, char, 29);
 			connection->header_position = 0;
+			DEBUG(1) syslog(LOG_DEBUG,
+				"network_handle_data: recv header...");
 			l = network_receive_data( connection->header, i,26,
 				&connection->header_position);
 			if ( l == 0) {
@@ -132,8 +143,13 @@ int network_handle_data( int i, config_t *c )
 				protocol_get_data_block_length(connection->header);
 			connection->encrypted = 
 				protocol_is_encrypted(connection->header);
+			DEBUG(1) syslog(LOG_DEBUG,
+				"network_handle_data: header complete.");
 			break;
 		case CONN_READ_HEADER_ONGOING:
+			DEBUG(1) syslog(LOG_DEBUG,
+				"network_handle_data: incomplete header,"
+				"recv ongoing...");
 			l = network_receive_data(
 				connection->header + connection->header_position,
 				i,
@@ -151,9 +167,13 @@ int network_handle_data( int i, config_t *c )
                                 protocol_get_data_block_length(connection->header);
                         connection->encrypted =
 				protocol_is_encrypted(connection->header);
+			DEBUG(1) syslog(LOG_DEBUG,
+				"network_handle_data: header complete.");
                         break;
 
 		case CONN_READ_DATA: ;
+			DEBUG(1) syslog(LOG_DEBUG,
+				"network_handle_data: recv data block");
 			connection->body = 
 				talloc_array(connection->CTX,
 						char,
@@ -181,13 +201,28 @@ int network_handle_data( int i, config_t *c )
 			}
 
 			connection->data_state = CONN_READ_HEADER;
-			if (connection->connection_function == SOCK_TYPE_DATA) 
+
+			if (connection->connection_function == SOCK_TYPE_DATA) {
+				if (c->dbg == 1) D_(LOG_DEBUG,
+					"Adding to cache:  %s | len = %i",
+					connection->body,
+					connection->blocklen); 
 				cache_add(connection->body, connection->blocklen);
-			if (connection->connection_function == SOCK_TYPE_DB_QUERY)
+			}
+
+			if (connection->connection_function == SOCK_TYPE_DB_QUERY) {
+				if (c->dbg == 1) D_(LOG_DEBUG,
+					"Adding to queries: %s | len = %i",
+					connection->body,
+					connection->blocklen);
 				query_add(connection->body, connection->blocklen,i);
+			}
+
 			TALLOC_FREE(connection->CTX);
 			break;
 		case CONN_READ_DATA_ONGOING: ;
+			DEBUG(1) syslog(LOG_DEBUG,"network_handle_data: "
+				"recv incomplete data block.");
 			l = network_receive_data(
 				connection->body + connection->body_position,
 				i,
@@ -208,10 +243,20 @@ int network_handle_data( int i, config_t *c )
 						c->key);
 			}
 			connection->data_state = CONN_READ_HEADER;
-			if (connection->connection_function == SOCK_TYPE_DATA)
+			if (connection->connection_function == SOCK_TYPE_DATA) {
+				if (c->dbg == 1) D_(LOG_DEBUG,
+					"Adding to cache %s | len = %i",
+					connection->body,
+					connection->blocklen);
 				cache_add(connection->body, connection->blocklen);
-			if (connection->connection_function == SOCK_TYPE_DB_QUERY)
+			}
+			if (connection->connection_function == SOCK_TYPE_DB_QUERY) {
+				if (c->dbg == 1) D_(LOG_DEBUG,
+					"Adding to queries %s | len = %i",
+					connection->body,
+					connection->blocklen);
 				query_add(connection->body, connection->blocklen,i);
+			}
 			TALLOC_FREE(connection->CTX);
 			break;
 			

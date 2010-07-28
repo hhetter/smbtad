@@ -36,6 +36,8 @@ int main(int argc, char *argv[])
 	sendlist_init();
 	/* parse command line */
 	if ( configuration_parse_cmdline( &conf, argc, argv ) <0 ) exit(1);
+	/* global debug level */
+	_DBG = conf.dbg;
 	/* set the db */
 	conf.dbhandle = database_create(conf.dbname);
 

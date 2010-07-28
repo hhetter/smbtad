@@ -20,5 +20,4 @@
  */
 
 #define D_ syslog
-void l_( int debuglevel, const char *msg, config_t *c );
 

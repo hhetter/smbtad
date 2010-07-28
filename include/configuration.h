@@ -30,7 +30,7 @@ typedef struct configuration_data {
 	char maint_timer[200];
 	char maint_timer_conf[200];
 	/* debug level */
-	int debug_level;
+	int dbg;
 	/* configuration file */
 	char *config_file;
 	/* daemon mode */
