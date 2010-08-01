@@ -25,7 +25,7 @@
 int main(int argc, char *argv[])
 {
 
-
+	syslog(LOG_DEBUG,"smbtad start up.");
 	config_t conf;
 	
 	pthread_t thread;
