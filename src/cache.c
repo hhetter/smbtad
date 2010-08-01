@@ -19,8 +19,12 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#define _BSD_SOURCE
 #include "../include/includes.h"
 #include <unistd.h>
+
+
+
 
 struct cache_entry *cache_start = NULL;
 struct cache_entry *cache_end = NULL;

@@ -159,6 +159,16 @@ int monitor_list_parse( struct monitor_item *entry)
 		monitor_list_parse_argument( entry->data, &c);
 	entry->domain =
 		monitor_list_parse_argument( entry->data, &c);
+	DEBUG(1) syslog(LOG_DEBUG,"monitor_list_parse: parsed "
+		"id %i, function = %i, param = %s, username = %s,"
+		"usersid = %s, share = %s, domain = %s",
+		entry->id,
+		entry->function,
+		entry->param,
+		entry->username,
+		entry->usersid,
+		entry->share,
+		entry->domain);
 
 	/*
 	 * initialize a memory block with the specific local data
@@ -213,6 +223,8 @@ int monitor_list_filter_apply( struct monitor_item *entry,
 	if (strcmp(entry->domain,"*") != 0) {
 		if (strcmp(entry->domain, domain)!=0) return 0;
 	}
+	DEBUG(1) syslog(LOG_DEBUG, "monitor_list_apply: "
+		"monitor did not apply.");
 	return 1;
 }
 
@@ -237,7 +249,7 @@ void monitor_list_update( int op_id,
 					*data = entry->local_data;
 
 				/* simply add, for testing */
-				data->sum = data->sum +1;
+				data->sum = data->sum + 1;
 				break;
 			default: ;
 
@@ -257,39 +269,39 @@ void monitor_list_process(int sock) {
 
 	while (entry != NULL) {
 
-	switch(entry->state) {
-	case MONITOR_IDENTIFY: ;
-		/* Identification: send the id to the client */
-		char *data;
-		data = talloc_asprintf(NULL,"0010%010i",entry->id);
-		sendlist_add(data,entry->sock,strlen(data));
-		talloc_free(data);
-		DEBUG(1) syslog(LOG_DEBUG,"monitor_list_process: identification done.");
-		entry->state = MONITOR_INITIALIZE;
-		break;
-	case MONITOR_INITIALIZE: ;
-		/* do everything required to correctly run the */
-		/* monitor. */
-		// monitor_list_parse( entry );
-		entry->state = MONITOR_PROCESS;
-		break;
-	case MONITOR_PROCESS: ;
-		/* process the monitor, create a result and send */
-		/* the result. This is done when receiving data */
-		break;
-	case MONITOR_STOP: ;
-		/* delete a monitor from the monitor_list */
-		break;
-	case MONITOR_ERROR: ;
-		/* send an error message to the client, and delete */
-		/* the monitor from the list */
-		break;
-/*	case default:
-		syslog(LOG_DEBUG,"ERROR: Unkown monitor state!");
-		exit(1);
-		break;
-*/
-	}
+		switch(entry->state) {
+		case MONITOR_IDENTIFY: ;
+			/* Identification: send the id to the client */
+			char *data;
+			data = talloc_asprintf(NULL,"0010%010i",entry->id);
+			sendlist_add(data,entry->sock,strlen(data));
+			talloc_free(data);
+			DEBUG(1) syslog(LOG_DEBUG,"monitor_list_process: identification done.");
+			entry->state = MONITOR_INITIALIZE;
+			break;
+		case MONITOR_INITIALIZE: ;
+			/* do everything required to correctly run the */
+			/* monitor. */
+			// monitor_list_parse( entry );
+			entry->state = MONITOR_PROCESS;
+			break;
+		case MONITOR_PROCESS: ;
+			/* process the monitor, create a result and send */
+			/* the result. This is done when receiving data */
+			break;
+		case MONITOR_STOP: ;
+			/* delete a monitor from the monitor_list */
+			break;
+		case MONITOR_ERROR: ;
+			/* send an error message to the client, and delete */
+			/* the monitor from the list */
+			break;
+	/*	case default:
+			syslog(LOG_DEBUG,"ERROR: Unkown monitor state!");
+			exit(1);
+			break;
+	*/
+		}
 	entry = entry->next;
         entry = monitor_list_get_next_by_socket(sock,
                 entry);

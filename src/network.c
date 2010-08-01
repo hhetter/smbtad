@@ -43,7 +43,7 @@ int network_receive_data( char *buf, int sock, int length, int *rlen)
 	*(buf + t) = '\0';
 	*rlen = *rlen + t;
 	DEBUG(1) syslog(LOG_DEBUG,
-		"network_receive_data: received %i bytes, >>%s<<",t,buf);
+		"network_receive_data: received %i bytes, >>%s<<",(int) t,buf);
 	return t;
 }
 
