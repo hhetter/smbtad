@@ -20,6 +20,7 @@
  */
 
 #include "../include/includes.h"
+#include <unistd.h>
 
 struct cache_entry *cache_start = NULL;
 struct cache_entry *cache_end = NULL;
@@ -270,6 +271,7 @@ void cache_manager(struct configuration_data *config )
 	while (1 == 1) {
                 /* wait a second; we don't need to check the       */
                 /* feed-list all the time.                              */
+		usleep(5000);
         	pthread_mutex_lock(&cache_mutex);
         	struct cache_entry *go_through = cache_start;
 		struct cache_entry *backup = cache_start;

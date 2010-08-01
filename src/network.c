@@ -20,7 +20,6 @@
  */
 #include "../include/includes.h"
 
-
 /**
  * receive a data block. return 0 if the connection
  * was closed, or return the received buffer
@@ -244,14 +243,14 @@ int network_handle_data( int i, config_t *c )
 			}
 			connection->data_state = CONN_READ_HEADER;
 			if (connection->connection_function == SOCK_TYPE_DATA) {
-				if (c->dbg == 1) D_(LOG_DEBUG,
+				DEBUG(1) syslog(LOG_DEBUG,
 					"Adding to cache %s | len = %i",
 					connection->body,
 					connection->blocklen);
 				cache_add(connection->body, connection->blocklen);
 			}
 			if (connection->connection_function == SOCK_TYPE_DB_QUERY) {
-				if (c->dbg == 1) D_(LOG_DEBUG,
+				DEBUG(1) syslog(LOG_DEBUG,
 					"Adding to queries %s | len = %i",
 					connection->body,
 					connection->blocklen);
@@ -360,6 +359,13 @@ void network_handle_connections( config_t *c )
 		 * data structure has a prepared result in the queue
 		 */
 		sendlist_send(&write_fd_set);
+
+		/*
+		 * process monitors
+		 *
+		 */
+		for ( i = 0; i < connection_list_max() + 1; ++i)
+			if (FD_ISSET(i,&write_fd_set)) monitor_list_process(i);
 				
 	}
 }

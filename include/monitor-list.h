@@ -65,7 +65,7 @@ struct monitor_local_data_adder {
 
 
 int monitor_list_add( char *data,int sock);
-
+void monitor_list_process(int sock);
 void monitor_list_update( int op_id,
         char *username,
         char *usersid,

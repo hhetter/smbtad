@@ -31,6 +31,7 @@ int monitor_id = 0;
  */
 int monitor_list_add( char *data,int sock) {
         struct monitor_item *entry;
+	DEBUG(1) syslog(LOG_DEBUG,"Adding monitor Item %s ",data);
         if (monlist_start == NULL) {
                 monlist_start = (struct monitor_item *) malloc( sizeof( struct monitor_item));
 		if (monlist_start == NULL) {
@@ -54,6 +55,7 @@ int monitor_list_add( char *data,int sock) {
 		entry->local_data = NULL;
 		monitor_id ++;
 		entry->state = MONITOR_IDENTIFY;
+		DEBUG(1) syslog(LOG_DEBUG,"returned id %i",entry->id);
                 return entry->id;
         }
         entry = (struct monitor_item *) malloc(sizeof(struct monitor_item));
@@ -76,6 +78,7 @@ int monitor_list_add( char *data,int sock) {
 
 	monitor_id++;
 	entry->state = MONITOR_IDENTIFY;
+	DEBUG(1) syslog(LOG_DEBUG,"returned id %i",entry->id);
         return entry->id;
 }
 
@@ -248,9 +251,11 @@ void monitor_list_process(int sock) {
 	struct monitor_item *entry = monlist_start;
 
 	if (monlist_start==NULL) return;
+        entry = monitor_list_get_next_by_socket(sock,
+                entry);
 
-	entry = monitor_list_get_next_by_socket(sock,
-		entry);
+
+	while (entry != NULL) {
 
 	switch(entry->state) {
 	case MONITOR_IDENTIFY: ;
@@ -259,12 +264,13 @@ void monitor_list_process(int sock) {
 		data = talloc_asprintf(NULL,"0010%010i",entry->id);
 		sendlist_add(data,entry->sock,strlen(data));
 		talloc_free(data);
+		DEBUG(1) syslog(LOG_DEBUG,"monitor_list_process: identification done.");
 		entry->state = MONITOR_INITIALIZE;
 		break;
 	case MONITOR_INITIALIZE: ;
 		/* do everything required to correctly run the */
 		/* monitor. */
-		monitor_list_parse( entry );
+		// monitor_list_parse( entry );
 		entry->state = MONITOR_PROCESS;
 		break;
 	case MONITOR_PROCESS: ;
@@ -283,6 +289,11 @@ void monitor_list_process(int sock) {
 		exit(1);
 		break;
 */
+	}
+	entry = entry->next;
+        entry = monitor_list_get_next_by_socket(sock,
+                entry);
+
 	}
 
 }

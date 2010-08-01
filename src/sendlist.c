@@ -37,6 +37,7 @@ void sendlist_init() {
 int sendlist_add( char *data,int sock, int length) {
         struct sendlist_item *entry;
 	pthread_mutex_lock(&sendlist_lock);
+	DEBUG(1) syslog(LOG_DEBUG,"sendlist_add: Adding Item %s to the sendlist.",data);
         if (sendlist_start == NULL) {
                 sendlist_start = (struct sendlist_item *) malloc( sizeof( struct sendlist_item));
 		if (sendlist_start == NULL) {
@@ -88,7 +89,7 @@ int sendlist_send( fd_set *write_fd_set ) {
 		pthread_mutex_unlock(&sendlist_lock);
 		return 0;
 	}
-
+	
 	switch(entry->state) {
 	case SENDLIST_STATUS_SEND_HEADER:
 		entry->header = network_create_header(NULL,
@@ -117,6 +118,7 @@ int sendlist_send( fd_set *write_fd_set ) {
 		return 0;
 	case SENDLIST_STATUS_SEND_DATA:
 		entry->send_len = 0;
+		DEBUG(1) syslog(LOG_DEBUG,"sendlist_send: sending %i bytes... ",entry->len);
 		entry->send_len = send(entry->sock, entry->data, entry->len,0);
 		if (entry->send_len != entry->len) {
 			entry->state = SENDLIST_STATUS_SEND_DATA_ONGOING;
