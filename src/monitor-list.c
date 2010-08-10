@@ -131,12 +131,18 @@ char *monitor_list_parse_argument( char *data, int *pos)
 	char value[1000];
 	int l;
         strncpy(convdummy,data+*pos,4);
+	convdummy[4]='\0';
+
+	DEBUG(1) syslog(LOG_DEBUG,"monitor_list_parse_argument: "
+		"convdummy: %s",convdummy);
+
         l = atoi(convdummy);
         if (l == 0 || l > 999) {
                 syslog(LOG_DEBUG,"ERROR: failure argument in monitor request");
                 exit(1);
         }
 	strncpy(value,data+*pos+4,l);
+	value[l] = '\0';
 	*pos = *pos + 4 + l;
 	return strdup(value);
 }
@@ -147,6 +153,8 @@ char *monitor_list_parse_argument( char *data, int *pos)
 int monitor_list_parse( struct monitor_item *entry)
 {
 	int c = 2;
+	DEBUG(1) syslog(LOG_DEBUG,"monitor_list_parse: trying to parse %s",
+		entry->data);
 	entry->function = atoi(
 		monitor_list_parse_argument( entry->data, &c));
 	entry->param =
@@ -211,22 +219,76 @@ int monitor_list_filter_apply( struct monitor_item *entry,
 	char *share,
 	char *domain)
 {
+
+	/* create local unqouted copies of the data */
+	char uusername[strlen(username)];
+	strncpy(uusername,username+1,strlen(username)-2);
+	char uusersid[strlen(usersid)];
+	strncpy(uusersid,usersid+1,strlen(usersid)-2);
+	char ushare[strlen(share)];
+	strncpy(ushare,share+1,strlen(share)-2);
+	char udomain[strlen(domain)];
+	strncpy(udomain,domain+1,strlen(domain)-2);
+
+        DEBUG(1) syslog(LOG_DEBUG, "monitor_list_apply: entry data:"
+                "entry->username : |%s|vs|%s|, "
+                "entry->usersid  : |%s|vs|%s|, "
+                "entry->share    : %s, "
+                "entry->domain   : %s. ",
+                entry->username, uusername, entry->usersid, uusersid,entry->share, entry->domain);
+
+
+	int applyflag = 0;
 	if (strcmp(entry->username,"*") != 0) {
-		if (strcmp(entry->username, username)!=0) return 0;
+		if (strcmp(entry->username, uusername)!=0) return 0;
 	}
 	if (strcmp(entry->usersid,"*") != 0) {
-		if (strcmp(entry->usersid, usersid)!=0) return 0;
+		if (strcmp(entry->usersid, uusersid)!=0) return 0;
 	}
 	if (strcmp(entry->share,"*") != 0) {
-		if (strcmp(entry->share, share)!=0) return 0;
+		if (strcmp(entry->share, ushare)!=0) return 0;
 	}
 	if (strcmp(entry->domain,"*") != 0) {
-		if (strcmp(entry->domain, domain)!=0) return 0;
+		if (strcmp(entry->domain, udomain)!=0) return 0;
 	}
 	DEBUG(1) syslog(LOG_DEBUG, "monitor_list_apply: "
-		"monitor did not apply.");
+		"monitor applied succesfully.");
 	return 1;
 }
+
+void monitor_initialize( struct monitor_item *entry)
+{
+	switch(entry->function) {
+	case MONITOR_ADD: ;
+		struct monitor_local_data_adder *data =
+			entry->local_data;
+		data->sum = 0;
+		break;
+	default: ;
+	}
+}
+
+void monitor_send_result( struct monitor_item *entry)
+{
+	char *sendstr = NULL;
+	char *idstr = NULL;
+	char *tmpdatastr;
+	asprintf(&idstr,"%i",entry->id);
+	switch(entry->function) {
+	case MONITOR_ADD: ;
+		struct monitor_local_data_adder *data =
+			entry->local_data;
+		asprintf(&tmpdatastr,"%i",data->sum);
+		asprintf(&sendstr,"%04i%s%04i%s",
+			strlen(idstr),
+			idstr,
+			strlen(tmpdatastr),
+			tmpdatastr);
+		sendlist_add(sendstr,entry->sock,strlen(sendstr));
+		break;
+	}
+}	
+			
 
 void monitor_list_update( int op_id,
 	char *username,
@@ -250,11 +312,15 @@ void monitor_list_update( int op_id,
 
 				/* simply add, for testing */
 				data->sum = data->sum + 1;
+				DEBUG(1) syslog(LOG_DEBUG,
+					"monitor_list_update: ADDER, new value: %i",data->sum);
+				monitor_send_result(entry);
 				break;
 			default: ;
 
 			}
 		}
+		entry = entry -> next;
 	}
 }
 			
@@ -282,7 +348,8 @@ void monitor_list_process(int sock) {
 		case MONITOR_INITIALIZE: ;
 			/* do everything required to correctly run the */
 			/* monitor. */
-			// monitor_list_parse( entry );
+			monitor_list_parse( entry );
+			monitor_initialize( entry );
 			entry->state = MONITOR_PROCESS;
 			break;
 		case MONITOR_PROCESS: ;
