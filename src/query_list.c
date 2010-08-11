@@ -84,11 +84,11 @@ char *query_list_run_query( sqlite3 *database, int *body_length, int *sock) {
 			sprintf(lenstr,"%04i", (int) strlen(z));
 			memcpy(FullAlloc+FullLength, lenstr, 4);
                         int x = 0;
-                        while (x <= strlen(z)) {
+                        while (x < strlen(z)) { // FIXME !
                                 FullAlloc[FullLength+x+ 4] = z[x];
                                 x++;
                         }
-			FullLength=FullLength + strlen(z) + 1 +4;
+			FullLength=FullLength + strlen(z) + 4; // FIXME !
 		colcount = colcount + 1;
 		}			
 	colcount = 0;
