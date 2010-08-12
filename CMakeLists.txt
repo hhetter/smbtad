@@ -41,6 +41,22 @@ if (NOT TALLOC_INCLUDE_DIR)
         MESSAGE( FATAL_ERROR "ERROR: you will need talloc development
                  files installed.")
 ENDIF()
+ 
+if (TALLOC_INCLUDE_DIR)
+       INCLUDE_DIRECTORIES(${TALLOC_INCLUDE_DIR})
+ENDIF()
+
+# compile on SunOS
+if (CMAKE_SYSTEM_NAME STREQUAL "SunOS" )
+       ADD_DEFINITIONS(-DSOLARIS)
+       SET(Libraries
+               ${Libraries}
+               socket
+               #fuer asprintf:
+               iberty
+       )
+endif()
+
 
 #
 # include iniparser on demand

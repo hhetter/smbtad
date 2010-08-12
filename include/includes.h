@@ -1,7 +1,18 @@
 #include "version.h"
-#define _XOPEN_SOURCE
+#ifdef SOLARIS
+    #define _XOPEN_SOURCE 500
+#else
+    #define _XOPEN_SOURCE
+#endif
+
 #define _SVID_SOURCE || _BSD_SOURCE || _XOPEN_SOURCE >= 500
 #define _GNU_SOURCE
+
+#ifdef SOLARIS
+       #include <netinet/in.h>
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>

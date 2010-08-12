@@ -286,6 +286,8 @@ int network_create_socket( int port )
 		exit(1);
 	}
 
+	bzero (&my_addr, sizeof (my_addr));
+	my_addr.sin6_family = AF_INET6;
 	my_addr.sin6_port = htons( port );
 	my_addr.sin6_addr = in6addr_any;
 
