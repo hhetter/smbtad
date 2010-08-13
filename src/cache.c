@@ -96,12 +96,12 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
         /**
          * don't run a newer smbtad with an older VFS module
          */
-	syslog(LOG_DEBUG,"%s",entry->data);
         if (common_blocks_num < 6) {
-                DEBUG(0) syslog(LOG_DEBUG, "FATAL: Protocol error!\n"
-			" Too less common data blocks! (%i)\n",
+                syslog(LOG_DEBUG, "FATAL: Protocol error!"
+			" Too less common data blocks! (%i), ignoring data!",
 			common_blocks_num);
-                exit(1);
+                TALLOC_FREE(data);
+		return NULL;
         }
 
         /* vfs_operation_identifier */
