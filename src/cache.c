@@ -90,6 +90,7 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 	char *path = NULL;
 	char *source = NULL;
 	char *destination = NULL;
+	char *mondata = NULL;
         /* first check how many common data blocks will come */
 	str = protocol_get_single_data_block( data, &go_through);
 	int common_blocks_num = atoi(str);
@@ -153,8 +154,6 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
         /* timestamp */
         timestamp = protocol_get_single_data_block_quoted( data, &go_through );
 
-	/* update and process every single monitor according to the new data */
-	monitor_list_update( op_id, username, usersid, share,domain);
 
 	/* now receive the VFS function depending arguments */
 	switch( op_id) {
@@ -173,6 +172,7 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 			"%s,%s);",
 			vfs_id,username,usersid,share,domain,timestamp,
 			filename,len);
+		mondata = len;
 		break;
 	case vfs_id_write:
 	case vfs_id_pwrite: ;
@@ -189,6 +189,7 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
                         "%s,%s);",
                         vfs_id,username,usersid,share,domain,timestamp,
                         filename,len);
+		mondata = len;
                 break;
 	case vfs_id_mkdir: ;
 		path = protocol_get_single_data_block_quoted( data,&go_through);
@@ -251,6 +252,10 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 
 	}
 
+        /* update and process every single monitor according to the new data */
+        monitor_list_update( op_id, username, usersid, share,domain, mondata);
+
+
 	/* free everything no longer needed */
 	TALLOC_FREE(data);
 	return retstr;
@@ -296,18 +301,10 @@ void cache_manager(struct configuration_data *config )
 		/* run a query and add the result to the sendlist */
 		int res_len;
 		int res_socket;
+		int monitorid = 0;
 		char *res = query_list_run_query(database,
-			&res_len, &res_socket);
-		if (res != NULL) sendlist_add(res,res_socket,res_len);
-		// sendlist_list();
-/*
-		pthread_mutex_t *cfg_mutex = configuration_get_lock();
-		pthread_mutex_lock(cfg_mutex);
-		if (config->current_query_result == NULL) {
-			config->current_query_result = query_list_run_query( database,
-				&config->current_query_result_len, &config->result_socket);
-		}
-		pthread_mutex_unlock(cfg_mutex);
-*/
+			&res_len, &res_socket, &monitorid);
+		if (res != NULL && monitorid ==0) sendlist_add(res,res_socket,res_len);
+		if (res != NULL && monitorid !=0) monitor_list_set_init_result(res, monitorid);
 	}
 }

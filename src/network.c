@@ -214,7 +214,7 @@ int network_handle_data( int i, config_t *c )
 					"Adding to queries: %s | len = %i",
 					connection->body,
 					connection->blocklen);
-				query_add(connection->body, connection->blocklen,i);
+				query_add(connection->body, connection->blocklen,i,0);
 			}
 
 			TALLOC_FREE(connection->CTX);
@@ -254,7 +254,7 @@ int network_handle_data( int i, config_t *c )
 					"Adding to queries %s | len = %i",
 					connection->body,
 					connection->blocklen);
-				query_add(connection->body, connection->blocklen,i);
+				query_add(connection->body, connection->blocklen,i,0);
 			}
 			TALLOC_FREE(connection->CTX);
 			break;

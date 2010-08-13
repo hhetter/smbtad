@@ -62,7 +62,9 @@ struct monitor_local_data_adder {
 	unsigned long int sum;
 };
 
-
+struct monitor_local_data_total {
+	unsigned long int sum;
+};
 
 int monitor_list_add( char *data,int sock);
 void monitor_list_process(int sock);
@@ -70,7 +72,7 @@ void monitor_list_update( int op_id,
         char *username,
         char *usersid,
         char *share,
-        char *domain);
+        char *domain, char *data);
 
 
 

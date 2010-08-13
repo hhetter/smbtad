@@ -48,7 +48,7 @@ void query_init( ) {
  * runs a query from the query list or returns -1 in int *body_lentgh
  * should no query be waiting.
  */
-char *query_list_run_query( sqlite3 *database, int *body_length, int *sock) {
+char *query_list_run_query( sqlite3 *database, int *body_length, int *sock, int *monitorid) {
 
 	sqlite3_stmt *stmt = NULL;
 	int o, columns, colcount=0;
@@ -71,7 +71,11 @@ char *query_list_run_query( sqlite3 *database, int *body_length, int *sock) {
 		backup->data,
 		strlen(backup->data),
 		&stmt,
-		&zErrmsg);			
+		&zErrmsg);
+	/* internal query by a monitor ? */
+	if (backup->monitorid != 0) *monitorid = backup->monitorid;
+	DEBUG(1) syslog(LOG_DEBUG,"query_list_run_query: running %s, monitorid = %i",
+		backup->data, backup->monitorid);
 	columns = sqlite3_column_count( stmt );
 	FullAlloc = (char *) malloc(sizeof(char));
 	while(sqlite3_step(stmt) == SQLITE_ROW) {
@@ -109,6 +113,7 @@ char *query_list_run_query( sqlite3 *database, int *body_length, int *sock) {
 	}
 
 	*body_length = FullLength;
+	
 	return FullAlloc;
 }
 
@@ -117,7 +122,7 @@ char *query_list_run_query( sqlite3 *database, int *body_length, int *sock) {
  * adds an entry to the querylist
  * returns -1 in case of an error
  */
-int query_add( char *data, int len, int sock ) {
+int query_add( char *data, int len, int sock, int monitorid) {
 
 	
         struct query_entry *entry;	
@@ -142,6 +147,9 @@ int query_add( char *data, int len, int sock ) {
 		entry->next = NULL;
 		query_end = entry;
 		entry->sock = sock;
+		entry->monitorid = monitorid;
+		DEBUG(1) syslog(LOG_DEBUG,"query_add: added entry %s with monitorid = %i",
+			entry->data, entry->monitorid);
 		pthread_mutex_unlock(&query_mutex);
 		return 0;
 	}
@@ -156,6 +164,10 @@ int query_add( char *data, int len, int sock ) {
 	entry->length = len;
 	query_end = entry;
 	entry->sock = sock;
+	entry->monitorid = monitorid;
+        DEBUG(1) syslog(LOG_DEBUG,"query_add: added entry %s with monitorid = %i",
+		entry->data, entry->monitorid);
+
 	pthread_mutex_unlock(&query_mutex);
 	return 0;
 }

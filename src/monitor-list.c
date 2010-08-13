@@ -23,7 +23,7 @@
 struct monitor_item *monlist_start = NULL;
 struct monitor_item *monlist_end = NULL;
 
-int monitor_id = 0;
+int monitor_id = 1;
 
 /*
  * adds an entry to the monitor list
@@ -187,6 +187,10 @@ int monitor_list_parse( struct monitor_item *entry)
 		entry->local_data = (struct monitor_local_data_adder *)
 			 malloc( sizeof(struct monitor_local_data_adder));
 		break;
+	case MONITOR_TOTAL: ;
+		entry->local_data = (struct monitor_local_data_total *)
+			malloc( sizeof(struct monitor_local_data_total));
+		break;
 	default: ;
 		syslog(LOG_DEBUG,"ERROR: Wrong monitor state while parsing!\n");
 		exit(1);
@@ -196,7 +200,15 @@ int monitor_list_parse( struct monitor_item *entry)
 	return 0;	
 }
 
-
+struct monitor_item *monitor_list_get_by_id(int id)
+{
+        struct monitor_item *entry=monlist_start;
+        while (entry != NULL) {
+                if (entry->id == id) return entry;
+                entry = entry->next;
+        }
+        return NULL;
+}
 
 
 struct monitor_item *monitor_list_get_next_by_socket(int sock,
@@ -256,13 +268,42 @@ int monitor_list_filter_apply( struct monitor_item *entry,
 	return 1;
 }
 
+char *monitor_list_create_sql_cond( struct monitor_item *entry)
+{
+	char *ret = NULL;
+	if (strcmp(entry->username,"*") != 0) asprintf(&ret,"username = '%s' and ",entry->username);
+	if (strcmp(entry->usersid,"*") != 0) asprintf(&ret,"%s usersid = '%s' and ",ret,entry->usersid);
+	if (strcmp(entry->share,"*") != 0) asprintf(&ret,"%s share = '%s' and ",ret,entry->share);
+	if (strcmp(entry->domain,"*") != 0) asprintf(&ret,"%s domain = '%s' and ",ret,entry->domain);
+	asprintf(&ret,"%s 1 = 1;",ret);
+	return ret;
+}
+
+
 void monitor_initialize( struct monitor_item *entry)
 {
 	switch(entry->function) {
 	case MONITOR_ADD: ;
-		struct monitor_local_data_adder *data =
-			entry->local_data;
-		data->sum = 0;
+		((struct monitor_local_data_adder *) entry->local_data)->sum = 0;
+		entry->state = MONITOR_PROCESS;
+		break;
+	case MONITOR_TOTAL: ;
+		((struct monitor_local_data_total *) entry->local_data)->sum = 0;
+		char *request;
+		if (strcmp(entry->param,"R")==0) {
+			asprintf(&request,"select sum(length) from read where ");
+		} else if (strcmp(entry->param,"W")==0) {
+			asprintf(&request,"select sum(length) from write where ");
+		} else if (strcmp(entry->param,"RW")==0) {
+			asprintf(&request, "select sum(a.length) + sum(b.length) from write a, read b where ");
+		} else { // FIXME! We have to remove this monitor now !
+			}
+		char *cond = monitor_list_create_sql_cond(entry);
+		asprintf(&request,"%s %s",request,cond);
+		free(cond);
+		DEBUG(1) syslog(LOG_DEBUG,"monitor_initizalize: created >%s< as request string!",request);
+		query_add(request, strlen(request), entry->sock, entry->id);
+		// FIXME: FREE the string !!!
 		break;
 	default: ;
 	}
@@ -276,9 +317,8 @@ void monitor_send_result( struct monitor_item *entry)
 	asprintf(&idstr,"%i",entry->id);
 	switch(entry->function) {
 	case MONITOR_ADD: ;
-		struct monitor_local_data_adder *data =
-			entry->local_data;
-		asprintf(&tmpdatastr,"%i",data->sum);
+		asprintf(&tmpdatastr,"%i",
+			((struct monitor_local_data_adder *) (entry->local_data))->sum);
 		asprintf(&sendstr,"%04i%s%04i%s",
 			strlen(idstr),
 			idstr,
@@ -286,6 +326,17 @@ void monitor_send_result( struct monitor_item *entry)
 			tmpdatastr);
 		sendlist_add(sendstr,entry->sock,strlen(sendstr));
 		break;
+	case MONITOR_TOTAL: ;
+		asprintf(&tmpdatastr,"%i",
+			((struct monitor_local_data_total *) (entry->local_data))->sum);
+                asprintf(&sendstr,"%04i%s%04i%s",
+                        strlen(idstr),
+                        idstr,
+                        strlen(tmpdatastr),
+                        tmpdatastr);
+                sendlist_add(sendstr,entry->sock,strlen(sendstr));
+                break;
+
 	}
 }	
 			
@@ -294,7 +345,7 @@ void monitor_list_update( int op_id,
 	char *username,
 	char *usersid,
 	char *share,
-	char *domain)
+	char *domain, char *data)
 {
 	struct monitor_item *entry = monlist_start;
 
@@ -307,14 +358,21 @@ void monitor_list_update( int op_id,
 			/* processing monitor */
 			switch(entry->function) {
 			case MONITOR_ADD: ;
-				struct monitor_local_data_adder
-					*data = entry->local_data;
-
-				/* simply add, for testing */
-				data->sum = data->sum + 1;
-				DEBUG(1) syslog(LOG_DEBUG,
-					"monitor_list_update: ADDER, new value: %i",data->sum);
+				/* simply add on any  VFS op, for testing */
+				((struct monitor_local_data_adder *) entry->local_data)->sum = 
+					((struct monitor_local_data_adder *) entry->local_data)->sum + 1;
 				monitor_send_result(entry);
+				break;
+			case MONITOR_TOTAL: ;
+				if (op_id == vfs_id_read ||
+					op_id == vfs_id_pread ||
+					op_id == vfs_id_write ||
+					op_id == vfs_id_pwrite ) {
+					((struct monitor_local_data_total *) entry->local_data)->sum =
+						((struct monitor_local_data_total *)entry->local_data)->sum +
+						atoi(data);
+					monitor_send_result(entry);
+				}
 				break;
 			default: ;
 
@@ -324,6 +382,36 @@ void monitor_list_update( int op_id,
 	}
 }
 			
+void monitor_list_set_init_result(char *res, int monitorid) {
+	/**
+	 * we assume that internal queries only return
+	 * single numbers at this point
+	 */
+	struct monitor_item *entry = monlist_start;
+	if (monlist_start == NULL) {
+		syslog(LOG_DEBUG,"ERROR: trying to initialize a"
+			" monitor but the monitor list is empty!");
+		exit(1);
+	}
+	entry = monitor_list_get_by_id(monitorid);
+	switch(entry->function) {
+	case MONITOR_ADD: ;
+		entry->state = MONITOR_PROCESS;
+		break;
+	case MONITOR_TOTAL: ;
+		struct monitor_local_data_total
+			*data = entry->local_data;
+		data->sum = atol( res+4 );
+		DEBUG(1) syslog(LOG_DEBUG, "monitor_list_set_init_result:"
+			" input: %s",res);
+		entry->state = MONITOR_PROCESS;
+		DEBUG(1) syslog(LOG_DEBUG, "monitor_list_set_init_result:"
+			" total sum set to %i",data->sum);
+		break;
+	}
+}
+
+		
 
 void monitor_list_process(int sock) {
 	struct monitor_item *entry = monlist_start;
@@ -350,7 +438,7 @@ void monitor_list_process(int sock) {
 			/* monitor. */
 			monitor_list_parse( entry );
 			monitor_initialize( entry );
-			entry->state = MONITOR_PROCESS;
+			// entry->state = MONITOR_PROCESS;
 			break;
 		case MONITOR_PROCESS: ;
 			/* process the monitor, create a result and send */
