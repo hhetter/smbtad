@@ -98,6 +98,12 @@ int monitor_list_delete( int id ) {
 	return -1; // id was not found
 }
 
+
+
+/**
+ * delete any monitors associated to the given
+ * socket (int sock)
+ */
 int monitor_list_delete_by_socket( int sock ) {
 	struct monitor_item *entry = monlist_start;
 	struct monitor_item *before = monlist_start;
@@ -114,6 +120,10 @@ int monitor_list_delete_by_socket( int sock ) {
 	}
 }
 
+
+/**
+ * delete any running monitors
+ */
 void monitor_list_delete_all() {
 	struct monitor_item *entry = monlist_start;
 	struct monitor_item *n = monlist_start;
@@ -127,7 +137,9 @@ void monitor_list_delete_all() {
 
 
 
-
+/**
+ * list all running monitor for debugging
+ */
 void monitor_list_list() {
 	struct monitor_item *entry = monlist_start;
 	syslog(LOG_DEBUG,"------------ monitor list ----------");
@@ -141,6 +153,11 @@ void monitor_list_list() {
 	}
 }
 
+
+/**
+ * parses an argument from a monitor definition
+ * sets *pos to the current position
+ */
 char *monitor_list_parse_argument( char *data, int *pos)
 {
 	char convdummy[10];
@@ -165,7 +182,9 @@ char *monitor_list_parse_argument( char *data, int *pos)
 
 
 
-
+/**
+ * fills the strings of the monitor struct with data
+ */
 int monitor_list_parse( struct monitor_item *entry)
 {
 	int c = 2;
@@ -216,6 +235,11 @@ int monitor_list_parse( struct monitor_item *entry)
 	return 0;	
 }
 
+
+/**
+ * get a monitor_item from the monitor list by
+ * given id
+ */
 struct monitor_item *monitor_list_get_by_id(int id)
 {
         struct monitor_item *entry=monlist_start;
@@ -227,6 +251,9 @@ struct monitor_item *monitor_list_get_by_id(int id)
 }
 
 
+/**
+ * get a monitor_item from the monitor_list by socket
+ */
 struct monitor_item *monitor_list_get_next_by_socket(int sock,
 		struct monitor_item *item)
 {
@@ -263,7 +290,12 @@ int monitor_list_filter_apply( struct monitor_item *entry,
                 "entry->usersid  : |%s|vs|%s|, "
                 "entry->share    : %s, "
                 "entry->domain   : %s. ",
-                entry->username, uusername, entry->usersid, uusersid,entry->share, entry->domain);
+                entry->username,
+		uusername,
+		entry->usersid, 
+		uusersid,
+		entry->share,
+		entry->domain);
 
 
 	int applyflag = 0;
@@ -284,18 +316,34 @@ int monitor_list_filter_apply( struct monitor_item *entry,
 	return 1;
 }
 
+
+
+/**
+ * create a SQL condition string based on the pattern of the
+ * given monitor
+ */
 char *monitor_list_create_sql_cond( struct monitor_item *entry)
 {
 	char *ret = NULL;
-	if (strcmp(entry->username,"*") != 0) asprintf(&ret,"username = '%s' and ",entry->username);
-	if (strcmp(entry->usersid,"*") != 0) asprintf(&ret,"%s usersid = '%s' and ",ret,entry->usersid);
-	if (strcmp(entry->share,"*") != 0) asprintf(&ret,"%s share = '%s' and ",ret,entry->share);
-	if (strcmp(entry->domain,"*") != 0) asprintf(&ret,"%s domain = '%s' and ",ret,entry->domain);
+	if (strcmp(entry->username,"*") != 0)
+		asprintf(&ret,"username = '%s' and ",entry->username);
+	if (strcmp(entry->usersid,"*") != 0)
+		asprintf(&ret,"%s usersid = '%s' and ",ret,entry->usersid);
+	if (strcmp(entry->share,"*") != 0)
+		asprintf(&ret,"%s share = '%s' and ",ret,entry->share);
+	if (strcmp(entry->domain,"*") != 0)
+		asprintf(&ret,"%s domain = '%s' and ",ret,entry->domain);
 	asprintf(&ret,"%s 1 = 1;",ret);
 	return ret;
 }
 
 
+
+/**
+ * do everything required before a monitor is going to run
+ * - initialize monitor local data variables
+ * - in case needed, make SQL requests to look into the past
+ */
 void monitor_initialize( struct monitor_item *entry)
 {
 	switch(entry->function) {
@@ -307,17 +355,22 @@ void monitor_initialize( struct monitor_item *entry)
 		((struct monitor_local_data_total *) entry->local_data)->sum = 0;
 		char *request;
 		if (strcmp(entry->param,"R")==0) {
-			asprintf(&request,"select sum(length) from read where ");
+			asprintf(&request,
+				"select sum(length) from read where ");
 		} else if (strcmp(entry->param,"W")==0) {
-			asprintf(&request,"select sum(length) from write where ");
+			asprintf(&request,
+				"select sum(length) from write where ");
 		} else if (strcmp(entry->param,"RW")==0) {
-			asprintf(&request, "select sum(a.length) + sum(b.length) from write a, read b where ");
+			asprintf(&request,
+				"select sum(a.length) + sum(b.length) "
+				"from write a, read b where ");
 		} else { // FIXME! We have to remove this monitor now !
 			}
 		char *cond = monitor_list_create_sql_cond(entry);
 		asprintf(&request,"%s %s",request,cond);
 		free(cond);
-		DEBUG(1) syslog(LOG_DEBUG,"monitor_initizalize: created >%s< as request string!",request);
+		DEBUG(1) syslog(LOG_DEBUG,"monitor_initizalize: "
+			"created >%s< as request string!",request);
 		query_add(request, strlen(request), entry->sock, entry->id);
 		free(request);
 		break;
@@ -334,7 +387,8 @@ void monitor_send_result( struct monitor_item *entry)
 	switch(entry->function) {
 	case MONITOR_ADD: ;
 		asprintf(&tmpdatastr,"%i",
-			((struct monitor_local_data_adder *) (entry->local_data))->sum);
+			((struct monitor_local_data_adder *)
+				(entry->local_data))->sum);
 		asprintf(&sendstr,"%04i%s%04i%s",
 			strlen(idstr),
 			idstr,
@@ -344,7 +398,8 @@ void monitor_send_result( struct monitor_item *entry)
 		break;
 	case MONITOR_TOTAL: ;
 		asprintf(&tmpdatastr,"%i",
-			((struct monitor_local_data_total *) (entry->local_data))->sum);
+			((struct monitor_local_data_total *)
+				(entry->local_data))->sum);
                 asprintf(&sendstr,"%04i%s%04i%s",
                         strlen(idstr),
                         idstr,
@@ -375,8 +430,10 @@ void monitor_list_update( int op_id,
 			switch(entry->function) {
 			case MONITOR_ADD: ;
 				/* simply add on any  VFS op, for testing */
-				((struct monitor_local_data_adder *) entry->local_data)->sum = 
-					((struct monitor_local_data_adder *) entry->local_data)->sum + 1;
+				((struct monitor_local_data_adder *)
+					entry->local_data)->sum = 
+					((struct monitor_local_data_adder *)
+						entry->local_data)->sum + 1;
 				monitor_send_result(entry);
 				break;
 			case MONITOR_TOTAL: ;
@@ -384,7 +441,8 @@ void monitor_list_update( int op_id,
 					op_id == vfs_id_pread ||
 					op_id == vfs_id_write ||
 					op_id == vfs_id_pwrite ) {
-					((struct monitor_local_data_total *) entry->local_data)->sum =
+					((struct monitor_local_data_total *)
+						entry->local_data)->sum =
 						((struct monitor_local_data_total *)entry->local_data)->sum +
 						atoi(data);
 					monitor_send_result(entry);
