@@ -303,7 +303,7 @@ void monitor_initialize( struct monitor_item *entry)
 		free(cond);
 		DEBUG(1) syslog(LOG_DEBUG,"monitor_initizalize: created >%s< as request string!",request);
 		query_add(request, strlen(request), entry->sock, entry->id);
-		// FIXME: FREE the string !!!
+		free(request);
 		break;
 	default: ;
 	}
