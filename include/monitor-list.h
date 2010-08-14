@@ -74,6 +74,7 @@ void monitor_list_update( int op_id,
         char *share,
         char *domain, char *data);
 
-
+void monitor_list_delete_by_socket( int sock );
+void monitor_list_set_init_result(char *res, int monitorid);
 
 

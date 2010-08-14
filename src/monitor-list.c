@@ -104,19 +104,23 @@ int monitor_list_delete( int id ) {
  * delete any monitors associated to the given
  * socket (int sock)
  */
-int monitor_list_delete_by_socket( int sock ) {
+void monitor_list_delete_by_socket( int sock ) {
 	struct monitor_item *entry = monlist_start;
 	struct monitor_item *before = monlist_start;
-	if (entry == NULL) return -1;
+	if (entry == NULL) return;
 	while (entry != NULL) {
 		if (entry->sock==sock) {
+			DEBUG(1) syslog(LOG_DEBUG,
+				"monitor_list_delete_by_socket: "
+				"Removing monitor on socket %i",
+				entry->sock);
 			free(entry->data);
 			before->next=entry->next;
 			free(entry);
 			entry=before->next;
 			continue;
 		}
-		entry->entry->next;
+		entry=entry->next;
 	}
 }
 
@@ -298,7 +302,6 @@ int monitor_list_filter_apply( struct monitor_item *entry,
 		entry->domain);
 
 
-	int applyflag = 0;
 	if (strcmp(entry->username,"*") != 0) {
 		if (strcmp(entry->username, uusername)!=0) return 0;
 	}
@@ -386,24 +389,24 @@ void monitor_send_result( struct monitor_item *entry)
 	asprintf(&idstr,"%i",entry->id);
 	switch(entry->function) {
 	case MONITOR_ADD: ;
-		asprintf(&tmpdatastr,"%i",
+		asprintf(&tmpdatastr,"%lu",
 			((struct monitor_local_data_adder *)
 				(entry->local_data))->sum);
 		asprintf(&sendstr,"%04i%s%04i%s",
-			strlen(idstr),
+			(int) strlen(idstr),
 			idstr,
-			strlen(tmpdatastr),
+			(int) strlen(tmpdatastr),
 			tmpdatastr);
 		sendlist_add(sendstr,entry->sock,strlen(sendstr));
 		break;
 	case MONITOR_TOTAL: ;
-		asprintf(&tmpdatastr,"%i",
+		asprintf(&tmpdatastr,"%lu",
 			((struct monitor_local_data_total *)
 				(entry->local_data))->sum);
                 asprintf(&sendstr,"%04i%s%04i%s",
-                        strlen(idstr),
+                        (int) strlen(idstr),
                         idstr,
-                        strlen(tmpdatastr),
+                        (int) strlen(tmpdatastr),
                         tmpdatastr);
                 sendlist_add(sendstr,entry->sock,strlen(sendstr));
                 break;
@@ -480,7 +483,7 @@ void monitor_list_set_init_result(char *res, int monitorid) {
 			" input: %s",res);
 		entry->state = MONITOR_PROCESS;
 		DEBUG(1) syslog(LOG_DEBUG, "monitor_list_set_init_result:"
-			" total sum set to %i",data->sum);
+			" total sum set to %lu",data->sum);
 		break;
 	}
 }
