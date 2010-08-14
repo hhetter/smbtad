@@ -98,6 +98,22 @@ int monitor_list_delete( int id ) {
 	return -1; // id was not found
 }
 
+int monitor_list_delete_by_socket( int sock ) {
+	struct monitor_item *entry = monlist_start;
+	struct monitor_item *before = monlist_start;
+	if (entry == NULL) return -1;
+	while (entry != NULL) {
+		if (entry->sock==sock) {
+			free(entry->data);
+			before->next=entry->next;
+			free(entry);
+			entry=before->next;
+			continue;
+		}
+		entry->entry->next;
+	}
+}
+
 void monitor_list_delete_all() {
 	struct monitor_item *entry = monlist_start;
 	struct monitor_item *n = monlist_start;

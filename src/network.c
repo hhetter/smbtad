@@ -94,6 +94,7 @@ void network_close_connection(int i)
 	struct connection_struct *connection = connection_list_identify(i);
 	close(connection->mysocket);
 	connection_list_remove(connection->mysocket);
+	monitor_list_delete_by_socket(connection->mysocket);
 	syslog(LOG_DEBUG,"network_close_connection: closed connection number "
 		"%i, socket %i",i,connection->mysocket);
 }
