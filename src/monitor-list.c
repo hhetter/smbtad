@@ -117,7 +117,8 @@ void monitor_list_delete_by_socket( int sock ) {
 			free(entry->data);
 			before->next=entry->next;
 			free(entry);
-			entry=before->next;
+			if (before == monlist_start) entry == NULL;
+			else entry=before->next;
 			continue;
 		}
 		entry=entry->next;
@@ -142,7 +143,7 @@ void monitor_list_delete_all() {
 
 
 /**
- * list all running monitor for debugging
+ * list all running monitors for debugging
  */
 void monitor_list_list() {
 	struct monitor_item *entry = monlist_start;
@@ -235,7 +236,7 @@ int monitor_list_parse( struct monitor_item *entry)
 		exit(1);
 	
 	}
-
+	entry->state = MONITOR_INITIALIZE_INIT;
 	return 0;	
 }
 
@@ -375,6 +376,7 @@ void monitor_initialize( struct monitor_item *entry)
 		DEBUG(1) syslog(LOG_DEBUG,"monitor_initizalize: "
 			"created >%s< as request string!",request);
 		query_add(request, strlen(request), entry->sock, entry->id);
+		entry->state = MONITOR_INITIALIZE_INIT_PREP;
 		free(request);
 		break;
 	default: ;
@@ -446,7 +448,8 @@ void monitor_list_update( int op_id,
 					op_id == vfs_id_pwrite ) {
 					((struct monitor_local_data_total *)
 						entry->local_data)->sum =
-						((struct monitor_local_data_total *)entry->local_data)->sum +
+						((struct monitor_local_data_total *)
+						entry->local_data)->sum +
 						atoi(data);
 					monitor_send_result(entry);
 				}
@@ -473,6 +476,9 @@ void monitor_list_set_init_result(char *res, int monitorid) {
 	entry = monitor_list_get_by_id(monitorid);
 	switch(entry->function) {
 	case MONITOR_ADD: ;
+		/**
+		 * MONITOR_ADD doesn't need to do any preprocessing
+		 */
 		entry->state = MONITOR_PROCESS;
 		break;
 	case MONITOR_TOTAL: ;
@@ -514,8 +520,9 @@ void monitor_list_process(int sock) {
 			/* do everything required to correctly run the */
 			/* monitor. */
 			monitor_list_parse( entry );
+			break;
+		case MONITOR_INITIALIZE_INIT:
 			monitor_initialize( entry );
-			// entry->state = MONITOR_PROCESS;
 			break;
 		case MONITOR_PROCESS: ;
 			/* process the monitor, create a result and send */
