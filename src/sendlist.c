@@ -37,11 +37,14 @@ void sendlist_init() {
 int sendlist_add( char *data,int sock, int length) {
         struct sendlist_item *entry;
 	pthread_mutex_lock(&sendlist_lock);
-	DEBUG(1) syslog(LOG_DEBUG,"sendlist_add: Adding Item %s to the sendlist.",data);
+	DEBUG(1) syslog(LOG_DEBUG,
+		"sendlist_add: Adding Item %s to the sendlist.",data);
         if (sendlist_start == NULL) {
-                sendlist_start = (struct sendlist_item *) malloc( sizeof( struct sendlist_item));
+                sendlist_start = (struct sendlist_item *)
+			malloc( sizeof( struct sendlist_item));
 		if (sendlist_start == NULL) {
-			syslog(LOG_DEBUG,"ERROR: could not allocate memory!");
+			syslog(LOG_DEBUG,
+				"ERROR: could not allocate memory!");
 			exit(1);
 		}
                 entry = sendlist_start;
@@ -91,11 +94,15 @@ int sendlist_send( fd_set *write_fd_set ) {
 	}
 	
 	switch(entry->state) {
+
 	case SENDLIST_STATUS_SEND_HEADER:
 		entry->header = network_create_header(NULL,
                                 "000000\0",
                                 entry->len);		
-		entry->send_len = send(entry->sock, entry->header + entry->send_len, strlen(entry->header)-entry->send_len,0);
+		entry->send_len = send(entry->sock,
+			entry->header + entry->send_len,
+			strlen(entry->header)-entry->send_len,0);
+
                 if (entry->send_len != strlen(entry->header)) {
                         /* Not transferred the full header yet */
                         entry->state = SENDLIST_STATUS_SEND_HEADER_ONGOING;
@@ -105,6 +112,7 @@ int sendlist_send( fd_set *write_fd_set ) {
                 entry->state = SENDLIST_STATUS_SEND_DATA;
 		pthread_mutex_unlock(&sendlist_lock);
 		return 0;
+
 	case SENDLIST_STATUS_SEND_HEADER_ONGOING:
 		entry->send_len = entry->send_len + send(entry->sock,
 			entry->header + entry->send_len,
@@ -116,19 +124,26 @@ int sendlist_send( fd_set *write_fd_set ) {
 		entry->state = SENDLIST_STATUS_SEND_DATA;
 		pthread_mutex_unlock(&sendlist_lock);
 		return 0;
+
 	case SENDLIST_STATUS_SEND_DATA:
 		entry->send_len = 0;
-		DEBUG(1) syslog(LOG_DEBUG,"sendlist_send: sending %i bytes... ",entry->len);
-		entry->send_len = send(entry->sock, entry->data, entry->len,0);
+		DEBUG(1) syslog(LOG_DEBUG,
+			"sendlist_send: sending %i bytes... ",entry->len);
+		entry->send_len =
+			send(entry->sock, entry->data, entry->len,0);
 		if (entry->send_len != entry->len) {
 			entry->state = SENDLIST_STATUS_SEND_DATA_ONGOING;
 			pthread_mutex_unlock(&sendlist_lock);
 			return 0;
 		}
 		break;
+
 	case SENDLIST_STATUS_SEND_DATA_ONGOING:
-		entry->send_len = entry->send_len + send(entry->sock, entry->data + entry->send_len,
+		entry->send_len = entry->send_len + 
+			send(entry->sock,
+			entry->data + entry->send_len,
 			entry->len-entry->send_len,0);
+
 		if (entry->send_len != entry->len) {
 			pthread_mutex_unlock(&sendlist_lock);
 			return 0;

@@ -33,9 +33,12 @@ int monitor_list_add( char *data,int sock) {
         struct monitor_item *entry;
 	DEBUG(1) syslog(LOG_DEBUG,"Adding monitor Item %s ",data);
         if (monlist_start == NULL) {
-                monlist_start = (struct monitor_item *) malloc( sizeof( struct monitor_item));
+                monlist_start = 
+			(struct monitor_item *)
+			malloc( sizeof( struct monitor_item));
 		if (monlist_start == NULL) {
-			syslog(LOG_DEBUG,"ERROR: could not allocate memory!");
+			syslog(LOG_DEBUG,
+				"ERROR: could not allocate memory!");
 			exit(1);
 		}
                 entry = monlist_start;
@@ -336,15 +339,32 @@ int monitor_list_filter_apply( struct monitor_item *entry,
 char *monitor_list_create_sql_cond( struct monitor_item *entry)
 {
 	char *ret = NULL;
+	char *username = NULL;
+	char *usersid = NULL;
+	char *share = NULL;
+	char *domain = NULL;
+
 	if (strcmp(entry->username,"*") != 0)
-		asprintf(&ret,"username = '%s' and ",entry->username);
+		asprintf(&username,"username = '%s' and ",entry->username);
+	else asprintf(&username," ");
 	if (strcmp(entry->usersid,"*") != 0)
-		asprintf(&ret,"%s usersid = '%s' and ",ret,entry->usersid);
+		asprintf(&usersid,"usersid = '%s' and ",entry->usersid);
+	else asprintf(&usersid," ");
 	if (strcmp(entry->share,"*") != 0)
-		asprintf(&ret,"%s share = '%s' and ",ret,entry->share);
+		asprintf(&share,"share = '%s' and ",entry->share);
+	else asprintf(&share," ");
 	if (strcmp(entry->domain,"*") != 0)
-		asprintf(&ret,"%s domain = '%s' and ",ret,entry->domain);
-	asprintf(&ret,"%s 1 = 1;",ret);
+		asprintf(&domain,"domain = '%s' and ",entry->domain);
+	else asprintf(&domain," ");
+	asprintf(&ret,"%s %s %s %s 1 = 1;",
+		username,
+		usersid,
+		share,
+		domain);
+	free(username);
+	free(usersid);
+	free(share);
+	free(domain);
 	return ret;
 }
 
@@ -359,11 +379,13 @@ void monitor_initialize( struct monitor_item *entry)
 {
 	switch(entry->function) {
 	case MONITOR_ADD: ;
-		((struct monitor_local_data_adder *) entry->local_data)->sum = 0;
+		((struct monitor_local_data_adder *)
+			entry->local_data)->sum = 0;
 		entry->state = MONITOR_PROCESS;
 		break;
 	case MONITOR_TOTAL: ;
-		((struct monitor_local_data_total *) entry->local_data)->sum = 0;
+		((struct monitor_local_data_total *)
+			entry->local_data)->sum = 0;
 		char *request;
 		if (strcmp(entry->param,"R")==0) {
 			asprintf(&request,
@@ -382,7 +404,9 @@ void monitor_initialize( struct monitor_item *entry)
 		free(cond);
 		DEBUG(1) syslog(LOG_DEBUG,"monitor_initizalize: "
 			"created >%s< as request string!",request);
-		query_add(request, strlen(request), entry->sock, entry->id);
+		query_add(request,
+			strlen(request),
+			entry->sock, entry->id);
 		entry->state = MONITOR_INITIALIZE_INIT_PREP;
 		free(request);
 		break;
@@ -528,8 +552,10 @@ void monitor_list_process(int sock) {
 			/* monitor. */
 			monitor_list_parse( entry );
 			break;
-		case MONITOR_INITIALIZE_INIT:
+		case MONITOR_INITIALIZE_INIT: ;
 			monitor_initialize( entry );
+			break;
+		case MONITOR_INITIALIZE_INIT_PREP: ;
 			break;
 		case MONITOR_PROCESS: ;
 			/* process the monitor, create a result and send */
