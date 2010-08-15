@@ -115,13 +115,20 @@ void monitor_list_delete_by_socket( int sock ) {
 				"Removing monitor on socket %i",
 				entry->sock);
 			free(entry->data);
-			before->next=entry->next;
+
+			if (before == monlist_start) {
+				entry=before->next;
+				monlist_start = before->next;
+				free(before);
+				before = monlist_start;
+				continue;
+			}
+			before->next = entry->next;
 			free(entry);
-			if (before == monlist_start) entry == NULL;
-			else entry=before->next;
-			continue;
 		}
+		before = entry;
 		entry=entry->next;
+		
 	}
 }
 
