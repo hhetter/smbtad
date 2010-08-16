@@ -241,6 +241,13 @@ int monitor_list_parse( struct monitor_item *entry)
 		entry->local_data = (struct monitor_local_data_total *)
 			malloc( sizeof(struct monitor_local_data_total));
 		break;
+	case MONITOR_THROUGHPUT: ;
+		entry->local_data = (struct monitor_local_data_throughput *)
+			malloc( sizeof(struct monitor_local_data_throughput));
+		((struct monitor_local_data_throughput *)
+			entry->local_data)->list = (struct throughput_list_base *)
+			malloc(sizeof(struct throughput_list_base));
+		break;
 	default: ;
 		syslog(LOG_DEBUG,"ERROR: Wrong monitor state while parsing!\n");
 		exit(1);
@@ -410,6 +417,16 @@ void monitor_initialize( struct monitor_item *entry)
 		entry->state = MONITOR_INITIALIZE_INIT_PREP;
 		free(request);
 		break;
+	case MONITOR_THROUGHPUT: ;
+		((struct monitor_local_data_throughput *)
+			entry->local_data)->throughput = 0;
+		((struct throughput_list_base *) ((struct monitor_local_data_throughput *)
+			entry->local_data)->list)->begin = NULL;
+		((struct throughput_list_base *) ((struct monitor_local_data_throughput *)
+			entry->local_data)->list)->end = NULL;
+		entry->state = MONITOR_PROCESS;
+		break;
+
 	default: ;
 	}
 }
@@ -443,8 +460,21 @@ void monitor_send_result( struct monitor_item *entry)
                         tmpdatastr);
                 sendlist_add(sendstr,entry->sock,strlen(sendstr));
                 break;
-
+/*
+	case MONITOR_THROUGHPUT: ;
+		asprintf(&tmpdatastr,"%lu",
+			((struct monitor_local_data_throughput *)
+				(entry->local_data))->throughput);
+                asprintf(&sendstr,"%04i%s%04i%s",
+                        (int) strlen(idstr),
+                        idstr,
+                        (int) strlen(tmpdatastr),
+                        tmpdatastr);
+                sendlist_add(sendstr,entry->sock,strlen(sendstr));
+                break;
+*/
 	}
+	free(idstr);
 }	
 			
 
@@ -452,7 +482,7 @@ void monitor_list_update( int op_id,
 	char *username,
 	char *usersid,
 	char *share,
-	char *domain, char *data)
+	char *domain, char *data, char *montimestamp)
 {
 	struct monitor_item *entry = monlist_start;
 
@@ -466,23 +496,58 @@ void monitor_list_update( int op_id,
 			switch(entry->function) {
 			case MONITOR_ADD: ;
 				/* simply add on any  VFS op, for testing */
-				((struct monitor_local_data_adder *)
-					entry->local_data)->sum = 
+				((struct monitor_local_data_adder *)					
+				entry->local_data)->sum = 
 					((struct monitor_local_data_adder *)
 						entry->local_data)->sum + 1;
 				monitor_send_result(entry);
 				break;
 			case MONITOR_TOTAL: ;
-				if (op_id == vfs_id_read ||
-					op_id == vfs_id_pread ||
-					op_id == vfs_id_write ||
-					op_id == vfs_id_pwrite ) {
+				if ( (op_id == vfs_id_read ||
+					op_id == vfs_id_pread) && (
+					strcmp(entry->param,"R")== 0 ||
+					strcmp(entry->param,"RW")==0 ))
+					{
 					((struct monitor_local_data_total *)
 						entry->local_data)->sum =
 						((struct monitor_local_data_total *)
 						entry->local_data)->sum +
 						atoi(data);
 					monitor_send_result(entry);
+					break;
+				}
+				if ( (op_id == vfs_id_write ||
+					op_id == vfs_id_pwrite) &&
+					(strcmp(entry->param,"W")==0 ||
+					 strcmp(entry->param,"RW")==0))
+					{
+                                        ((struct monitor_local_data_total *)
+                                                entry->local_data)->sum =
+                                                ((struct monitor_local_data_total *)
+                                                entry->local_data)->sum +
+                                                atoi(data);
+                                        monitor_send_result(entry);
+                                        break;
+				} 
+				break;
+			case MONITOR_THROUGHPUT: ;
+				if ((op_id == vfs_id_read ||
+					op_id == vfs_id_pread) &&
+					(strcmp(entry->param,"R")==0 ||
+					 strcmp(entry->param,"RW")==0)) {
+					throughput_list_add(
+					((struct monitor_local_data_throughput *)
+					entry->local_data)->list,atoi(data),montimestamp);
+					break;
+				}
+				if ((op_id == vfs_id_write ||
+					op_id == vfs_id_pwrite) &&
+					(strcmp(entry->param,"W")==0 ||
+					strcmp(entry->param,"RW")==0)) {
+                                        throughput_list_add(
+                                        ((struct monitor_local_data_throughput *)
+                                        entry->local_data)->list,atoi(data),montimestamp);
+                                        break;
 				}
 				break;
 			default: ;
@@ -522,6 +587,9 @@ void monitor_list_set_init_result(char *res, int monitorid) {
 		DEBUG(1) syslog(LOG_DEBUG, "monitor_list_set_init_result:"
 			" total sum set to %lu",data->sum);
 		break;
+	case MONITOR_THROUGHPUT: ;
+		entry->state = MONITOR_PROCESS;
+		break;
 	}
 }
 
@@ -529,7 +597,7 @@ void monitor_list_set_init_result(char *res, int monitorid) {
 
 void monitor_list_process(int sock) {
 	struct monitor_item *entry = monlist_start;
-
+	char *data = NULL;
 	if (monlist_start==NULL) return;
         entry = monitor_list_get_next_by_socket(sock,
                 entry);
@@ -540,7 +608,6 @@ void monitor_list_process(int sock) {
 		switch(entry->state) {
 		case MONITOR_IDENTIFY: ;
 			/* Identification: send the id to the client */
-			char *data;
 			data = talloc_asprintf(NULL,"0010%010i",entry->id);
 			sendlist_add(data,entry->sock,strlen(data));
 			talloc_free(data);
@@ -560,6 +627,32 @@ void monitor_list_process(int sock) {
 		case MONITOR_PROCESS: ;
 			/* process the monitor, create a result and send */
 			/* the result. This is done when receiving data */
+			/* except for timer based monitors, which are */
+			/* processed here */
+			if (entry->function == MONITOR_THROUGHPUT) {
+				long unsigned int thr = 
+				throughput_list_throughput_per_second(
+					((struct monitor_local_data_throughput *)
+					entry->local_data)->list);
+				if (thr != ((struct monitor_local_data_throughput *)
+					entry->local_data)->throughput) {
+					char *idstr = NULL;
+				        asprintf(&idstr,"%i",entry->id);
+					char *tmpdatastr = NULL;
+					asprintf(&tmpdatastr,"%lu",thr);
+					asprintf(&data,"%04i%s%04i%s",
+						(int) strlen(idstr),
+						idstr,
+						(int) strlen(tmpdatastr),
+						tmpdatastr);
+
+					sendlist_add(data,entry->sock,strlen(data));
+					free(data);
+					free(idstr);
+					free(tmpdatastr);
+					((struct monitor_local_data_throughput *) entry->local_data)->throughput = thr;
+				} 
+			}
 			break;
 		case MONITOR_STOP: ;
 			/* delete a monitor from the monitor_list */

@@ -69,13 +69,18 @@ struct monitor_local_data_total {
 	unsigned long int sum;
 };
 
+struct monitor_local_data_throughput {
+	unsigned long int throughput;
+	struct throughput_list_base *list;
+};
+
 int monitor_list_add( char *data,int sock);
 void monitor_list_process(int sock);
 void monitor_list_update( int op_id,
         char *username,
         char *usersid,
         char *share,
-        char *domain, char *data);
+        char *domain, char *data, char *montimestamp);
 
 void monitor_list_delete_by_socket( int sock );
 void monitor_list_set_init_result(char *res, int monitorid);

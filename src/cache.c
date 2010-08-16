@@ -73,6 +73,7 @@ int cache_add( char *data, int len ) {
 char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 {
 	char *data = talloc( NULL, char);
+	char *montimestamp = NULL;
 	char *retstr = NULL;
 
 	char *username = NULL;
@@ -173,6 +174,7 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 			vfs_id,username,usersid,share,domain,timestamp,
 			filename,len);
 		mondata = len;
+		montimestamp = timestamp;
 		break;
 	case vfs_id_write:
 	case vfs_id_pwrite: ;
@@ -190,6 +192,7 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
                         vfs_id,username,usersid,share,domain,timestamp,
                         filename,len);
 		mondata = len;
+		montimestamp = timestamp;
                 break;
 	case vfs_id_mkdir: ;
 		path = protocol_get_single_data_block_quoted( data,&go_through);
@@ -253,7 +256,7 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 	}
 
         /* update and process every single monitor according to the new data */
-        monitor_list_update( op_id, username, usersid, share,domain, mondata);
+        monitor_list_update( op_id, username, usersid, share,domain, mondata, montimestamp);
 
 
 	/* free everything no longer needed */

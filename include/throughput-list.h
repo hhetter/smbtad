@@ -19,16 +19,16 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-struct throughput_item {
+struct throughput_list_item {
 	unsigned long int value;
 	time_t timestamp;
-	struct throughput_item *next;
+	struct throughput_list_item *next;
 };
 
 
 struct throughput_list_base {
-	struct throughput_item *begin;
-	struct throughput_item *end;
+	struct throughput_list_item *begin;
+	struct throughput_list_item *end;
 };	
 
 int throughput_list_add( struct throughput_list_base *list,
@@ -41,4 +41,4 @@ unsigned long int throughput_list_throughput_per_second(
 
 void throughput_list_free( struct throughput_list_base *list);
 
-
+void throughput_list_init();

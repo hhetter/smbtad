@@ -94,7 +94,8 @@ ADD_EXECUTABLE(${CurrentExe}
 	src/crypto/aes.c
 	src/crypto/rijndael-alg-fst.c
 	src/monitor-list.c
-	src/sendlist.c)
+	src/sendlist.c
+	src/throughput-list.c)
 TARGET_LINK_LIBRARIES(${CurrentExe} ${Libraries})
 
 

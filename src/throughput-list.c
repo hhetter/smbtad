@@ -22,16 +22,34 @@
 #include "../include/includes.h"
 #include <stdio.h>
 
+pthread_mutex_t throughput_lock;
+
+
+/*
+ * init the cache system */
+void throughput_list_init( ) {
+        pthread_mutex_init(&throughput_lock, NULL);
+}
+
 
 int throughput_list_add( struct throughput_list_base *list,
 	unsigned long int value,
 	char *timestr)
 {
-	struct throughput_list_item *entry = malloc(
-		sizeof(struct throughput_list));
+	pthread_mutex_lock(&throughput_lock);
+	/* create a local unqouted copy of the timestr */
+        char utimestr[strlen(timestr)];
+        strncpy(utimestr,timestr+1,strlen(timestr)-4);
+
+	struct tm current;
+	struct throughput_list_item *entry = (struct throughput_list_item *) malloc(
+		sizeof(struct throughput_list_item));
 	entry->next = NULL;
 	entry->value = value;
-	strptime( &timestr, "%Y-%m-%d %T",&entry->timestamp);
+
+	if (strptime( utimestr, "%Y-%m-%d %T",&current) == NULL) syslog(LOG_DEBUG,"ERROR STRPTIME! %s",utimestr);
+	entry->timestamp = mktime(&current);
+	DEBUG(1) syslog(LOG_DEBUG,"throughput_list_add: adding value %lui",value);
 	if (list->begin == NULL) {
 		list->begin = entry;
 		list->end = entry;
@@ -39,35 +57,58 @@ int throughput_list_add( struct throughput_list_base *list,
 		list->end->next = entry;
 		list->end = entry;
 	}
+	pthread_mutex_unlock(&throughput_lock);
 	return 0;
+
 }
 
 unsigned long int throughput_list_throughput_per_second(
         struct throughput_list_base *list) {
 
+	pthread_mutex_lock(&throughput_lock);
 	unsigned long int add = 0;
 	time_t now = time(NULL);
 	struct throughput_list_item *entry =
 		list->begin;
 	struct throughput_list_item *backup =
 		entry;
-
+	double a=0;
 	while ( entry != NULL) {
-		if (difftime(now,entry->timestamp) == 0)
+		a=difftime(now,entry->timestamp);
+		if ( a == 0) {
 			add = add + entry->value;
-		else { /* remove this entry */
-			if (backup == list->begin) {
+			backup = entry;
+			DEBUG(1) syslog(LOG_DEBUG,"adding value %i",entry->value);
+			entry = entry->next;
+		} else { /* remove this entry */
+			if (entry == list->begin) {
+				DEBUG(1) syslog(LOG_DEBUG,
+					"throughput_list_throughput_per_second: removing from beginning!");
 				list->begin = backup->next;
+				list->end = backup->next;
 				free(backup);
+				entry = list->begin;
+				backup = entry;
+			} else if (entry == list->end) {
+				backup->next = NULL;
+				free(entry);
+				list->end = backup;
+				entry = NULL;
 			} else {
+				DEBUG(1) syslog(LOG_DEBUG,
+					"throughput_list_throughput_per_second: removing in the middle!");
 				backup->next = entry->next;
 				free(entry);
-				entry = backup;
+				entry = backup->next;
+				
 			}
 		}
-		backup = entry;
-		entry = entry->next;
+
 	}
+	if (add != 0) 
+		DEBUG(1) syslog(LOG_DEBUG,"throughput_list_throughput_per_second:  returning a throughput of %i bytes!",add);
+	pthread_mutex_unlock(&throughput_lock);
+
 	return add;
 }
 
