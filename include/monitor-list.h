@@ -73,7 +73,9 @@ struct monitor_local_data_throughput {
 	unsigned long int throughput;
 	struct throughput_list_base *list;
 };
-
+void monitor_list_init();
+void monitor_timer(void *);
+int monitor_get_timer_flag();
 int monitor_list_add( char *data,int sock);
 void monitor_list_process(int sock);
 void monitor_list_update( int op_id,

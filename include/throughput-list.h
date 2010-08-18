@@ -22,6 +22,7 @@
 struct throughput_list_item {
 	unsigned long int value;
 	time_t timestamp;
+	int milliseconds;
 	struct throughput_list_item *next;
 };
 

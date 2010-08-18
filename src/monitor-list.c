@@ -24,6 +24,38 @@ struct monitor_item *monlist_start = NULL;
 struct monitor_item *monlist_end = NULL;
 
 int monitor_id = 1;
+int monitor_timer_flag = 0;
+pthread_mutex_t monitor_timer_lock;
+
+void monitor_list_init()
+{
+	pthread_mutex_init(&monitor_timer_lock, NULL);
+}
+
+
+void monitor_timer( void *var)
+{
+        pthread_detach(pthread_self());
+	unsigned long int micro = 1000*1000; /* microseconds */
+	unsigned long int div = micro / 20;
+	while ( 1 == 1) {
+		usleep(div);
+		pthread_mutex_lock(&monitor_timer_lock);
+		monitor_timer_flag = 1;
+		pthread_mutex_unlock(&monitor_timer_lock);
+	}
+}
+
+
+int monitor_get_timer_flag() {
+	int a;
+	pthread_mutex_lock(&monitor_timer_lock);
+	a = monitor_timer_flag;
+	monitor_timer_flag = 0;
+	pthread_mutex_unlock(&monitor_timer_lock);
+	return a;
+}
+
 
 /*
  * adds an entry to the monitor list
@@ -629,7 +661,8 @@ void monitor_list_process(int sock) {
 			/* the result. This is done when receiving data */
 			/* except for timer based monitors, which are */
 			/* processed here */
-			if (entry->function == MONITOR_THROUGHPUT) {
+			if (entry->function == MONITOR_THROUGHPUT &&
+				monitor_get_timer_flag() == 1) {
 				long unsigned int thr = 
 				throughput_list_throughput_per_second(
 					((struct monitor_local_data_throughput *)

@@ -21,7 +21,7 @@
 
 #include "../include/includes.h"
 #include <stdio.h>
-
+#include <sys/time.h>
 pthread_mutex_t throughput_lock;
 
 
@@ -49,6 +49,8 @@ int throughput_list_add( struct throughput_list_base *list,
 
 	if (strptime( utimestr, "%Y-%m-%d %T",&current) == NULL) syslog(LOG_DEBUG,"ERROR STRPTIME! %s",utimestr);
 	entry->timestamp = mktime(&current);
+	entry->milliseconds = atoi(timestr + strlen(timestr) - 4);
+	DEBUG(1) syslog(LOG_DEBUG,"throughput_list_add: saved milliseconds: %i",entry->milliseconds);
 	DEBUG(1) syslog(LOG_DEBUG,"throughput_list_add: adding value %lui",value);
 	if (list->begin == NULL) {
 		list->begin = entry;
@@ -66,6 +68,10 @@ unsigned long int throughput_list_throughput_per_second(
         struct throughput_list_base *list) {
 
 	pthread_mutex_lock(&throughput_lock);
+	struct timeval tv;
+	gettimeofday(&tv,NULL);
+	int milliseconds = tv.tv_usec / 1000;
+	
 	unsigned long int add = 0;
 	time_t now = time(NULL);
 	struct throughput_list_item *entry =
@@ -75,7 +81,7 @@ unsigned long int throughput_list_throughput_per_second(
 	double a=0;
 	while ( entry != NULL) {
 		a=difftime(now,entry->timestamp);
-		if ( a == 0) {
+		if ( (a == 0) || ( a <= 1 && milliseconds <= entry->milliseconds)) {
 			add = add + entry->value;
 			backup = entry;
 			DEBUG(1) syslog(LOG_DEBUG,"adding value %i",entry->value);
