@@ -342,6 +342,7 @@ void network_handle_connections( config_t *c )
 			exit(1);
 		}
 		for( i = 0; i < connection_list_max() + 1; ++i) {
+			monitor_list_process(i);
 			if (FD_ISSET(i,&read_fd_set)) {
 				int sr;
 				if ( i == c->vfs_socket)
@@ -354,7 +355,9 @@ void network_handle_connections( config_t *c )
 						c,
 						&remote,
 						SOCK_TYPE_DB_QUERY);
-				else network_handle_data(i,c);
+				else {
+					network_handle_data(i,c);
+				}
 			}
 		}
 		/*
@@ -367,8 +370,9 @@ void network_handle_connections( config_t *c )
 		 * process monitors
 		 *
 		 */
+/*
 		for ( i = 0; i < connection_list_max() + 1; ++i)
 			if (FD_ISSET(i,&write_fd_set)) monitor_list_process(i);
-				
+*/				
 	}
 }

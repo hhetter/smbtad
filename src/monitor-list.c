@@ -37,7 +37,7 @@ void monitor_timer( void *var)
 {
         pthread_detach(pthread_self());
 	unsigned long int micro = 1000*1000; /* microseconds */
-	unsigned long int div = micro / 20;
+	unsigned long int div = micro / 50;
 	while ( 1 == 1) {
 		usleep(div);
 		pthread_mutex_lock(&monitor_timer_lock);
@@ -544,7 +544,7 @@ void monitor_list_update( int op_id,
 						entry->local_data)->sum =
 						((struct monitor_local_data_total *)
 						entry->local_data)->sum +
-						atoi(data);
+						atol(data);
 					monitor_send_result(entry);
 					break;
 				}
@@ -557,7 +557,7 @@ void monitor_list_update( int op_id,
                                                 entry->local_data)->sum =
                                                 ((struct monitor_local_data_total *)
                                                 entry->local_data)->sum +
-                                                atoi(data);
+                                                atol(data);
                                         monitor_send_result(entry);
                                         break;
 				} 
@@ -569,7 +569,7 @@ void monitor_list_update( int op_id,
 					 strcmp(entry->param,"RW")==0)) {
 					throughput_list_add(
 					((struct monitor_local_data_throughput *)
-					entry->local_data)->list,atoi(data),montimestamp);
+					entry->local_data)->list,atol(data),montimestamp);
 					break;
 				}
 				if ((op_id == vfs_id_write ||
@@ -578,7 +578,7 @@ void monitor_list_update( int op_id,
 					strcmp(entry->param,"RW")==0)) {
                                         throughput_list_add(
                                         ((struct monitor_local_data_throughput *)
-                                        entry->local_data)->list,atoi(data),montimestamp);
+                                        entry->local_data)->list,atol(data),montimestamp);
                                         break;
 				}
 				break;
