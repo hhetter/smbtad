@@ -256,8 +256,9 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 	}
 
         /* update and process every single monitor according to the new data */
-        monitor_list_update( op_id, username, usersid, share,domain, mondata, montimestamp);
-
+	if (filename == NULL) filename = talloc_asprintf(ctx,"\"*\"");
+        monitor_list_update( op_id, username, usersid, share,filename,domain, mondata, montimestamp);
+		
 
 	/* free everything no longer needed */
 	TALLOC_FREE(data);

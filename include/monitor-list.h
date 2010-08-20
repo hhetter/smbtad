@@ -82,6 +82,7 @@ void monitor_list_update( int op_id,
         char *username,
         char *usersid,
         char *share,
+	char *file,
         char *domain, char *data, char *montimestamp);
 
 void monitor_list_delete_by_socket( int sock );

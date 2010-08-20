@@ -37,7 +37,7 @@ void monitor_timer( void *var)
 {
         pthread_detach(pthread_self());
 	unsigned long int micro = 1000*1000; /* microseconds */
-	unsigned long int div = micro / 50;
+	unsigned long int div = micro / 10;
 	while ( 1 == 1) {
 		usleep(div);
 		pthread_mutex_lock(&monitor_timer_lock);
@@ -196,6 +196,7 @@ void monitor_list_list() {
 	}
 	while (entry!=NULL) {
 		syslog(LOG_DEBUG,"%s",entry->data);
+		
 		entry=entry->next;
 	}
 }
@@ -247,17 +248,20 @@ int monitor_list_parse( struct monitor_item *entry)
 		monitor_list_parse_argument( entry->data, &c);
 	entry->share =
 		monitor_list_parse_argument( entry->data, &c);
+	entry->file =
+		monitor_list_parse_argument( entry->data, &c);
 	entry->domain =
 		monitor_list_parse_argument( entry->data, &c);
 	DEBUG(1) syslog(LOG_DEBUG,"monitor_list_parse: parsed "
 		"id %i, function = %i, param = %s, username = %s,"
-		"usersid = %s, share = %s, domain = %s",
+		"usersid = %s, share = %s, file = %s, domain = %s",
 		entry->id,
 		entry->function,
 		entry->param,
 		entry->username,
 		entry->usersid,
 		entry->share,
+		entry->file,
 		entry->domain);
 
 	/*
@@ -326,6 +330,7 @@ int monitor_list_filter_apply( struct monitor_item *entry,
 	char *username,
 	char *usersid,
 	char *share,
+	char *file,
 	char *domain)
 {
 
@@ -336,6 +341,8 @@ int monitor_list_filter_apply( struct monitor_item *entry,
 	strncpy(uusersid,usersid+1,strlen(usersid)-2);
 	char ushare[strlen(share)];
 	strncpy(ushare,share+1,strlen(share)-2);
+	char ufile[strlen(file)];
+	strncpy(ufile,file+1,strlen(file)-2);
 	char udomain[strlen(domain)];
 	strncpy(udomain,domain+1,strlen(domain)-2);
 
@@ -343,12 +350,14 @@ int monitor_list_filter_apply( struct monitor_item *entry,
                 "entry->username : |%s|vs|%s|, "
                 "entry->usersid  : |%s|vs|%s|, "
                 "entry->share    : %s, "
+		"entry->file	 : %s, "
                 "entry->domain   : %s. ",
                 entry->username,
 		uusername,
 		entry->usersid, 
 		uusersid,
 		entry->share,
+		entry->file,
 		entry->domain);
 
 
@@ -360,6 +369,9 @@ int monitor_list_filter_apply( struct monitor_item *entry,
 	}
 	if (strcmp(entry->share,"*") != 0) {
 		if (strcmp(entry->share, ushare)!=0) return 0;
+	}
+	if (strcmp(entry->file,"*") != 0) {
+		if (strcmp(entry->file, ufile)!=0) return 0;
 	}
 	if (strcmp(entry->domain,"*") != 0) {
 		if (strcmp(entry->domain, udomain)!=0) return 0;
@@ -381,6 +393,7 @@ char *monitor_list_create_sql_cond( struct monitor_item *entry)
 	char *username = NULL;
 	char *usersid = NULL;
 	char *share = NULL;
+	char *file = NULL;
 	char *domain = NULL;
 
 	if (strcmp(entry->username,"*") != 0)
@@ -392,18 +405,23 @@ char *monitor_list_create_sql_cond( struct monitor_item *entry)
 	if (strcmp(entry->share,"*") != 0)
 		asprintf(&share,"share = '%s' and ",entry->share);
 	else asprintf(&share," ");
+	if (strcmp(entry->file,"*") != 0)
+		asprintf(&file,"file = '%s' and ",entry->file);
+	else asprintf(&file," ");
 	if (strcmp(entry->domain,"*") != 0)
 		asprintf(&domain,"domain = '%s' and ",entry->domain);
 	else asprintf(&domain," ");
-	asprintf(&ret,"%s %s %s %s 1 = 1;",
+	asprintf(&ret,"%s %s %s %s %s 1 = 1;",
 		username,
 		usersid,
 		share,
+		file,
 		domain);
 	free(username);
 	free(usersid);
 	free(share);
 	free(domain);
+	free(file);
 	return ret;
 }
 
@@ -514,6 +532,7 @@ void monitor_list_update( int op_id,
 	char *username,
 	char *usersid,
 	char *share,
+	char *file,
 	char *domain, char *data, char *montimestamp)
 {
 	struct monitor_item *entry = monlist_start;
@@ -523,6 +542,7 @@ void monitor_list_update( int op_id,
 			username,
 			usersid,
 			share,
+			file,
 			domain) == 1) {
 			/* processing monitor */
 			switch(entry->function) {
@@ -631,9 +651,6 @@ void monitor_list_process(int sock) {
 	struct monitor_item *entry = monlist_start;
 	char *data = NULL;
 	if (monlist_start==NULL) return;
-        entry = monitor_list_get_next_by_socket(sock,
-                entry);
-
 
 	while (entry != NULL) {
 
@@ -701,8 +718,6 @@ void monitor_list_process(int sock) {
 	*/
 		}
 	entry = entry->next;
-        entry = monitor_list_get_next_by_socket(sock,
-                entry);
 
 	}
 
