@@ -337,15 +337,19 @@ int monitor_list_filter_apply( struct monitor_item *entry,
 	/* create local unqouted copies of the data */
 	char uusername[strlen(username)];
 	strncpy(uusername,username+1,strlen(username)-2);
+	uusername[strlen(username)-2]='\0';
 	char uusersid[strlen(usersid)];
 	strncpy(uusersid,usersid+1,strlen(usersid)-2);
+	uusersid[strlen(usersid)-2]='\0';
 	char ushare[strlen(share)];
 	strncpy(ushare,share+1,strlen(share)-2);
+	ushare[strlen(share)-2]='\0';
 	char ufile[strlen(file)];
 	strncpy(ufile,file+1,strlen(file)-2);
+	ufile[strlen(file)-2]='\0';
 	char udomain[strlen(domain)];
 	strncpy(udomain,domain+1,strlen(domain)-2);
-
+	udomain[strlen(domain)-2]='\0';
         DEBUG(1) syslog(LOG_DEBUG, "monitor_list_apply: entry data:"
                 "entry->username : |%s|vs|%s|, "
                 "entry->usersid  : |%s|vs|%s|, "

@@ -257,6 +257,21 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 
         /* update and process every single monitor according to the new data */
 	if (filename == NULL) filename = talloc_asprintf(ctx,"\"*\"");
+	DEBUG(1) syslog(LOG_DEBUG,
+		"Calling monitor_list update with:"
+		"username: %s, "
+		"usersid : %s, "
+		"share   : %s, "
+		"filename: %s, "
+		"domain  : %s, "
+		"montimestamp: %s",
+		username,
+		usersid,
+		share,
+		filename,
+		domain,
+		montimestamp);
+
         monitor_list_update( op_id, username, usersid, share,filename,domain, mondata, montimestamp);
 		
 
