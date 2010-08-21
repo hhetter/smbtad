@@ -68,6 +68,10 @@ struct monitor_local_data_adder {
 struct monitor_local_data_total {
 	unsigned long int sum;
 };
+struct monitor_local_data_log {
+	char *log;
+};
+
 
 struct monitor_local_data_throughput {
 	unsigned long int throughput;

@@ -174,7 +174,6 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 			vfs_id,username,usersid,share,domain,timestamp,
 			filename,len);
 		mondata = len;
-		montimestamp = timestamp;
 		break;
 	case vfs_id_write:
 	case vfs_id_pwrite: ;
@@ -192,7 +191,6 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
                         vfs_id,username,usersid,share,domain,timestamp,
                         filename,len);
 		mondata = len;
-		montimestamp = timestamp;
                 break;
 	case vfs_id_mkdir: ;
 		path = protocol_get_single_data_block_quoted( data,&go_through);
@@ -272,7 +270,7 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 		domain,
 		montimestamp);
 
-        monitor_list_update( op_id, username, usersid, share,filename,domain, mondata, montimestamp);
+        monitor_list_update( op_id, username, usersid, share,filename,domain, mondata, timestamp);
 		
 
 	/* free everything no longer needed */

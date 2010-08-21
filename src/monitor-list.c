@@ -284,6 +284,10 @@ int monitor_list_parse( struct monitor_item *entry)
 			entry->local_data)->list = (struct throughput_list_base *)
 			malloc(sizeof(struct throughput_list_base));
 		break;
+	case MONITOR_LOG: ;
+		entry->local_data = (struct monitor_local_data_log *)
+			malloc( sizeof(struct monitor_local_data_log));
+		break;
 	default: ;
 		syslog(LOG_DEBUG,"ERROR: Wrong monitor state while parsing!\n");
 		exit(1);
@@ -480,7 +484,11 @@ void monitor_initialize( struct monitor_item *entry)
 			entry->local_data)->list)->end = NULL;
 		entry->state = MONITOR_PROCESS;
 		break;
-
+	case MONITOR_LOG:
+		((struct monitor_local_data_log *)
+			entry->local_data)->log = NULL;
+		entry->state = MONITOR_PROCESS;
+		break;
 	default: ;
 	}
 }
@@ -514,6 +522,17 @@ void monitor_send_result( struct monitor_item *entry)
                         tmpdatastr);
                 sendlist_add(sendstr,entry->sock,strlen(sendstr));
                 break;
+	case MONITOR_LOG: ;
+		asprintf(&tmpdatastr,"%s",
+			((struct monitor_local_data_log *)
+				(entry->local_data))->log);
+		asprintf(&sendstr,"%04i%s%04i%s",
+			(int) strlen(idstr),
+			idstr,
+			(int) strlen(tmpdatastr),
+			tmpdatastr);
+		sendlist_add(sendstr,entry->sock,strlen(sendstr));
+		break;
 /*
 	case MONITOR_THROUGHPUT: ;
 		asprintf(&tmpdatastr,"%lu",
@@ -540,7 +559,7 @@ void monitor_list_update( int op_id,
 	char *domain, char *data, char *montimestamp)
 {
 	struct monitor_item *entry = monlist_start;
-
+	char *op_id_str = NULL;
 	while (entry != NULL) {
 		if (monitor_list_filter_apply(entry,
 			username,
@@ -606,6 +625,38 @@ void monitor_list_update( int op_id,
                                         break;
 				}
 				break;
+			case MONITOR_LOG:
+				/**
+				 * log protocol
+				 * vfs_op_id,username,share,filename,domain,timestamp
+				 *
+				*/
+				asprintf( &op_id_str, "%i",op_id);
+				asprintf( &((struct monitor_local_data_log *)
+					entry->local_data)->log, "%04i%s" // op id
+								 "%04i%s" // username
+								 "%04i%s" // share
+								 "%04i%s" // filename
+								 "%04i%s" // domain
+								 "%04i%s", // timestamp
+								 strlen(op_id_str),
+								 op_id_str,
+								 strlen(username),
+								 username,
+								 strlen(share),
+								 share,
+								 strlen(file),
+								 file,
+								 strlen(domain),
+								 domain,
+								 strlen(montimestamp),
+								 montimestamp);
+				DEBUG(1) syslog(LOG_DEBUG, "monitor_list_update: MONITOR_LOG:"
+					"created infostring >%s<",
+					((struct monitor_local_data_log *) entry->local_data)->log);
+				free(op_id_str);
+				monitor_send_result(entry);
+				break;
 			default: ;
 
 			}
@@ -644,6 +695,9 @@ void monitor_list_set_init_result(char *res, int monitorid) {
 			" total sum set to %lu",data->sum);
 		break;
 	case MONITOR_THROUGHPUT: ;
+		entry->state = MONITOR_PROCESS;
+		break;
+	case MONITOR_LOG: ;
 		entry->state = MONITOR_PROCESS;
 		break;
 	}
