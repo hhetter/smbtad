@@ -120,7 +120,6 @@ int network_handle_data( int i, config_t *c )
 	    connection->connection_function == SOCK_TYPE_DB_QUERY) {
 		switch(connection->data_state) {
 		case CONN_READ_HEADER: ;
-			connection->CTX = talloc(0,char);
 			connection->header =
 				talloc_array(connection->CTX, char, 29);
 			connection->header_position = 0;
@@ -176,7 +175,7 @@ int network_handle_data( int i, config_t *c )
 			DEBUG(1) syslog(LOG_DEBUG,
 				"network_handle_data: recv data block");
 			connection->body = 
-				talloc_array(connection->CTX,
+				talloc_array(connection->header,
 						char,
 						connection->blocklen +2); 
 			connection->body_position = 0;
@@ -195,7 +194,7 @@ int network_handle_data( int i, config_t *c )
 			/* we have the full data block, encrypt if needed */
 			if ( connection->encrypted == 1) {
 				connection->body =
-					protocol_decrypt(connection->CTX,
+					protocol_decrypt(connection->header,
 						connection->body,
 						connection->blocklen,
 						c->key);
@@ -219,7 +218,7 @@ int network_handle_data( int i, config_t *c )
 				query_add(connection->body, connection->blocklen,i,0);
 			}
 
-			TALLOC_FREE(connection->CTX);
+			TALLOC_FREE(connection->header);
 			break;
 		case CONN_READ_DATA_ONGOING: ;
 			DEBUG(1) syslog(LOG_DEBUG,"network_handle_data: "
@@ -238,7 +237,7 @@ int network_handle_data( int i, config_t *c )
 			/* we finally have the full data block, encrypt if needed */
 			if ( connection->encrypted == 1) {
 				connection->body =
-					protocol_decrypt(connection->CTX,
+					protocol_decrypt(connection->header,
 						connection->body,
 						connection->blocklen,
 						c->key);
@@ -258,7 +257,7 @@ int network_handle_data( int i, config_t *c )
 					connection->blocklen);
 				query_add(connection->body, connection->blocklen,i,0);
 			}
-			TALLOC_FREE(connection->CTX);
+			TALLOC_FREE(connection->header);
 			break;
 			
 		}

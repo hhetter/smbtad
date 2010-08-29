@@ -29,7 +29,6 @@
 struct cache_entry *cache_start = NULL;
 struct cache_entry *cache_end = NULL;
 
-
 pthread_mutex_t cache_mutex;
 
 
@@ -293,11 +292,8 @@ void cache_manager(struct configuration_data *config )
 	/* backup the start and make it possible to
 	 * allocate a new cache beginning
 	 */
-
+	TALLOC_CTX *database_str = talloc_pool(NULL, 2000);
 	while (1 == 1) {
-                /* wait a second; we don't need to check the       */
-                /* feed-list all the time.                              */
-		usleep(5000);
         	pthread_mutex_lock(&cache_mutex);
         	struct cache_entry *go_through = cache_start;
 		struct cache_entry *backup = cache_start;
@@ -307,7 +303,7 @@ void cache_manager(struct configuration_data *config )
 		/* store all existing entries into the database */
 		sqlite3_exec(database, "BEGIN TRANSACTION;", 0, 0, 0);
 		while (go_through != NULL) {
-			char *a = cache_make_database_string(NULL, go_through );
+			char *a = cache_make_database_string(database_str, go_through );
 			if (a!= NULL) sqlite3_exec(database, a,0,0,0);
 			TALLOC_FREE(a);
 			go_through = go_through->next;
@@ -316,12 +312,17 @@ void cache_manager(struct configuration_data *config )
 		sqlite3_exec(database, "COMMIT;", 0, 0, 0); 
 
 		/* run a query and add the result to the sendlist */
-		int res_len;
-		int res_socket;
-		int monitorid = 0;
-		char *res = query_list_run_query(database,
-			&res_len, &res_socket, &monitorid);
-		if (res != NULL && monitorid ==0) sendlist_add(res,res_socket,res_len);
-		if (res != NULL && monitorid !=0) monitor_list_set_init_result(res, monitorid);
+		int count = 0;
+		while (count <1000) {
+			usleep(5000);
+			count++;
+			int res_len;
+			int res_socket;
+			int monitorid = 0;
+			char *res = query_list_run_query(database,
+				&res_len, &res_socket, &monitorid);
+			if (res != NULL && monitorid ==0) sendlist_add(res,res_socket,res_len);
+			if (res != NULL && monitorid !=0) monitor_list_set_init_result(res, monitorid);
+		}
 	}
 }
