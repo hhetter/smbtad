@@ -120,6 +120,7 @@ int network_handle_data( int i, config_t *c )
 	    connection->connection_function == SOCK_TYPE_DB_QUERY) {
 		switch(connection->data_state) {
 		case CONN_READ_HEADER: ;
+			connection->CTX = talloc(0,char);
 			connection->header =
 				talloc_array(connection->CTX, char, 29);
 			connection->header_position = 0;

@@ -72,7 +72,7 @@ int cache_add( char *data, int len ) {
 
 char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 {
-	char *data = talloc( NULL, char);
+	TALLOC_CTX *data = talloc( NULL, char);
 	char *montimestamp = NULL;
 	char *retstr = NULL;
 
@@ -254,7 +254,7 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 	}
 
         /* update and process every single monitor according to the new data */
-	if (filename == NULL) filename = talloc_asprintf(ctx,"\"*\"");
+	if (filename == NULL) filename = talloc_asprintf(data,"\"*\"");
 	DEBUG(1) syslog(LOG_DEBUG,
 		"Calling monitor_list update with:"
 		"username: %s, "
