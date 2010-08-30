@@ -28,7 +28,7 @@
 
 struct cache_entry *cache_start = NULL;
 struct cache_entry *cache_end = NULL;
-
+TALLOC_CTX *cache_pool = NULL;
 pthread_mutex_t cache_mutex;
 
 
@@ -36,6 +36,7 @@ pthread_mutex_t cache_mutex;
  * init the cache system */
 void cache_init( ) {
         pthread_mutex_init(&cache_mutex, NULL);
+	cache_pool = talloc_pool(NULL, 20 * 1024 * 1024);
 }
 
 /*
@@ -48,7 +49,7 @@ int cache_add( char *data, int len ) {
         struct cache_entry *entry;	
 	pthread_mutex_lock(&cache_mutex);
 	if (cache_start == NULL) {
-		cache_start = talloc(NULL, struct cache_entry);
+		cache_start = talloc(cache_pool, struct cache_entry);
 		entry = cache_start;
 		entry->data = talloc_steal( cache_start, data);
 		entry->length = len;
@@ -313,7 +314,7 @@ void cache_manager(struct configuration_data *config )
 
 		/* run a query and add the result to the sendlist */
 		int count = 0;
-		while (count <1000) {
+		while (count <1 ) {
 			usleep(5000);
 			count++;
 			int res_len;

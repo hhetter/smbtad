@@ -460,8 +460,7 @@ void monitor_initialize( struct monitor_item *entry)
 				"select sum(length) from write where ");
 		} else if (strcmp(entry->param,"RW")==0) {
 			asprintf(&request,
-				"select sum(a.length) + sum(b.length) "
-				"from write a, read b where ");
+				"select sum(length) from write UNION select sum(length) from read where ");
 		} else { // FIXME! We have to remove this monitor now !
 			}
 		char *cond = monitor_list_create_sql_cond(entry);
@@ -687,7 +686,16 @@ void monitor_list_set_init_result(char *res, int monitorid) {
 	case MONITOR_TOTAL: ;
 		struct monitor_local_data_total
 			*data = entry->local_data;
-		data->sum = atol( res+4 );
+		char len[10];
+		char sum1[100];
+		char len2[10];
+		char sum2[100];
+		strncpy(len,res,4);
+		strncpy(sum1,(res+4),atoi(len));
+		strncpy(len2,(res+4+atoi(len)),4);
+		strncpy(sum2,(res+4+atoi(len)+4),atoi(len2));
+		
+		data->sum = atoll( sum1 )+ atoll(sum2);
 		DEBUG(1) syslog(LOG_DEBUG, "monitor_list_set_init_result:"
 			" input: %s",res);
 		entry->state = MONITOR_PROCESS;
