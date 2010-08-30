@@ -71,7 +71,7 @@ int cache_add( char *data, int len ) {
 
 char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 {
-	TALLOC_CTX *data = talloc( NULL, char);
+	TALLOC_CTX *data = talloc_pool( NULL, 2048);
 	char *montimestamp = NULL;
 	char *retstr = NULL;
 
