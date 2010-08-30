@@ -28,7 +28,7 @@
 
 struct cache_entry *cache_start = NULL;
 struct cache_entry *cache_end = NULL;
-
+TALLOC_CTX *cache_memory = NULL;
 pthread_mutex_t cache_mutex;
 
 
@@ -48,7 +48,8 @@ int cache_add( char *data, int len ) {
         struct cache_entry *entry;	
 	pthread_mutex_lock(&cache_mutex);
 	if (cache_start == NULL) {
-		cache_start = talloc(NULL, struct cache_entry);
+		cache_memory = talloc_pool(NULL, 8192 * 1024);
+		cache_start = talloc(cache_memory, struct cache_entry);
 		entry = cache_start;
 		entry->data = talloc_steal( cache_start, data);
 		entry->length = len;
@@ -58,7 +59,7 @@ int cache_add( char *data, int len ) {
 		pthread_mutex_unlock(&cache_mutex);
 		return 0;
 	}
-	entry = talloc(cache_start, struct cache_entry);
+	entry = talloc(cache_memory, struct cache_entry);
 	cache_end->next = entry;
 	entry->next = NULL;
 	entry->data = talloc_steal( cache_start, data);
@@ -297,6 +298,7 @@ void cache_manager(struct configuration_data *config )
         	pthread_mutex_lock(&cache_mutex);
         	struct cache_entry *go_through = cache_start;
 		struct cache_entry *backup = cache_start;
+		TALLOC_CTX *cache_memory_backup = cache_memory;
        		cache_start = NULL;
         	cache_end = NULL;
         	pthread_mutex_unlock(&cache_mutex);
@@ -310,7 +312,7 @@ void cache_manager(struct configuration_data *config )
 		}
 		if (backup != NULL) TALLOC_FREE(backup);
 		sqlite3_exec(database, "COMMIT;", 0, 0, 0); 
-
+		TALLOC_FREE(cache_memory_backup);
 		/* run a query and add the result to the sendlist */
 		int count = 0;
 		while (count <1000) {
