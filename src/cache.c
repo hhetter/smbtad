@@ -30,13 +30,13 @@ struct cache_entry *cache_start = NULL;
 struct cache_entry *cache_end = NULL;
 TALLOC_CTX *cache_pool = NULL;
 pthread_mutex_t cache_mutex;
-
+void cache_update_monitor( struct cache_entry *entry);
 
 /*
  * init the cache system */
 void cache_init( ) {
         pthread_mutex_init(&cache_mutex, NULL);
-	cache_pool = talloc_pool(NULL, 20 * 1024 * 1024);
+	cache_pool = talloc_pool(NULL, 200 * 1024 * 1024);
 }
 
 /*
@@ -56,6 +56,7 @@ int cache_add( char *data, int len ) {
 		cache_start = entry;
 		entry->next = NULL;
 		cache_end = entry;
+		cache_update_monitor( entry); 
 		pthread_mutex_unlock(&cache_mutex);
 		return 0;
 	}
@@ -65,8 +66,101 @@ int cache_add( char *data, int len ) {
 	entry->data = talloc_steal( cache_start, data);
 	entry->length = len;
 	cache_end = entry;
+	cache_update_monitor(entry);
 	pthread_mutex_unlock(&cache_mutex);
 	return 0;
+}
+
+void cache_update_monitor(struct cache_entry *entry)
+{
+        TALLOC_CTX *data = talloc_pool( NULL, 2048);
+        char *montimestamp = NULL;
+
+        char *username = NULL;
+        char *domain = NULL;
+        char *share = NULL;
+        char *timestamp = NULL;
+        char *usersid = NULL;
+        char *vfs_id = NULL;
+        char *go_through = entry->data;
+        char *str = NULL;
+        char *filename = NULL;
+        char *len = NULL;
+        char *mode = NULL;
+        char *result = NULL;
+        char *path = NULL;
+        char *source = NULL;
+        char *destination = NULL;
+        char *mondata = NULL;
+        /* first check how many common data blocks will come */
+        str = protocol_get_single_data_block( data, &go_through);
+        int common_blocks_num = atoi(str);
+        /**
+         * don't run a newer smbtad with an older VFS module
+         */
+        if (common_blocks_num < 6) {
+                syslog(LOG_DEBUG, "FATAL: Protocol error!"
+                        " Too less common data blocks! (%i), ignoring data!",
+                        common_blocks_num);
+                TALLOC_FREE(data);
+                return;
+        }
+
+        /* vfs_operation_identifier */
+        str = protocol_get_single_data_block( data, &go_through);
+        int op_id = atoi(str);
+        /* username */
+        username = protocol_get_single_data_block_quoted( data, &go_through );
+        /* user's SID */
+        usersid = protocol_get_single_data_block_quoted( data, &go_through );
+        /* share */
+        share = protocol_get_single_data_block_quoted( data, &go_through );
+        /* domain */
+        domain = protocol_get_single_data_block_quoted( data, &go_through );
+        /* timestamp */
+        timestamp = protocol_get_single_data_block_quoted( data, &go_through );
+        /* now receive the VFS function depending arguments */
+        switch( op_id) {
+        case vfs_id_read:
+        case vfs_id_pread: ;
+                filename = protocol_get_single_data_block_quoted( data, &go_through );
+                len = protocol_get_single_data_block( data, &go_through);
+                mondata = len;
+                break;
+        case vfs_id_write:
+        case vfs_id_pwrite: ;
+                filename= protocol_get_single_data_block_quoted( data,&go_through );
+                len = protocol_get_single_data_block( data,&go_through);
+                mondata = len;
+                break;
+        case vfs_id_mkdir: ;
+                path = protocol_get_single_data_block_quoted( data,&go_through);
+                mode = protocol_get_single_data_block_quoted( data,&go_through);
+                result=protocol_get_single_data_block( data,&go_through);
+                break;
+        case vfs_id_chdir: ;
+                path = protocol_get_single_data_block_quoted( data,&go_through);
+                result = protocol_get_single_data_block( data,&go_through);
+                break;
+        case vfs_id_open: ;
+                filename = protocol_get_single_data_block_quoted(data,&go_through);
+                mode = protocol_get_single_data_block_quoted(data,&go_through);
+                result = protocol_get_single_data_block(data,&go_through);
+                break;
+        case vfs_id_close: ;
+                filename = protocol_get_single_data_block_quoted(data,&go_through);
+                result = protocol_get_single_data_block(data,&go_through);
+                break;
+        case vfs_id_rename: ;
+                source = protocol_get_single_data_block_quoted(data,&go_through);
+                destination = protocol_get_single_data_block_quoted(data,&go_through);
+                result = protocol_get_single_data_block(data,&go_through);
+                break;
+
+        }
+        if (filename == NULL) filename = talloc_asprintf(data,"\"*\"");
+	monitor_list_update( op_id, username, usersid, share,filename,domain, mondata, timestamp);
+        TALLOC_FREE(data);
 }
 
 
@@ -270,7 +364,7 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 		domain,
 		montimestamp);
 
-        monitor_list_update( op_id, username, usersid, share,filename,domain, mondata, timestamp);
+//        monitor_list_update( op_id, username, usersid, share,filename,domain, mondata, timestamp);
 		
 
 	/* free everything no longer needed */
@@ -314,7 +408,7 @@ void cache_manager(struct configuration_data *config )
 
 		/* run a query and add the result to the sendlist */
 		int count = 0;
-		while (count <1 ) {
+		while (count <5000 ) {
 			usleep(5000);
 			count++;
 			int res_len;
