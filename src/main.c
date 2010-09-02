@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 	
 	pthread_t thread;
 	pthread_t thread2;
-
+	pthread_t thread3;
 	cache_init();
 	query_init();
 	sendlist_init();
@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
 	daemon_daemonize( &conf );
 
        	pthread_create(&thread,NULL,(void *)&cache_manager,(void *) &conf);
+	pthread_create(&thread3,NULL,(void *)&cache_query_thread, (void *) &conf);
 	pthread_create(&thread2,NULL,(void *)&monitor_timer,NULL);
 	/* enter the main network function. */
 	network_handle_connections( &conf );

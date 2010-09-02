@@ -81,15 +81,15 @@ unsigned long int throughput_list_throughput_per_second(
 	double a=0;
 	while ( entry != NULL) {
 		a=difftime(now,entry->timestamp);
-		if ( (a == 0) || ( a <= 1 && milliseconds <= entry->milliseconds)) {
+		if ( (a == 0) ||
+			( a <= 1 && milliseconds <= entry->milliseconds)) {
 			add = add + entry->value;
 			backup = entry;
-			DEBUG(1) syslog(LOG_DEBUG,"adding value %i",entry->value);
+			DEBUG(1) syslog(LOG_DEBUG,"adding value %i",
+				entry->value);
 			entry = entry->next;
 		} else { /* remove this entry */
 			if (entry == list->begin) {
-				DEBUG(1) syslog(LOG_DEBUG,
-					"throughput_list_throughput_per_second: removing from beginning!");
 				list->begin = backup->next;
 				list->end = backup->next;
 				free(backup);
@@ -101,8 +101,6 @@ unsigned long int throughput_list_throughput_per_second(
 				list->end = backup;
 				entry = NULL;
 			} else {
-				DEBUG(1) syslog(LOG_DEBUG,
-					"throughput_list_throughput_per_second: removing in the middle!");
 				backup->next = entry->next;
 				free(entry);
 				entry = backup->next;
@@ -111,8 +109,6 @@ unsigned long int throughput_list_throughput_per_second(
 		}
 
 	}
-	if (add != 0) 
-		DEBUG(1) syslog(LOG_DEBUG,"throughput_list_throughput_per_second:  returning a throughput of %i bytes!",add);
 	pthread_mutex_unlock(&throughput_lock);
 
 	return add;

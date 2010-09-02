@@ -347,8 +347,8 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 
 	}
 
-        /* update and process every single monitor according to the new data */
 	if (filename == NULL) filename = talloc_asprintf(data,"\"*\"");
+
 	DEBUG(1) syslog(LOG_DEBUG,
 		"Calling monitor_list update with:"
 		"username: %s, "
@@ -364,7 +364,6 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 		domain,
 		montimestamp);
 
-//        monitor_list_update( op_id, username, usersid, share,filename,domain, mondata, timestamp);
 		
 
 	/* free everything no longer needed */
@@ -372,7 +371,29 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 	return retstr;
 }
 
-	
+/* 
+ * sqlite >= 3.7.0 allows WAL. We will use this feature.
+ * Run as a thread and run any query that is waiting.
+ */
+void cache_query_thread(struct configuration_data *config)
+{
+	pthread_detach(pthread_self());
+	sqlite3 *database = config->dbhandle;
+	/* run a query and add the result to the sendlist */
+	int count = 0;
+	while (1 == 1) {
+		usleep(5000);
+                int res_len;
+                int res_socket;
+                int monitorid = 0;
+                char *res = query_list_run_query(database,
+			&res_len, &res_socket, &monitorid);
+		if (res != NULL && monitorid ==0) sendlist_add(res,res_socket,res_len);
+		if (res != NULL && monitorid !=0) monitor_list_set_init_result(res, monitorid);
+	}
+}
+
+
 /*
  * cache_manager runs as a detached thread. Every half second,
  * it's checking if there's data available to store to the DB.
@@ -389,6 +410,7 @@ void cache_manager(struct configuration_data *config )
 	 */
 	TALLOC_CTX *database_str = talloc_pool(NULL, 2000);
 	while (1 == 1) {
+		sleep(5);
         	pthread_mutex_lock(&cache_mutex);
         	struct cache_entry *go_through = cache_start;
 		struct cache_entry *backup = cache_start;
@@ -406,18 +428,6 @@ void cache_manager(struct configuration_data *config )
 		if (backup != NULL) TALLOC_FREE(backup);
 		sqlite3_exec(database, "COMMIT;", 0, 0, 0); 
 
-		/* run a query and add the result to the sendlist */
-		int count = 0;
-		while (count <5000 ) {
-			usleep(5000);
-			count++;
-			int res_len;
-			int res_socket;
-			int monitorid = 0;
-			char *res = query_list_run_query(database,
-				&res_len, &res_socket, &monitorid);
-			if (res != NULL && monitorid ==0) sendlist_add(res,res_socket,res_len);
-			if (res != NULL && monitorid !=0) monitor_list_set_init_result(res, monitorid);
-		}
+		
 	}
 }

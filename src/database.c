@@ -31,7 +31,7 @@ sqlite3 *database_create( char *filename )
 
 	sqlite3 *db;
 	int rc;
-	char *zErrormsg;
+	char *zErrormsg = NULL;
 	rc=sqlite3_open( filename,&db);
 	if ( rc ) {
 		syslog(LOG_DAEMON,
@@ -81,6 +81,16 @@ sqlite3 *database_create( char *filename )
 		"CREATE TABLE close ("
 		CREATE_COMMONS
 		"filename varchar, result integer)",NULL,0,&zErrormsg);
+
+
+	/* set journal mode to WAL. sqlite >= 3.2.7 is required. */
+	rc = sqlite3_exec( db, \
+		"PRAGMA journal_mode = WAL",NULL,0,&zErrormsg);
+
+	if (zErrormsg != NULL) {
+		printf("FATAL: Error creating database. Exiting.");
+		exit(1);
+	}
 
 	return db;
 }
