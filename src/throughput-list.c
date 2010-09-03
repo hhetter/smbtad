@@ -82,7 +82,7 @@ unsigned long int throughput_list_throughput_per_second(
 	while ( entry != NULL) {
 		a=difftime(now,entry->timestamp);
 		if ( (a == 0) ||
-			( a <= 1 && milliseconds <= entry->milliseconds)) {
+			( a == 1 && milliseconds <= entry->milliseconds)) {
 			add = add + entry->value;
 			backup = entry;
 			DEBUG(1) syslog(LOG_DEBUG,"adding value %i",
