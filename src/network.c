@@ -328,15 +328,18 @@ void network_handle_connections( config_t *c )
 
 	connection_list_add( c->vfs_socket, SOCK_TYPE_DATA );
 	connection_list_add( c->query_socket, SOCK_TYPE_DB_QUERY);
+                connection_list_recreate_fs_sets(
+                        &active_read_fd_set,
+                        &active_write_fd_set,
+                        &read_fd_set,
+                        &write_fd_set);
+
 	for (;;) {
 		z = 0;
 
-		connection_list_recreate_fs_sets(
-			&active_read_fd_set,
-			&active_write_fd_set,
-			&read_fd_set,
-			&write_fd_set);
 		int h = connection_list_max() +1;
+		read_fd_set = active_read_fd_set;
+		write_fd_set = active_write_fd_set;
 		z = select( h,
 			&read_fd_set, &write_fd_set, NULL,NULL);
 		if (z < 0) {
@@ -347,16 +350,22 @@ void network_handle_connections( config_t *c )
 			monitor_list_process(i);
 			if (FD_ISSET(i,&read_fd_set)) {
 				int sr;
-				if ( i == c->vfs_socket)
+				if ( i == c->vfs_socket) {
 					sr = network_accept_connection(
 						c,
 						&remote,
-						SOCK_TYPE_DATA); 
-				else if ( i == c->query_socket)
+						SOCK_TYPE_DATA);
+					FD_SET(sr,&active_read_fd_set);
+					FD_SET(sr,&active_write_fd_set);
+				}
+				else if ( i == c->query_socket) {
 					sr = network_accept_connection(
 						c,
 						&remote,
 						SOCK_TYPE_DB_QUERY);
+					FD_SET(sr,&active_read_fd_set);
+					FD_SET(sr,&active_write_fd_set);
+				}
 				else {
 					network_handle_data(i,c);
 				}
