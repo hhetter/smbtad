@@ -36,7 +36,6 @@ void cache_update_monitor( struct cache_entry *entry);
  * init the cache system */
 void cache_init( ) {
         pthread_mutex_init(&cache_mutex, NULL);
-	cache_pool = talloc_pool(NULL, 200 * 1024 * 1024);
 }
 
 /*
@@ -49,6 +48,7 @@ int cache_add( char *data, int len ) {
         struct cache_entry *entry;	
 	pthread_mutex_lock(&cache_mutex);
 	if (cache_start == NULL) {
+		cache_pool = talloc_pool(NULL, 8*1024*1024);
 		cache_start = talloc(cache_pool, struct cache_entry);
 		entry = cache_start;
 		entry->data = talloc_steal( cache_start, data);
@@ -413,7 +413,7 @@ void cache_manager(struct configuration_data *config )
 		sleep(5);
         	pthread_mutex_lock(&cache_mutex);
         	struct cache_entry *go_through = cache_start;
-		struct cache_entry *backup = cache_start;
+		struct cache_entry *backup = cache_pool;
        		cache_start = NULL;
         	cache_end = NULL;
         	pthread_mutex_unlock(&cache_mutex);

@@ -335,13 +335,14 @@ void network_handle_connections( config_t *c )
 			&active_write_fd_set,
 			&read_fd_set,
 			&write_fd_set);
-		z = select( connection_list_max() +1,
+		int h = connection_list_max() + 1;
+		z = select( h,
 			&read_fd_set, &write_fd_set, NULL,NULL);
 		if (z < 0) {
 			syslog(LOG_DEBUG,"ERROR: select error.");
 			exit(1);
 		}
-		for( i = 0; i < connection_list_max() + 1; ++i) {
+		for( i = 0; i < h; ++i) {
 			monitor_list_process(i);
 			if (FD_ISSET(i,&read_fd_set)) {
 				int sr;
