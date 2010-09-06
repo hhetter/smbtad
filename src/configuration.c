@@ -160,11 +160,12 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 			{ "debug-level",1, NULL, 'd' },
 			{ "config-file",1,NULL,'c'},
 			{ "key-file",1,NULL,'k'},
+			{ "database",1,NULL,'b'},
 			{ 0,0,0,0 }
 		};
 
 		i = getopt_long( argc, argv,
-			"d:i:oc:k:q:", long_options, &option_index );
+			"d:i:oc:k:q:b:", long_options, &option_index );
 
 		if ( i == -1 ) break;
 
@@ -188,6 +189,9 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 			case 'k':
 				c->keyfile = strdup( optarg);
 				configuration_load_key_from_file(c);
+				break;
+			case 'b':
+				c->dbname = strdup( optarg );
 				break;
 			default	:
 				printf("ERROR: unkown option.\n\n");
