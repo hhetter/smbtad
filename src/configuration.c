@@ -20,7 +20,7 @@
  */
 
 #include "../include/includes.h"
-
+#include <sys/stat.h>
 
 pthread_mutex_t config_mutex;
 
@@ -34,13 +34,28 @@ pthread_mutex_t *configuration_get_lock(void) {
  */
 void configuration_define_defaults( config_t *c )
 {
+	char *home = getenv("HOME");
+	if (home == NULL) {
+		printf("\nError retrieving the users home directory.\n");
+		printf("Database file will be forced to:\n");
+		printf("'/var/lib/staddb'\n\n");
+		c->dbname = strdup("/var/lib/staddb");
+	} else {
+		c->dbname = (char *) malloc(sizeof(char) * (strlen(home) + 50));
+		c->dbname = strcpy(c->dbname,home);
+		strcat(c->dbname,"/.smbtad");
+		/* create the directory when it doesn't exist */
+		mkdir(c->dbname, S_IFDIR | S_IRWXU | S_IRWXG | S_IRWXO);
+		strcat(c->dbname,"/staddb");
+	}
+
 	c->port = 3940;
 	strcpy( c->maint_timer, "01:00:00" );
 	strcpy( c->maint_timer_conf, "01,00:00:00" );
 	c->daemon = 1;
 	c->config_file = NULL;
 	c->dbg = 0; // debug level
-	c->dbname = strdup( "/var/lib/staddb");
+	
 	c->dbhandle = NULL;
 	c->keyfile =NULL;
 	c->query_port = 3941;
