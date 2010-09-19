@@ -545,6 +545,8 @@ void monitor_send_result( struct monitor_item *entry)
                 sendlist_add(sendstr,entry->sock,strlen(sendstr));
                 break;
 */
+	default: ;
+		break;
 	}
 	free(idstr);
 }	
@@ -638,17 +640,17 @@ void monitor_list_update( int op_id,
 								 "%04i%s" // filename
 								 "%04i%s" // domain
 								 "%04i%s", // timestamp
-								 strlen(op_id_str),
+								 (int) strlen(op_id_str),
 								 op_id_str,
-								 strlen(username),
+								 (int) strlen(username),
 								 username,
-								 strlen(share),
+								 (int) strlen(share),
 								 share,
-								 strlen(file),
+								 (int) strlen(file),
 								 file,
-								 strlen(domain),
+								 (int) strlen(domain),
 								 domain,
-								 strlen(montimestamp),
+								 (int) strlen(montimestamp),
 								 montimestamp);
 				DEBUG(1) syslog(LOG_DEBUG, "monitor_list_update: MONITOR_LOG:"
 					"created infostring >%s<",
@@ -707,6 +709,8 @@ void monitor_list_set_init_result(char *res, int monitorid) {
 		break;
 	case MONITOR_LOG: ;
 		entry->state = MONITOR_PROCESS;
+		break;
+	default: ;
 		break;
 	}
 }

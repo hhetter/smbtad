@@ -74,14 +74,12 @@ int cache_add( char *data, int len ) {
 void cache_update_monitor(struct cache_entry *entry)
 {
         TALLOC_CTX *data = talloc_pool( NULL, 2048);
-        char *montimestamp = NULL;
 
         char *username = NULL;
         char *domain = NULL;
         char *share = NULL;
         char *timestamp = NULL;
         char *usersid = NULL;
-        char *vfs_id = NULL;
         char *go_through = entry->data;
         char *str = NULL;
         char *filename = NULL;
@@ -380,7 +378,6 @@ void cache_query_thread(struct configuration_data *config)
 	pthread_detach(pthread_self());
 	sqlite3 *database = config->dbhandle;
 	/* run a query and add the result to the sendlist */
-	int count = 0;
 	while (1 == 1) {
 		usleep(5000);
                 int res_len;

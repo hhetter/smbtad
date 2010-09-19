@@ -85,8 +85,6 @@ unsigned long int throughput_list_throughput_per_second(
 			( a == 1 && milliseconds <= entry->milliseconds)) {
 			add = add + entry->value;
 			backup = entry;
-			DEBUG(1) syslog(LOG_DEBUG,"adding value %i",
-				entry->value);
 			entry = entry->next;
 		} else { /* remove this entry */
 			if (entry == list->begin) {
