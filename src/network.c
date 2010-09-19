@@ -72,7 +72,7 @@ int network_accept_connection( config_t *c, struct sockaddr_in *remote, int type
 {
 	socklen_t t=sizeof(*remote);
 	int sr;
-	int sock;
+	int sock = 0;
 	if (type == SOCK_TYPE_DATA) 	sock = c->vfs_socket;
 	if (type == SOCK_TYPE_DB_QUERY)	sock = c->query_socket;
 	if ( (sr = accept( sock,
