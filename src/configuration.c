@@ -191,6 +191,8 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 				configuration_load_key_from_file(c);
 				break;
 			case 'b':
+				free(c->dbname); // allocated by default
+				// setting
 				c->dbname = strdup( optarg );
 				break;
 			default	:
