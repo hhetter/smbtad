@@ -49,14 +49,16 @@ enum header_states protocol_check_header( char *header )
 	/* exit the process if we are about to receive 0 bytes */
 	if ( protocol_get_data_block_length(header) == 0) {
 		syslog(LOG_DEBUG, "ERROR: 0 bytes of data are about to"
-				"be received. smbta is exiting.");
-		exit (1);
+				"be received. closing connection.");
+		status = HEADER_CHECK_NULL;
+		return status;
 	}
 	/* exit the process if we don't receive a V2 header */	
 	if (strncmp( header, "V2.", 3) != 0) {
 		syslog(LOG_DEBUG, "ERROR: Not a V2 protocol header! "
-				"smbtad is exiting.");
-		exit (1);
+				"smbtad is exiting. closing connection.");
+		status = HEADER_CHECK_FAIL;
+		return status;
 	}
 
 	if ( protocol_get_subversion(header) != PROTOCOL_SUBRELEASE ) {

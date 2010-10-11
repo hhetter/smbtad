@@ -114,6 +114,7 @@ void network_close_connection(int i)
 int network_handle_data( int i, config_t *c )
 {
 	int l;
+	enum header_states hstate;
      	struct connection_struct *connection =
 		connection_list_identify(i);
         if (connection->connection_function == SOCK_TYPE_DATA ||
@@ -137,7 +138,11 @@ int network_handle_data( int i, config_t *c )
 					CONN_READ_HEADER_ONGOING;
 				break;
 			}
-			protocol_check_header(connection->header);
+			hstate = 
+				protocol_check_header(connection->header);
+			if (hstate == HEADER_CHECK_FAIL ||
+				hstate == HEADER_CHECK_NULL)
+					network_close_connection(i);
 			connection->data_state = CONN_READ_DATA;
 			connection->blocklen =
 				protocol_get_data_block_length(connection->header);
@@ -161,7 +166,11 @@ int network_handle_data( int i, config_t *c )
 			}
 			if (connection->header_position != 26) break;
 			/* full header */
-			protocol_check_header(connection->header);
+			hstate =
+				protocol_check_header(connection->header);
+			if (hstate == HEADER_CHECK_FAIL ||
+				hstate == HEADER_CHECK_NULL)
+					network_close_connection(i);
                         connection->data_state = CONN_READ_DATA;
                         connection->blocklen =
                                 protocol_get_data_block_length(connection->header);
