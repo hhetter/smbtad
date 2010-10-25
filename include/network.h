@@ -23,5 +23,6 @@
 void network_handle_connections( config_t *c );
 char *network_create_header( TALLOC_CTX *ctx,
         const char *state_flags, size_t data_len);
+void network_close_connections();
 
 

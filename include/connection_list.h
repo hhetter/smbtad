@@ -55,5 +55,5 @@ void connection_list_recreate_fs_sets(  fd_set *active_read_fd_set,
                                         fd_set *active_write_fd_set,
                                         fd_set *read_fd_set,
                                         fd_set *write_fd_set);
-
+struct connection_struct *connection_list_begin();
 

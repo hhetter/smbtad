@@ -23,6 +23,9 @@
 
 void daemon_signal_term( int signum )
 {
+	syslog(LOG_DEBUG,"smbtad is being terminated,"
+		"closing all connections.");
+	network_close_connections();
 	exit(0);
 }
 

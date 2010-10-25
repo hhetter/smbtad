@@ -99,6 +99,10 @@ void connection_list_recreate_fs_sets( 	fd_set *active_read_fd_set,
 	*write_fd_set = *active_write_fd_set;
 }
 
+struct connection_struct *connection_list_begin()
+{
+	return connection_list_start;
+}
 
 int connection_list_max()
 {

@@ -99,7 +99,24 @@ void network_close_connection(int i)
 		"%i, socket %i",i,connection->mysocket);
 }
 
+/**
+ * close all network connections.
+ */
+void network_close_connections()
+{
+	struct connection_struct *connection = connection_list_begin();
+	struct connection_struct *connection2 = connection;
+	while (connection != NULL) {
+		close(connection->mysocket);
+		monitor_list_delete_by_socket(connection->mysocket);
+		connection2=connection->next;
+		connection_list_remove(connection->mysocket);
+        	syslog(LOG_DEBUG,"network_close_connections: closed connection on "
+                	"socket %i",connection->mysocket);
+		connection=connection2;
+	}
 
+}
 /**
  * Handle incoming data.
  * int i 		The handle
