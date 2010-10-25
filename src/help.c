@@ -24,6 +24,7 @@
 void help_show_help()
 {
 	printf("SMB Traffic Analyzer daemon version %s\n", STAD2_VERSION);
+	printf("%s\n", SMBTA_LICENSE);
 	printf("\n");
 	printf("(C) 2008-2010 Holger Hetterich <ozzy@metal-district.de>	\n");
 	printf("\n");
