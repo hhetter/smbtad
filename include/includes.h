@@ -61,3 +61,5 @@
 #define DEBUG(x) if ( (x) <= _DBG ) 
 int _DBG;
 
+pthread_mutex_t database_access;
+int DO_MAINTENANCE;

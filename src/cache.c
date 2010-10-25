@@ -36,6 +36,7 @@ void cache_update_monitor( struct cache_entry *entry);
  * init the cache system */
 void cache_init( ) {
         pthread_mutex_init(&cache_mutex, NULL);
+	pthread_mutex_init(&database_access, NULL);
 }
 
 /*
@@ -399,7 +400,19 @@ void cache_query_thread(struct configuration_data *config)
  */
 void cache_manager(struct configuration_data *config )
 {
-
+	char *fnnames[] = {
+		"write",
+		"read",
+		"close",
+		"rename",
+		"open",
+		"chdir",
+		"rmdir",
+		"mkdir",
+		NULL,
+	};
+	int maintenance_c_val = config->maintenance_seconds / 5;
+	int maintenance_count = 0;
         pthread_detach(pthread_self());
 	sqlite3 *database = config->dbhandle;
 	/* backup the start and make it possible to
@@ -408,6 +421,7 @@ void cache_manager(struct configuration_data *config )
 	TALLOC_CTX *database_str = talloc_pool(NULL, 2000);
 	while (1 == 1) {
 		sleep(5);
+		maintenance_count++;
         	pthread_mutex_lock(&cache_mutex);
         	struct cache_entry *go_through = cache_start;
 		struct cache_entry *backup = cache_start;
@@ -425,6 +439,37 @@ void cache_manager(struct configuration_data *config )
 		if (backup != NULL) TALLOC_FREE(backup);
 		sqlite3_exec(database, "COMMIT;", 0, 0, 0); 
 
+		if (maintenance_count == maintenance_c_val) {
+			char String[400];
+			char dbstring[300];
+			struct tm *tm;
+			int fncount = 0;
+			sqlite3_exec(database,"BEGIN TRANSACTION;",0,0,0);
+			while (fnnames[fncount]!=NULL) {
+			        time_t today=time(NULL);
+			        time_t delete_date=today - config->maint_run_time;
+			        tm = localtime ( &delete_date );
+
+
+			        sprintf(String,"%04d-%02d-%02d %02d:%02d:%02d", \
+                			tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday, \
+                			tm->tm_hour, tm->tm_min, tm->tm_sec);
+
+
+        			sprintf(dbstring,"delete from %s where timestamp < \"",
+					fnnames[fncount]);
+        			strcat(dbstring,String);
+        			strcat(dbstring,"\";");
+				sqlite3_exec(database,dbstring,0,0,0);
+				fncount++;
+			}
+			sqlite3_exec(database,"COMMIT;",0,0,0);
+			maintenance_count = 0;
+		}
+				
+
+
+			
 		
 	}
 }

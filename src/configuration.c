@@ -28,6 +28,9 @@ pthread_mutex_t *configuration_get_lock(void) {
 	return &config_mutex;
 }
 
+int configuration_check_configuration( config_t *c );
+
+static config_t *conf;
 
 /* Initialize default values of the configuration.
  * Also initialize the configuration mutex.
@@ -50,8 +53,8 @@ void configuration_define_defaults( config_t *c )
 	}
 
 	c->port = 3940;
-	strcpy( c->maint_timer, "01:00:00" );
-	strcpy( c->maint_timer_conf, "01,00:00:00" );
+	strcpy( c->maintenance_timer_str, "01:00:00" );
+	strcpy( c->maint_run_time_str, "01,00:00:00" );
 	c->daemon = 1;
 	c->config_file = NULL;
 	c->dbg = 0; // debug level
@@ -91,6 +94,7 @@ int configuration_load_config_file( config_t *c)
 	dictionary *Mydict;
 	Mydict=iniparser_load( c->config_file);
 	char *cc;
+
 
 	if ( Mydict == NULL ) return -1;
 
@@ -142,7 +146,7 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 	int i;
 
 	configuration_define_defaults( c );
-
+	conf = c;
 
 	if ( argc == 1 ) {
 		printf("ERROR: not enough arguments.\n\n");
@@ -161,17 +165,25 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 			{ "config-file",1,NULL,'c'},
 			{ "key-file",1,NULL,'k'},
 			{ "database",1,NULL,'b'},
+			{ "maintenance-timer",1,NULL,'t'},
+			{ "maintenance-timer-config",1,NULL,'m'},
 			{ 0,0,0,0 }
 		};
 
 		i = getopt_long( argc, argv,
-			"d:i:oc:k:q:b:", long_options, &option_index );
+			"d:i:oc:k:q:b:t:m:", long_options, &option_index );
 
 		if ( i == -1 ) break;
 
 		switch (i) {
 			case 'i':
 				c->port = atoi( optarg );
+				break;
+			case 't':
+				strncpy(c->maintenance_timer_str,optarg,199);
+				break;
+			case 'm':
+				strncpy(c->maint_run_time_str,optarg,199);
 				break;
 			case 'o':
 				c->daemon = 0;
@@ -201,6 +213,7 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 				return -1;
 		}
 	}
+	configuration_check_configuration(c);
 
 return 0;
 }
@@ -209,5 +222,70 @@ return 0;
 int configuration_check_configuration( config_t *c )
 {
 	// fixme: add checks
+	// create the maintenance timer
+        /* initialize the maintenance timer */
+        struct tm maintenance_timer;
+        char *Result;
+        Result=strptime( c->maintenance_timer_str,"%H:%M:%S",
+                 &maintenance_timer);
+        if (Result==NULL) {
+                        printf("\n\nERROR: The maintenance timer (option -m)"
+                                " is not in the right format.\n");
+                        exit (0);
+        }
+
+        c->maintenance_seconds=maintenance_timer.tm_sec
+                +60*60*maintenance_timer.tm_hour
+                +60*maintenance_timer.tm_min;
+        if ( c->maintenance_seconds<10 ) {
+                printf("\n\nWARNING: the maintenance timer (option -m) "
+                        "might be too short!\n");
+                }
+
+        /* calculate the maintenance timeout value */
+        char *Helper=strstr(c->maint_run_time_str,",");
+        char *Begin;
+        if ( Helper==NULL ) {
+                printf("\n\nERROR: The maintenance-timer-conf value is "
+                        "in the wrong format! 1\n");
+                exit (0);
+        }
+        *Helper='\0';
+        c->mdays=atoi(c->maint_run_time_str); /* 86400 */
+        Begin=Helper+1;
+        Helper=strstr(Helper+1,":");
+
+        if ( Helper==NULL) {
+                printf("\n\nERROR: The maintenance-timer-conf value is in"
+                        " the wrong format! 2\n");
+                exit (0);
+        }
+        *Helper='\0';
+        c->mhours=atoi(Begin);
+
+        Begin=Helper+1;
+        Helper=strstr(Begin,":");
+
+        if ( Helper==NULL) {
+                printf("\n\nERROR: The maintenance-timer-conf value is "
+                        "in the wrong format! 3\n");
+                exit (0);
+        }
+        *Helper='\0';
+        c->mminutes=atoi(Begin);
+        Begin=Helper+1;
+        c->mseconds=atoi(Begin);
+
+        c->maint_run_time=86400*c->mdays 
+                + 3600*c->mhours 
+                + 60*c->mminutes 
+                + c->mseconds;
+        if ( c->maint_run_time==0 ) {
+                printf("\n\nERROR: The maintenance-timer-conf"
+                        " value is zero.\n");
+                exit (0);
+        }
+//        signal(SIGALRM,run_maintenance);
+//        alarm(c->maintenance_seconds);
 	return 0;
 }

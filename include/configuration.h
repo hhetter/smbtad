@@ -27,8 +27,15 @@ typedef struct configuration_data {
 	/* portnumber for clients who query */
 	int query_port;
 	/* the maintenance timer strings */
-	char maint_timer[200];
-	char maint_timer_conf[200];
+        /* user given string argument, as to when the maintenance       */
+        /* routine should start.                                        */
+        char maintenance_timer_str[200];
+        char maint_run_time_str[200];
+        /* time in seconds to restart the maintenance timer             */
+        time_t maintenance_seconds;
+        /* time in seconds for the maintenance run, everything older    */
+        /* than this time will be deleted from the database.            */
+        time_t maint_run_time;
 	/* debug level */
 	int dbg;
 	/* configuration file */
@@ -37,6 +44,8 @@ typedef struct configuration_data {
 	int daemon;
 
 	/* run time configuration */
+        /* integers used to separate the time for the maintenance run   */
+        int mdays,mminutes,mseconds,mhours;
 	int vfs_socket;
 	int query_socket;
 	char *current_query_result;
