@@ -156,7 +156,7 @@ char *protocol_get_single_data_block_quoted( TALLOC_CTX *ctx, char **data_pointe
  */
 int protocol_get_subversion( char *header )
 {
-		int retval;
+	int retval;
 	char conv[4];
 	conv[0] = header[3];
 	conv[1] = '\0';
