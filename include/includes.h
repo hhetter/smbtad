@@ -49,6 +49,13 @@
 #include "monitor-list.h"
 #include "sendlist.h"
 #include "throughput-list.h"
+
+/* define TALLOC_FREE when older talloc versions are used */
+#ifndef TALLOC_FREE(ctx)
+        #define TALLOC_FREE(ctx) do { talloc_free(ctx); ctx=NULL; } while(0)
+#endif
+
+
 /**
  * Debug Levels:
  * 0 -> only fatal errors which lead to terminate stad
