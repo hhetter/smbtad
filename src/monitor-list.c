@@ -489,6 +489,16 @@ void monitor_initialize( struct monitor_item *entry)
 			entry->local_data)->log = NULL;
 		entry->state = MONITOR_PROCESS;
 		break;
+	case MONITOR_READ:
+		((struct monitor_local_data_read *)
+			entry->local_data)->read = 0;
+		entry->state = MONITOR_PROCESS;
+		break;
+	case MONITOR_WRITE:
+		((struct monitor_local_data_write *)
+			entry->local_data)->write = 0;
+		entry->state = MONITOR_PROCESS;
+		break;
 	default: ;
 	}
 }
@@ -616,6 +626,24 @@ void monitor_list_update( int op_id,
 					atol(data),
 					montimestamp);
                                         break;
+				}
+				break;
+			case MONITOR_READ:
+				if ((op_id == vfs_id_read ||
+					op_id == vfs_id_pread)) {
+					((struct monitor_local_data_read *)
+					entry->local_data)->read = atol(data);
+					monitor_send_result(entry);
+					break;
+				}
+				break;
+			case MONITOR_WRITE:
+				if ((op_id == vfs_id_write ||
+					op_id == vfs_id_pwrite)) { 
+					((struct monitor_local_data_write *)
+					entry->local_data)->write = atol(data);
+					monitor_send_result(entry);
+					break;
 				}
 				break;
 			case MONITOR_LOG:

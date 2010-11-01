@@ -72,6 +72,13 @@ struct monitor_local_data_log {
 	char *log;
 };
 
+struct monitor_local_data_read {
+	unsigned long int read;
+};
+
+struct monitor_local_data_write {
+	unsigned long int write;
+};
 
 struct monitor_local_data_throughput {
 	unsigned long int throughput;
