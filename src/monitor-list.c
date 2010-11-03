@@ -288,6 +288,14 @@ int monitor_list_parse( struct monitor_item *entry)
 		entry->local_data = (struct monitor_local_data_log *)
 			malloc( sizeof(struct monitor_local_data_log));
 		break;
+	case MONITOR_READ: ;
+		entry->local_data = (struct monitor_local_data_read *)
+			malloc(sizeof(struct monitor_local_data_read));
+		break;
+	case MONITOR_WRITE: ;
+		entry->local_data = (struct monitor_local_data_write *)
+			malloc(sizeof(struct monitor_local_data_write));
+		break;
 	default: ;
 		syslog(LOG_DEBUG,"ERROR: Wrong monitor state while parsing!\n");
 		exit(1);
@@ -542,6 +550,29 @@ void monitor_send_result( struct monitor_item *entry)
 			tmpdatastr);
 		sendlist_add(sendstr,entry->sock,strlen(sendstr));
 		break;
+	case MONITOR_READ: ;
+		asprintf(&tmpdatastr,"%lu",
+			((struct monitor_local_data_read *)
+				(entry->local_data))->read);
+		asprintf(&sendstr,"%04i%s%04i%s",
+			(int) strlen(idstr),
+			idstr,
+			(int) strlen(tmpdatastr),
+			tmpdatastr);
+		sendlist_add(sendstr,entry->sock,strlen(sendstr));
+		break;
+        case MONITOR_WRITE: ;
+                asprintf(&tmpdatastr,"%lu",
+                        ((struct monitor_local_data_write *)
+                                (entry->local_data))->write);
+                asprintf(&sendstr,"%04i%s%04i%s",
+                        (int) strlen(idstr),
+                        idstr,
+                        (int) strlen(tmpdatastr),
+                        tmpdatastr);
+                sendlist_add(sendstr,entry->sock,strlen(sendstr));
+                break;
+
 /*
 	case MONITOR_THROUGHPUT: ;
 		asprintf(&tmpdatastr,"%lu",
