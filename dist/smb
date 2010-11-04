@@ -1,0 +1,96 @@
+#! /bin/sh
+# Copyright (c) 2010 Holger Hetterich
+#
+# Based on the smb script by Lars Müller <lmuelle@suse.de>
+#
+# /etc/init.d/smbtad
+#   and its symbolic link
+# /usr/sbin/rcsmbtad
+#
+#	This program is free software: you can redistribute it and/or modify
+#	it under the terms of the GNU General Public License as published by
+#	the Free Software Foundation, either version 3 of the License, or
+#	(at your option) any later version.
+#
+#	This program is distributed in the hope that it will be useful,
+#	but WITHOUT ANY WARRANTY; without even the implied warranty of
+#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#	GNU General Public License for more details.
+#
+#	You should have received a copy of the GNU General Public License
+#	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+### BEGIN INIT INFO
+# Provides:       smbtad
+# Required-Start: $network $syslog
+# Should-Start:   
+# Required-Stop:  $network $syslog
+# Should-Stop:    
+# Default-Start:  3 5
+# Default-Stop:   0 1 2 6
+# Short-Description: SMB Traffic Analyzer Daemon
+# Description:    SMB Traffic Analyzer Daemon
+### END INIT INFO
+
+SMBTAD_BIN="/usr/bin/smbtad"
+SMBTAD_CONF="/etc/smbtad.conf"
+PID_FILE="/var/run/smbtad.pid"
+
+. /etc/rc.status
+rc_reset
+
+# Check for missing binary
+if [ ! -x ${SMBTAD_BIN} ]; then
+	echo -n >&2 "SMB Traffic Analyzer daemon, ${SMBTAD_BIN} is not installed. "
+	rc_status -s
+	exit 5
+fi
+
+# be extra carefull cause connection fail if TMPDIR is not writeable
+export TMPDIR="/var/tmp"
+
+case "$1" in
+	start)
+		echo -n "Starting SMB Traffic Analyzer daemon "
+		if [ ! -f ${SMBTAD_CONF} ]; then
+			echo -n >&2 "smbtad configuration file, ${SMBTAD_CONF} does not exist. "
+			rc_status -s
+			exit 6
+		fi
+		checkproc -p ${PID_FILE} ${SMBTAD_BIN}
+		case $? in
+			0) echo -n "- Warning: daemon already running. " ;;
+			1) echo -n "- Warning: ${PID_FILE} exists. " ;;
+		esac
+		test -f /etc/sysconfig/language && \
+			. /etc/sysconfig/language
+		export LC_ALL="$RC_LC_ALL"
+		export LC_CTYPE="$RC_LC_CTYPE"
+		export LANG="$RC_LANG"
+		startproc -p ${PID_FILE} ${SMBTAD_BIN} -D -s ${SMBTAD_CONF}
+		unset LC_ALL LC_CTYPE LANG
+		rc_status -v
+		;;
+	stop)
+		echo -n "Shutting down SMB Traffic Analyzer daemon "
+		checkproc -p ${PID_FILE} ${SMBTAD_BIN} || \
+			echo -n " Warning: daemon not running. "
+		killproc -p ${PID_FILE} -t 10 ${SMBTAD_BIN}
+		rc_status -v
+		;;
+	restart)
+		$0 stop
+		$0 start
+		rc_status
+		;;
+	status)
+		echo -n "Checking for Samba SMB daemon "
+		checkproc -p ${PID_FILE} ${SMBTAD_BIN}
+		rc_status -v
+		;;
+	*)
+		echo "Usage: $0 {start|stop|status|restart}"
+		exit 1
+		;;
+esac
+rc_exit
