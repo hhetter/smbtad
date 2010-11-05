@@ -76,9 +76,7 @@ if (NOT INIPARSER_INCLUDE_DIR)
         set_target_properties(iniparser PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/iniparser3.0b/libiniparser.a)
 ENDIF()
 
-
-ADD_CUSTOM_TARGET(createLinks COMMAND ${CMAKE_COMMAND} -E create_symlink /etc/init.d/smbtad /usr/sbin/rcsmbtad)
-
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/make_symlink.cmake "exec_program(${CMAKE_COMMAND} ARGS -E create_symlink /etc/init.d/smbtad /usr/sbin/rcsmbtad)")
 
 SET(CurrentExe "smbtad")
 ADD_EXECUTABLE(${CurrentExe} 
@@ -97,9 +95,8 @@ ADD_EXECUTABLE(${CurrentExe}
 	src/monitor-list.c
 	src/sendlist.c
 	src/throughput-list.c)
-ADD_DEPENDENCIES(${CurrentExe} createLinks)
 
 TARGET_LINK_LIBRARIES(${CurrentExe} ${Libraries})
 INSTALL(TARGETS smbtad DESTINATION bin)
 INSTALL(PROGRAMS dist/smbtad DESTINATION /etc/init.d/)
-
+INSTALL(SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/make_symlink.cmake)
