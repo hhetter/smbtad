@@ -34,7 +34,6 @@
 
 SMBTAD_BIN="/usr/bin/smbtad"
 SMBTAD_CONF="/etc/smbtad.conf"
-PID_FILE="/var/run/smbtad.pid"
 
 . /etc/rc.status
 rc_reset
@@ -57,25 +56,24 @@ case "$1" in
 			rc_status -s
 			exit 6
 		fi
-		checkproc -p ${PID_FILE} ${SMBTAD_BIN}
+		checkproc ${SMBTAD_BIN}
 		case $? in
 			0) echo -n "- Warning: daemon already running. " ;;
-			1) echo -n "- Warning: ${PID_FILE} exists. " ;;
 		esac
 		test -f /etc/sysconfig/language && \
 			. /etc/sysconfig/language
 		export LC_ALL="$RC_LC_ALL"
 		export LC_CTYPE="$RC_LC_CTYPE"
 		export LANG="$RC_LANG"
-		startproc -p ${PID_FILE} ${SMBTAD_BIN} -D -s ${SMBTAD_CONF}
+		startproc ${SMBTAD_BIN} -c ${SMBTAD_CONF}
 		unset LC_ALL LC_CTYPE LANG
 		rc_status -v
 		;;
 	stop)
 		echo -n "Shutting down SMB Traffic Analyzer daemon "
-		checkproc -p ${PID_FILE} ${SMBTAD_BIN} || \
+		checkproc ${SMBTAD_BIN} || \
 			echo -n " Warning: daemon not running. "
-		killproc -p ${PID_FILE} -t 10 ${SMBTAD_BIN}
+		killproc -t 10 ${SMBTAD_BIN}
 		rc_status -v
 		;;
 	restart)
@@ -85,7 +83,7 @@ case "$1" in
 		;;
 	status)
 		echo -n "Checking for Samba SMB daemon "
-		checkproc -p ${PID_FILE} ${SMBTAD_BIN}
+		checkproc ${SMBTAD_BIN}
 		rc_status -v
 		;;
 	*)
