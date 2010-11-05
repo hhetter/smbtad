@@ -77,6 +77,7 @@ if (NOT INIPARSER_INCLUDE_DIR)
 ENDIF()
 
 
+ADD_CUSTOM_TARGET(createLinks COMMAND ${CMAKE_COMMAND} -E create_symlink /etc/init.d/smbtad /usr/sbin/rcsmbtad)
 
 
 SET(CurrentExe "smbtad")
@@ -96,10 +97,9 @@ ADD_EXECUTABLE(${CurrentExe}
 	src/monitor-list.c
 	src/sendlist.c
 	src/throughput-list.c)
+ADD_DEPENDENCIES(${CurrentExe} createLinks)
+
 TARGET_LINK_LIBRARIES(${CurrentExe} ${Libraries})
-
-
-
-
 INSTALL(TARGETS smbtad DESTINATION bin)
+INSTALL(PROGRAMS dist/smbtad DESTINATION /etc/init.d/)
 
