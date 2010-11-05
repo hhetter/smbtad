@@ -1,0 +1,15 @@
+[general]
+	debug_level = 0
+
+
+[network]
+	port_number = 3490
+	query_port = 3491
+
+[database]
+	sqlite_filename = /tmp/testfile.db
+
+[maintenance]
+	interval = 00:01:00
+	config = 01,00:00:00
+

@@ -116,7 +116,16 @@ int configuration_load_config_file( config_t *c)
 	}
 	cc = iniparser_getstring(Mydict,"general:keyfile",NULL);
 	if (cc != NULL) {
+		c->keyfile = strdup(cc);
 		configuration_load_key_from_file( c);
+	}
+	cc = iniparser_getstring(Mydict,"maintenance:interval",NULL);
+	if (cc != NULL) {
+		strncpy(c->maintenance_timer_str,cc,199);
+	}
+	cc = iniparser_getstring(Mydict,"maintenance:config",NULL);
+	if (cc != NULL) {
+		strncpy(c->maint_run_time_str,cc,199);
 	}
 	return 0;
 }
@@ -247,7 +256,7 @@ int configuration_check_configuration( config_t *c )
         char *Begin;
         if ( Helper==NULL ) {
                 printf("\n\nERROR: The maintenance-timer-conf value is "
-                        "in the wrong format! 1\n");
+                        "in the wrong format! \n");
                 exit (0);
         }
         *Helper='\0';
@@ -257,7 +266,7 @@ int configuration_check_configuration( config_t *c )
 
         if ( Helper==NULL) {
                 printf("\n\nERROR: The maintenance-timer-conf value is in"
-                        " the wrong format! 2\n");
+                        " the wrong format! \n");
                 exit (0);
         }
         *Helper='\0';
@@ -268,7 +277,7 @@ int configuration_check_configuration( config_t *c )
 
         if ( Helper==NULL) {
                 printf("\n\nERROR: The maintenance-timer-conf value is "
-                        "in the wrong format! 3\n");
+                        "in the wrong format! \n");
                 exit (0);
         }
         *Helper='\0';
