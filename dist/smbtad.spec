@@ -25,7 +25,7 @@ Requires:	sqlite3 >= 3.7
 BuildRecommends: libiniparser-devel
 License:        GPLv3+
 Group:          Productivity/Networking/Samba
-Version:        1.0
+Version:        1.1
 Release:        1
 Summary:        A collector of smbd share usage data
 Url:            http://github.com/hhetter/smbtad
@@ -70,7 +70,8 @@ pushd build
 make DESTDIR=%{buildroot} install
 %endif
 popd build
-
+mkdir -p %{buildroot}/usr/sbin
+ln -s /etc/init.d/smbtad %{buildroot}/usr/sbin/rcsmbtad
 
 %clean
 %__rm -rf %{buildroot}
