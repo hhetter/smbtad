@@ -32,6 +32,8 @@ Url:            http://github.com/hhetter/smbtad
 Source0:        %{name}-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
+%define INITDIR %{_sysconfdir}/init.d
+
 %description
 smbtad is the data receiver of the SMB Traffic Analyzer project.
 With SMB Traffic Analyzer statistics about the data flow on a Samba network can be created.
@@ -76,5 +78,6 @@ popd build
 %files
 %defattr(-,root,root)
 %{_bindir}/smbtad
-
+%{_sbindir}/rcsmbtad
+%attr(0754,root,root) %config %{INITDIR}/smbtad
 %changelog
