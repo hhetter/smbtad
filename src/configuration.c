@@ -102,7 +102,7 @@ int configuration_load_config_file( config_t *c)
 	if (cc != NULL) c->port = atoi(cc);
 
 	cc = iniparser_getstring( Mydict, "network:query_port",NULL);
-	if (cc != NULL) c->port = atoi(cc);
+	if (cc != NULL) c->query_port = atoi(cc);
 
         cc = iniparser_getstring(Mydict,"database:sqlite_filename",NULL);
         if ( cc != NULL ) {
