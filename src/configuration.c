@@ -58,7 +58,7 @@ void configuration_define_defaults( config_t *c )
 	c->daemon = 1;
 	c->config_file = NULL;
 	c->dbg = 0; // debug level
-	
+	c->unix_socket = 0;
 	c->dbhandle = NULL;
 	c->keyfile =NULL;
 	c->query_port = 3941;
@@ -176,15 +176,19 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 			{ "database",1,NULL,'b'},
 			{ "maintenance-timer",1,NULL,'t'},
 			{ "maintenance-timer-config",1,NULL,'m'},
+			{ "unix-domain-socket",0,NULL,'u'},
 			{ 0,0,0,0 }
 		};
 
 		i = getopt_long( argc, argv,
-			"d:i:oc:k:q:b:t:m:", long_options, &option_index );
+			"d:i:oc:k:q:b:t:m:u", long_options, &option_index );
 
 		if ( i == -1 ) break;
 
 		switch (i) {
+			case 'u':
+				c->unix_socket = 1;
+				break;
 			case 'i':
 				c->port = atoi( optarg );
 				break;

@@ -42,7 +42,9 @@ typedef struct configuration_data {
 	char *config_file;
 	/* daemon mode */
 	int daemon;
-
+	/* 1 if a unix domain socket is used for the connection to the	*/
+	/* module.							*/
+	int unix_socket;
 	/* run time configuration */
         /* integers used to separate the time for the maintenance run   */
         int mdays,mminutes,mseconds,mhours;

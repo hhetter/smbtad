@@ -30,6 +30,10 @@ void help_show_help()
 	printf("\n");
 	printf("-i	--inet-port		Specifiy the port to be used.	\n");
 	printf("				Default: 3490.			\n");
+	printf("-u	--unix-domain-socket	If this parameter is specified, \n");
+	printf("				a unix domain socket at		\n");
+	printf("				/var/tmp/stadsocket will be	\n");
+	printf("				used.				\n");
 	printf("-d      --debug-level		Specify the debug level (0-10).	\n");
 	printf("				Default: 0.			\n");
 	printf("-o	--interactive		Don't run as daemon.		\n");
