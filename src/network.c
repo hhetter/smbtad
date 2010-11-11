@@ -332,6 +332,30 @@ int network_create_socket( int port )
 }
 
 /**
+ * create a unix domain socket
+ *
+ */
+int network_create_unix_socket()
+{
+        /* Create a streaming UNIX Domain Socket */
+        int s,len;
+        struct sockaddr_un local;
+        if ((s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1){
+                syslog(LOG_DAEMON, "ERROR: unix socket creation failed.");
+                return 1;
+        }
+
+        local.sun_family= AF_UNIX;
+        strcpy(local.sun_path,"/var/tmp/stadsocket");
+        unlink(local.sun_path);
+        len=strlen(local.sun_path) + sizeof(local.sun_family);
+        bind(s,(struct sockaddr *) &local, len);
+        listen(s,50);
+        return s;
+}
+
+
+/**
  * Run select() on the server handle, and call
  * the required functions to handle data.
  * config_t *c		A configuration structure.
@@ -348,8 +372,11 @@ void network_handle_connections( config_t *c )
 
 	FD_ZERO(&active_read_fd_set );
 	FD_ZERO(&active_write_fd_set );
+	if (c->unix_socket == 0) 
+		c->vfs_socket = network_create_socket( c->port );
+	else
+		c->vfs_socket = network_create_unix_socket();
 
-	c->vfs_socket = network_create_socket( c->port );
 	c->query_socket = network_create_socket( c->query_port );
 
 	connection_list_add( c->vfs_socket, SOCK_TYPE_DATA );
