@@ -97,6 +97,8 @@ int configuration_load_config_file( config_t *c)
 
 
 	if ( Mydict == NULL ) return -1;
+	cc = iniparser_getstring (Mydict, "network:unix_domain_socket",NULL);
+	if (cc!= NULL) c->unix_socket = 1;
 
 	cc = iniparser_getstring( Mydict, "network:port_number",NULL);
 	if (cc != NULL) c->port = atoi(cc);
