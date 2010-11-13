@@ -68,17 +68,30 @@ char *network_create_header( TALLOC_CTX *ctx,
  * Accept an incoming connection
  * and add it to the list of connections.
  */
-int network_accept_connection( config_t *c, struct sockaddr_in *remote, int type)
+int network_accept_connection( config_t *c, struct sockaddr_in *remote_inet, struct sockaddr_un *remote_unix, int type)
 {
-	socklen_t t=sizeof(*remote);
+	socklen_t t;
+	if ( c->unix_socket ==1 ) t=sizeof(*remote_unix);
+	else t=sizeof(*remote_inet);
 	int sr;
 	int sock = 0;
 	if (type == SOCK_TYPE_DATA) 	sock = c->vfs_socket;
 	if (type == SOCK_TYPE_DB_QUERY)	sock = c->query_socket;
-	if ( (sr = accept( sock,
-			(struct sockaddr *) remote, &t)) == -1) {
-		syslog(LOG_DEBUG,"ERROR: accept failed.");
-		return -1;
+	/* accepting on a unix socket can only happen with */
+	/* SOCK_TYPE_DATA, since the client programs only  */
+	/* support an internet socket */
+	if (c->unix_socket == 1 && type == SOCK_TYPE_DATA) {
+		if ( (sr = accept( sock,
+				(struct sockaddr *) remote_unix, &t)) == -1) {
+			syslog(LOG_DEBUG,"ERROR: accept (unix socket) failed.");
+			return -1;
+		}
+	} else {
+		if ( (sr = accept( sock,
+				(struct sockaddr *) remote_inet, &t)) == -1) {
+			syslog(LOG_DEBUG,"ERROR: accept (inet) failed.");
+			return -1;
+		}
 	}
 	connection_list_add(sr, type);
 	return sr;
@@ -364,9 +377,8 @@ void network_handle_connections( config_t *c )
 {
 	int i;
 	int z=0;
-	int t;
-	struct sockaddr_in remote;
-	t=sizeof(remote);
+	struct sockaddr_un remote_unix;
+	struct sockaddr_in remote_inet;
 	fd_set read_fd_set, active_read_fd_set;
 	fd_set write_fd_set, active_write_fd_set;
 
@@ -402,12 +414,14 @@ void network_handle_connections( config_t *c )
 				if ( i == c->vfs_socket)
 					sr = network_accept_connection(
 						c,
-						&remote,
+						&remote_inet,
+						&remote_unix,
 						SOCK_TYPE_DATA); 
 				else if ( i == c->query_socket)
 					sr = network_accept_connection(
 						c,
-						&remote,
+						&remote_inet,
+						&remote_unix,
 						SOCK_TYPE_DB_QUERY);
 				else {
 					network_handle_data(i,c);
