@@ -81,10 +81,8 @@ int network_accept_connection( config_t *c,
 	int sock = 0;
 	if (type == SOCK_TYPE_DATA) 	sock = c->vfs_socket;
 	if (type == SOCK_TYPE_DB_QUERY)	sock = c->query_socket;
-	/* accepting on a unix socket can only happen with */
-	/* SOCK_TYPE_DATA, since the client programs only  */
-	/* support an internet socket */
-	if (c->unix_socket == 1 && type == SOCK_TYPE_DATA) {
+	if ( (c->unix_socket == 1 && type == SOCK_TYPE_DATA) || 
+		(c->unix_socket_clients == 1 && type == SOCK_TYPE_DB_QUERY)) {
 		if ( (sr = accept( sock,
 				(struct sockaddr *) remote_unix, &t)) == -1) {
 			syslog(LOG_DEBUG,
@@ -358,7 +356,7 @@ int network_create_socket( int port )
  * create a unix domain socket
  *
  */
-int network_create_unix_socket()
+int network_create_unix_socket(char *name)
 {
         /* Create a streaming UNIX Domain Socket */
         int s,len;
@@ -369,7 +367,7 @@ int network_create_unix_socket()
         }
 
         local.sun_family= AF_UNIX;
-        strcpy(local.sun_path,"/var/tmp/stadsocket");
+        strcpy(local.sun_path,name);
         unlink(local.sun_path);
         len=strlen(local.sun_path) + sizeof(local.sun_family);
         bind(s,(struct sockaddr *) &local, len);
@@ -397,9 +395,12 @@ void network_handle_connections( config_t *c )
 	if (c->unix_socket == 0) 
 		c->vfs_socket = network_create_socket( c->port );
 	else
-		c->vfs_socket = network_create_unix_socket();
+		c->vfs_socket = network_create_unix_socket("/var/tmp/stadsocket");
 
-	c->query_socket = network_create_socket( c->query_port );
+	if (c->unix_socket_clients == 0)
+		c->query_socket = network_create_socket( c->query_port );
+	else
+		c->query_socket = network_create_unix_socket("/var/tmp/stadsocket_client");
 
 	connection_list_add( c->vfs_socket, SOCK_TYPE_DATA );
 	connection_list_add( c->query_socket, SOCK_TYPE_DB_QUERY);
