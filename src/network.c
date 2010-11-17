@@ -43,7 +43,8 @@ int network_receive_data( char *buf, int sock, int length, int *rlen)
 	*(buf + t) = '\0';
 	*rlen = *rlen + t;
 	DEBUG(1) syslog(LOG_DEBUG,
-		"network_receive_data: received %i bytes, >>%s<<",(int) t,buf);
+		"network_receive_data: received %i bytes, >>%s<<",
+		(int) t,buf);
 	return t;
 }
 
@@ -68,7 +69,10 @@ char *network_create_header( TALLOC_CTX *ctx,
  * Accept an incoming connection
  * and add it to the list of connections.
  */
-int network_accept_connection( config_t *c, struct sockaddr_in *remote_inet, struct sockaddr_un *remote_unix, int type)
+int network_accept_connection( config_t *c,
+	struct sockaddr_in *remote_inet,
+	struct sockaddr_un *remote_unix,
+	int type)
 {
 	socklen_t t;
 	if ( c->unix_socket ==1 ) t=sizeof(*remote_unix);
@@ -83,7 +87,8 @@ int network_accept_connection( config_t *c, struct sockaddr_in *remote_inet, str
 	if (c->unix_socket == 1 && type == SOCK_TYPE_DATA) {
 		if ( (sr = accept( sock,
 				(struct sockaddr *) remote_unix, &t)) == -1) {
-			syslog(LOG_DEBUG,"ERROR: accept (unix socket) failed.");
+			syslog(LOG_DEBUG,
+				"ERROR: accept (unix socket) failed.");
 			return -1;
 		}
 	} else {
@@ -124,7 +129,8 @@ void network_close_connections()
 		monitor_list_delete_by_socket(connection->mysocket);
 		connection2=connection->next;
 		connection_list_remove(connection->mysocket);
-        	syslog(LOG_DEBUG,"network_close_connections: closed connection on "
+        	syslog(LOG_DEBUG,
+			"network_close_connections: closed connection on "
                 	"socket %i",connection->mysocket);
 		connection=connection2;
 	}
@@ -287,14 +293,16 @@ int network_handle_data( int i, config_t *c )
 					"Adding to cache %s | len = %i",
 					connection->body,
 					connection->blocklen);
-				cache_add(connection->body, connection->blocklen);
+				cache_add(connection->body,
+					connection->blocklen);
 			}
 			if (connection->connection_function == SOCK_TYPE_DB_QUERY) {
 				DEBUG(1) syslog(LOG_DEBUG,
 					"Adding to queries %s | len = %i",
 					connection->body,
 					connection->blocklen);
-				query_add(connection->body, connection->blocklen,i,0);
+				query_add(connection->body,
+					connection->blocklen,i,0);
 			}
 			TALLOC_FREE(connection->header);
 			break;
@@ -331,7 +339,9 @@ int network_create_socket( int port )
 	my_addr.sin6_port = htons( port );
 	my_addr.sin6_addr = in6addr_any;
 
-	if (bind(sock_fd,(struct sockaddr *)&my_addr,sizeof(my_addr)) == -1 ) {
+	if (bind(sock_fd,
+		(struct sockaddr *)&my_addr,
+		sizeof(my_addr)) == -1 ) {
 		syslog( LOG_DEBUG, "ERROR: bind failed." );
 		exit(1);
 	}
@@ -433,14 +443,5 @@ void network_handle_connections( config_t *c )
 		 * data structure has a prepared result in the queue
 		 */
 		sendlist_send(&write_fd_set);
-
-		/*
-		 * process monitors
-		 *
-		 */
-/*
-		for ( i = 0; i < connection_list_max() + 1; ++i)
-			if (FD_ISSET(i,&write_fd_set)) monitor_list_process(i);
-*/				
 	}
 }
