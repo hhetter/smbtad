@@ -468,7 +468,8 @@ void monitor_initialize( struct monitor_item *entry)
 				"select sum(length) from write where ");
 		} else if (strcmp(entry->param,"RW")==0) {
 			asprintf(&request,
-				"select sum(length) from write UNION select sum(length) from read where ");
+				"select sum(length) from write UNION "
+				"select sum(length) from read where ");
 		} else { // FIXME! We have to remove this monitor now !
 			}
 		char *cond = monitor_list_create_sql_cond(entry);
@@ -572,20 +573,6 @@ void monitor_send_result( struct monitor_item *entry)
                         tmpdatastr);
                 sendlist_add(sendstr,entry->sock,strlen(sendstr));
                 break;
-
-/*
-	case MONITOR_THROUGHPUT: ;
-		asprintf(&tmpdatastr,"%lu",
-			((struct monitor_local_data_throughput *)
-				(entry->local_data))->throughput);
-                asprintf(&sendstr,"%04i%s%04i%s",
-                        (int) strlen(idstr),
-                        idstr,
-                        (int) strlen(tmpdatastr),
-                        tmpdatastr);
-                sendlist_add(sendstr,entry->sock,strlen(sendstr));
-                break;
-*/
 	default: ;
 		break;
 	}
@@ -654,7 +641,9 @@ void monitor_list_update( int op_id,
 					 strcmp(entry->param,"RW")==0)) {
 					throughput_list_add(
 					((struct monitor_local_data_throughput *)
-					entry->local_data)->list,atol(data),montimestamp);
+					entry->local_data)->list,
+					atol(data),
+					montimestamp);
 					break;
 				}
 				if ((op_id == vfs_id_write ||
@@ -663,7 +652,9 @@ void monitor_list_update( int op_id,
 					strcmp(entry->param,"RW")==0)) {
                                         throughput_list_add(
                                         ((struct monitor_local_data_throughput *)
-                                        entry->local_data)->list,atol(data),montimestamp);
+                                        entry->local_data)->list,
+					atol(data),
+					montimestamp);
                                         break;
 				}
 				break;
@@ -713,7 +704,8 @@ void monitor_list_update( int op_id,
 								 montimestamp);
 				DEBUG(1) syslog(LOG_DEBUG, "monitor_list_update: MONITOR_LOG:"
 					"created infostring >%s<",
-					((struct monitor_local_data_log *) entry->local_data)->log);
+					((struct monitor_local_data_log *)
+						entry->local_data)->log);
 				free(op_id_str);
 				monitor_send_result(entry);
 				break;
