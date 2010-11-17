@@ -183,12 +183,12 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 			{ "maintenance-timer",1,NULL,'t'},
 			{ "maintenance-timer-config",1,NULL,'m'},
 			{ "unix-domain-socket",0,NULL,'u'},
-			{ "unix-domain-socket-clients",0,NULL,'n'},
+			{ "unix-domain-socket-cl",0,NULL,'n'},
 			{ 0,0,0,0 }
 		};
 
 		i = getopt_long( argc, argv,
-			"d:i:oc:k:q:b:t:m:u", long_options, &option_index );
+			"d:i:oc:k:q:b:t:m:un", long_options, &option_index );
 
 		if ( i == -1 ) break;
 
