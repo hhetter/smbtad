@@ -59,5 +59,6 @@ void help_show_help()
 	printf("                                maintenance routine.\n");
 	printf("                                Format is: DAYS, HH:MM:SS\n");
 	printf("                                Default: 1,00:00:00\n");
-
+	printf("-n --unix-domain-socket-cl	Will use a unix domain socket\n");
+	printf("				to connect to clients.\n");
 }
