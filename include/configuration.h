@@ -45,6 +45,9 @@ typedef struct configuration_data {
 	/* 1 if a unix domain socket is used for the connection to the	*/
 	/* module.							*/
 	int unix_socket;
+	/* 1 if a unix domain socket is used for the connection the the */
+	/* client 							*/
+	int unix_socket_clients;
 	/* run time configuration */
         /* integers used to separate the time for the maintenance run   */
         int mdays,mminutes,mseconds,mhours;

@@ -59,6 +59,7 @@ void configuration_define_defaults( config_t *c )
 	c->config_file = NULL;
 	c->dbg = 0; // debug level
 	c->unix_socket = 0;
+	c->unix_socket_clients = 0;
 	c->dbhandle = NULL;
 	c->keyfile =NULL;
 	c->query_port = 3941;
@@ -99,6 +100,9 @@ int configuration_load_config_file( config_t *c)
 	if ( Mydict == NULL ) return -1;
 	cc = iniparser_getstring (Mydict, "network:unix_domain_socket",NULL);
 	if (cc!= NULL) c->unix_socket = 1;
+
+	cc = iniparser_getstring (Mydict, "network:unix_domain_socket_clients",NULL);
+	if (cc!= NULL) c->unix_socket_clients = 1;
 
 	cc = iniparser_getstring( Mydict, "network:port_number",NULL);
 	if (cc != NULL) c->port = atoi(cc);
@@ -179,6 +183,7 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 			{ "maintenance-timer",1,NULL,'t'},
 			{ "maintenance-timer-config",1,NULL,'m'},
 			{ "unix-domain-socket",0,NULL,'u'},
+			{ "unix-domain-socket-clients",0,NULL,'n'},
 			{ 0,0,0,0 }
 		};
 
@@ -190,6 +195,9 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 		switch (i) {
 			case 'u':
 				c->unix_socket = 1;
+				break;
+			case 'n':
+				c->unix_socket_clients = 1;
 				break;
 			case 'i':
 				c->port = atoi( optarg );
