@@ -16,21 +16,19 @@ INCLUDE(${CMAKE_SOURCE_DIR}/FindSqlite3.cmake)
 SET(CMAKE_BUILD_TYPE "Debug")
 SET(CMAKE_C_FLAGS_DEBUG "-g -Wall")
 #SET(CMAKE_VERBOSE_MAKEFILE ON)
+
+
+#
+# check for sqlite3
+#
+include(FindSqlite3.cmake)
 SET(SQLITE3_MIN_VERSION "3.7.0")
 FIND_PACKAGE(Sqlite3 REQUIRED)
+if (NOT SQLITE3_FOUND)
+	MESSAGE( FATAL_ERROR "ERROR: you'll need sqlite3 development files installed.")
+ENDIF()
+
 SET(CMAKE_INSTALL_PREFIX /usr)
-SET(Libraries
-#list libraries here
-sqlite3
-pthread
-rt
-dl
-iniparser
-talloc
-)
-
-
-SET(PLATFORM_LINKFLAGS "-pthread")
 
 #
 # check for talloc
@@ -56,6 +54,15 @@ if (CMAKE_SYSTEM_NAME STREQUAL "SunOS" )
                iberty
        )
 endif()
+
+#
+# check for pthreads
+#
+FIND_PACKAGE(Threads)
+if (NOT CMAKE_USE_PTHREADS_INIT)
+        MESSAGE( FATAL_ERROR "ERROR: you will need pthread development files installed.")
+ENDIF()
+
 
 
 #
@@ -96,7 +103,7 @@ ADD_EXECUTABLE(${CurrentExe}
 	src/sendlist.c
 	src/throughput-list.c)
 
-TARGET_LINK_LIBRARIES(${CurrentExe} ${Libraries})
+TARGET_LINK_LIBRARIES(${CurrentExe} ${INIPARSER_LIBRARIES} ${SQLITE3_LIBRARIES} ${TALLOC_LIBRARIES} ${Libraries} iniparser ${CMAKE_THREAD_LIBS_INIT})
 INSTALL(TARGETS smbtad DESTINATION bin)
 INSTALL(PROGRAMS dist/smbtad DESTINATION /etc/init.d/)
 INSTALL(SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/make_symlink.cmake)
