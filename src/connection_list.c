@@ -82,9 +82,8 @@ int connection_list_remove( int socket )
 }
 
 void connection_list_recreate_fs_sets( 	fd_set *active_read_fd_set,
-					fd_set *active_write_fd_set,
-					fd_set *read_fd_set,
-					fd_set *write_fd_set) {
+					fd_set *active_write_fd_set)
+{
 	FD_ZERO(active_read_fd_set);
 	FD_ZERO(active_write_fd_set);
 	struct connection_struct *Searcher = connection_list_start;
@@ -94,9 +93,6 @@ void connection_list_recreate_fs_sets( 	fd_set *active_read_fd_set,
 		FD_SET(Searcher->mysocket, active_write_fd_set);
 		Searcher = Searcher->next;
 	}
-
-	*read_fd_set = *active_read_fd_set;
-	*write_fd_set = *active_write_fd_set;
 }
 
 struct connection_struct *connection_list_begin()

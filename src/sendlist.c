@@ -59,6 +59,7 @@ int sendlist_add( char *data,int sock, int length) {
 		entry->state = SENDLIST_STATUS_SEND_HEADER;
 		entry->header = NULL; 
 		pthread_mutex_unlock(&sendlist_lock);
+		sendlist_send();
                return 0;
         }
         entry = (struct sendlist_item *) malloc(sizeof(struct sendlist_item));
@@ -77,18 +78,35 @@ int sendlist_add( char *data,int sock, int length) {
 	entry->state = SENDLIST_STATUS_SEND_HEADER;
 	entry->header = NULL;
 	pthread_mutex_unlock(&sendlist_lock);
+	sendlist_send();
         return 0;
 }
+
+/* return 1 if there's nothing to send */
+int sendlist_empty()
+{
+	if (sendlist_start == NULL) return 1;
+	else return 0;
+}
+
 
 /*
  * get the first item of the sendlist, check if it's possible to send,
  * send the item and remove the first item
  */
-int sendlist_send( fd_set *write_fd_set ) {
+int sendlist_send( ) {
 	struct sendlist_item *entry;
+	fd_set write_fd_set, read_fd_set;
+	FD_ZERO(&write_fd_set );
+	connection_list_recreate_fs_sets(
+                        &read_fd_set,
+                        &write_fd_set);
+        int h = connection_list_max() + 1;
+        int z = select( h,
+                        NULL, &write_fd_set, NULL,NULL);
 	pthread_mutex_lock(&sendlist_lock);
 	entry = sendlist_start;
-	if (entry == NULL || !FD_ISSET(entry->sock, write_fd_set)) {
+	if (entry == NULL || !FD_ISSET(entry->sock, &write_fd_set)) {
 		pthread_mutex_unlock(&sendlist_lock);
 		return 0;
 	}
@@ -110,8 +128,6 @@ int sendlist_send( fd_set *write_fd_set ) {
                         return 0;
                 }
                 entry->state = SENDLIST_STATUS_SEND_DATA;
-		pthread_mutex_unlock(&sendlist_lock);
-		return 0;
 
 	case SENDLIST_STATUS_SEND_HEADER_ONGOING:
 		entry->send_len = entry->send_len + send(entry->sock,
@@ -122,8 +138,6 @@ int sendlist_send( fd_set *write_fd_set ) {
 			return 0;
 		}
 		entry->state = SENDLIST_STATUS_SEND_DATA;
-		pthread_mutex_unlock(&sendlist_lock);
-		return 0;
 
 	case SENDLIST_STATUS_SEND_DATA:
 		entry->send_len = 0;
