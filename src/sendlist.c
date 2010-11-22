@@ -102,8 +102,8 @@ int sendlist_send( ) {
                         &read_fd_set,
                         &write_fd_set);
         int h = connection_list_max() + 1;
-        int z = select( h,
-                        NULL, &write_fd_set, NULL,NULL);
+        select( h,
+        	NULL, &write_fd_set, NULL,NULL);
 	pthread_mutex_lock(&sendlist_lock);
 	entry = sendlist_start;
 	if (entry == NULL || !FD_ISSET(entry->sock, &write_fd_set)) {
