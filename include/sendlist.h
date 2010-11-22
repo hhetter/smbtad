@@ -35,9 +35,9 @@ struct sendlist_item {
 	enum sendlist_item_state state;
 	struct sendlist_item *next;
 };
-
+int sendlist_empty();
 pthread_mutex_t sendlist_lock;
 void sendlist_init();
 int sendlist_add( char *data,int sock, int length);
-int sendlist_send( fd_set *write_fd_set );
+int sendlist_send( );
 void sendlist_list();

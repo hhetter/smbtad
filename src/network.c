@@ -387,11 +387,12 @@ void network_handle_connections( config_t *c )
 	int z=0;
 	struct sockaddr_un remote_unix;
 	struct sockaddr_in remote_inet;
-	fd_set read_fd_set, active_read_fd_set;
-	fd_set write_fd_set, active_write_fd_set;
 
-	FD_ZERO(&active_read_fd_set );
-	FD_ZERO(&active_write_fd_set );
+	fd_set read_fd_set;
+	fd_set write_fd_set;
+
+	FD_ZERO(&read_fd_set );
+	FD_ZERO(&write_fd_set );
 	if (c->unix_socket == 0) 
 		c->vfs_socket = network_create_socket( c->port );
 	else
@@ -407,19 +408,16 @@ void network_handle_connections( config_t *c )
 	for (;;) {
 		z = 0;
 		connection_list_recreate_fs_sets(
-			&active_read_fd_set,
-			&active_write_fd_set,
 			&read_fd_set,
 			&write_fd_set);
 		int h = connection_list_max() + 1;
 		z = select( h,
-			&read_fd_set, &write_fd_set, NULL,NULL);
+			&read_fd_set, NULL, NULL,NULL);
 		if (z < 0) {
 			syslog(LOG_DEBUG,"ERROR: select error.");
 			exit(1);
 		}
 		for( i = 0; i < h; ++i) {
-			monitor_list_process(i);
 			if (FD_ISSET(i,&read_fd_set)) {
 				int sr;
 				if ( i == c->vfs_socket)
@@ -436,13 +434,9 @@ void network_handle_connections( config_t *c )
 						SOCK_TYPE_DB_QUERY);
 				else {
 					network_handle_data(i,c);
+					monitor_list_process(i);
 				}
 			}
 		}
-		/*
-		 * send a query result to a client, if our runtime
-		 * data structure has a prepared result in the queue
-		 */
-		sendlist_send(&write_fd_set);
 	}
 }
