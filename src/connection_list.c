@@ -64,6 +64,7 @@ int connection_list_remove( int socket )
 			if ( Prev == NULL ) {
 				/* first entry */
 				connection_list_start = Searcher->next;
+				TALLOC_FREE(Searcher->CTX);
 				free(Searcher);
 				return 0;
 			}
