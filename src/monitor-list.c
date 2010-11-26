@@ -528,6 +528,8 @@ void monitor_send_result( struct monitor_item *entry)
 			(int) strlen(tmpdatastr),
 			tmpdatastr);
 		sendlist_add(sendstr,entry->sock,strlen(sendstr));
+		free(sendstr);
+		free(tmpdatastr);
 		break;
 	case MONITOR_TOTAL: ;
 		asprintf(&tmpdatastr,"%lu",
@@ -539,6 +541,8 @@ void monitor_send_result( struct monitor_item *entry)
                         (int) strlen(tmpdatastr),
                         tmpdatastr);
                 sendlist_add(sendstr,entry->sock,strlen(sendstr));
+		free(sendstr);
+		free(tmpdatastr);
                 break;
 	case MONITOR_LOG: ;
 		asprintf(&tmpdatastr,"%s",
@@ -550,6 +554,8 @@ void monitor_send_result( struct monitor_item *entry)
 			(int) strlen(tmpdatastr),
 			tmpdatastr);
 		sendlist_add(sendstr,entry->sock,strlen(sendstr));
+		free(sendstr);
+		free(tmpdatastr);
 		break;
 	case MONITOR_READ: ;
 		asprintf(&tmpdatastr,"%lu",
@@ -561,6 +567,8 @@ void monitor_send_result( struct monitor_item *entry)
 			(int) strlen(tmpdatastr),
 			tmpdatastr);
 		sendlist_add(sendstr,entry->sock,strlen(sendstr));
+		free(sendstr);
+		free(tmpdatastr);
 		break;
         case MONITOR_WRITE: ;
                 asprintf(&tmpdatastr,"%lu",
@@ -572,6 +580,8 @@ void monitor_send_result( struct monitor_item *entry)
                         (int) strlen(tmpdatastr),
                         tmpdatastr);
                 sendlist_add(sendstr,entry->sock,strlen(sendstr));
+		free(sendstr);
+		free(tmpdatastr);
                 break;
 
 /*

@@ -14,7 +14,7 @@ include(CPack)
 #include(CPackConfig.cmake)
 INCLUDE(${CMAKE_SOURCE_DIR}/FindSqlite3.cmake)
 SET(CMAKE_BUILD_TYPE "Debug")
-SET(CMAKE_C_FLAGS_DEBUG "-g -Wall")
+SET(CMAKE_C_FLAGS_DEBUG "-g -Wall -D_FORTIFY_SOURCE=2")
 #SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 
