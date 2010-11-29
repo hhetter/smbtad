@@ -5,6 +5,8 @@
     #define _XOPEN_SOURCE
 #endif
 
+#define __EXTENSIONS__
+
 #define _SVID_SOURCE || _BSD_SOURCE || _XOPEN_SOURCE >= 500
 #define _GNU_SOURCE
 
