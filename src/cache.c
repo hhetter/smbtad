@@ -391,6 +391,21 @@ void cache_query_thread(struct configuration_data *config)
 	}
 }
 
+void do_db( struct configuration_data *config, char *dbstring)
+{
+	sqlite3 *database = config->dbhandle;
+	int rc = -1;
+	char *erg = 0;
+	while (rc != SQLITE_OK) {
+		rc = sqlite3_exec(database, dbstring,0,0,&erg);
+		if (rc != SQLITE_OK) {
+			syslog(LOG_DEBUG,"sqlite error: %s",erg);
+			sqlite3_free(erg);
+			sleep(1); // sleep a second then try again
+		}
+	}
+	
+}
 
 /*
  * cache_manager runs as a detached thread. Every half second,
@@ -414,7 +429,6 @@ void cache_manager(struct configuration_data *config )
 	int maintenance_c_val = config->maintenance_seconds / 5;
 	int maintenance_count = 0;
         pthread_detach(pthread_self());
-	sqlite3 *database = config->dbhandle;
 	/* backup the start and make it possible to
 	 * allocate a new cache beginning
 	 */
@@ -429,22 +443,22 @@ void cache_manager(struct configuration_data *config )
         	cache_end = NULL;
         	pthread_mutex_unlock(&cache_mutex);
 		/* store all existing entries into the database */
-		sqlite3_exec(database, "BEGIN TRANSACTION;", 0, 0, 0);
+		do_db(config,"BEGIN TRANSACTION;");
 		while (go_through != NULL) {
 			char *a = cache_make_database_string(database_str, go_through );
-			if (a!= NULL) sqlite3_exec(database, a,0,0,0);
+			if (a!= NULL) do_db(config,a);
 			TALLOC_FREE(a);
 			go_through = go_through->next;
 		}
 		if (backup != NULL) TALLOC_FREE(backup);
-		sqlite3_exec(database, "COMMIT;", 0, 0, 0); 
+		do_db(config,"COMMIT;"); 
 
 		if (maintenance_count == maintenance_c_val) {
 			char String[400];
 			char dbstring[300];
 			struct tm *tm;
 			int fncount = 0;
-			sqlite3_exec(database,"BEGIN TRANSACTION;",0,0,0);
+			do_db(config,"BEGIN TRANSACTION;");
 			while (fnnames[fncount]!=NULL) {
 			        time_t today=time(NULL);
 			        time_t delete_date=today - config->maint_run_time;
@@ -460,10 +474,10 @@ void cache_manager(struct configuration_data *config )
 					fnnames[fncount]);
         			strcat(dbstring,String);
         			strcat(dbstring,"\";");
-				sqlite3_exec(database,dbstring,0,0,0);
+				do_db(config,dbstring);
 				fncount++;
 			}
-			sqlite3_exec(database,"COMMIT;",0,0,0);
+			do_db(config,"COMMIT;");
 			maintenance_count = 0;
 		}
 				
