@@ -403,7 +403,7 @@ int monitor_list_filter_apply( struct monitor_item *entry,
  * create a SQL condition string based on the pattern of the
  * given monitor
  */
-char *monitor_list_create_sql_cond( struct monitor_item *entry)
+char *monitor_list_create_sql_cond( TALLOC_CTX *ctx,struct monitor_item *entry)
 {
 	char *ret = NULL;
 	char *username = NULL;
@@ -413,31 +413,26 @@ char *monitor_list_create_sql_cond( struct monitor_item *entry)
 	char *domain = NULL;
 
 	if (strcmp(entry->username,"*") != 0)
-		asprintf(&username,"username = '%s' and ",entry->username);
-	else asprintf(&username," ");
+		username = talloc_asprintf(ctx,"username = '%s' and ",entry->username);
+	else username = talloc_asprintf(ctx," ");
 	if (strcmp(entry->usersid,"*") != 0)
-		asprintf(&usersid,"usersid = '%s' and ",entry->usersid);
-	else asprintf(&usersid," ");
+		usersid = talloc_asprintf(ctx, "usersid = '%s' and ",entry->usersid);
+	else usersid = talloc_asprintf(ctx," ");
 	if (strcmp(entry->share,"*") != 0)
-		asprintf(&share,"share = '%s' and ",entry->share);
-	else asprintf(&share," ");
+		share = talloc_asprintf(ctx,"share = '%s' and ",entry->share);
+	else share = talloc_asprintf(ctx," ");
 	if (strcmp(entry->file,"*") != 0)
-		asprintf(&file,"file = '%s' and ",entry->file);
-	else asprintf(&file," ");
+		file = talloc_asprintf(ctx,"file = '%s' and ",entry->file);
+	else file = talloc_asprintf(ctx," ");
 	if (strcmp(entry->domain,"*") != 0)
-		asprintf(&domain,"domain = '%s' and ",entry->domain);
-	else asprintf(&domain," ");
-	asprintf(&ret,"%s %s %s %s %s 1 = 1;",
+		domain = talloc_asprintf(ctx,"domain = '%s' and ",entry->domain);
+	else domain = talloc_asprintf(ctx," ");
+	ret = talloc_asprintf(ctx,"%s %s %s %s %s 1 = 1;",
 		username,
 		usersid,
 		share,
 		file,
 		domain);
-	free(username);
-	free(usersid);
-	free(share);
-	free(domain);
-	free(file);
 	return ret;
 }
 
@@ -461,27 +456,27 @@ void monitor_initialize( struct monitor_item *entry)
 			entry->local_data)->sum = 0;
 		char *request;
 		if (strcmp(entry->param,"R")==0) {
-			asprintf(&request,
+			request = talloc_asprintf(NULL,
 				"select sum(length) from read where ");
 		} else if (strcmp(entry->param,"W")==0) {
-			asprintf(&request,
+			request = talloc_asprintf(NULL,
 				"select sum(length) from write where ");
 		} else if (strcmp(entry->param,"RW")==0) {
-			asprintf(&request,
+			request = talloc_asprintf(NULL,
 				"select sum(length) from write UNION "
 				"select sum(length) from read where ");
 		} else { // FIXME! We have to remove this monitor now !
 			}
-		char *cond = monitor_list_create_sql_cond(entry);
-		asprintf(&request,"%s %s",request,cond);
-		free(cond);
+		char *cond = monitor_list_create_sql_cond(NULL, entry);
+		request = talloc_asprintf(NULL,"%s %s",request,cond);
+		talloc_free(cond);
 		DEBUG(1) syslog(LOG_DEBUG,"monitor_initizalize: "
 			"created >%s< as request string!",request);
 		query_add(request,
 			strlen(request),
 			entry->sock, entry->id);
 		entry->state = MONITOR_INITIALIZE_INIT_PREP;
-		free(request);
+		talloc_free(request);
 		break;
 	case MONITOR_THROUGHPUT: ;
 		((struct monitor_local_data_throughput *)
@@ -516,77 +511,72 @@ void monitor_send_result( struct monitor_item *entry)
 	char *sendstr = NULL;
 	char *idstr = NULL;
 	char *tmpdatastr;
-	asprintf(&idstr,"%i",entry->id);
+	idstr = talloc_asprintf(NULL,"%i",entry->id);
 	switch(entry->function) {
 	case MONITOR_ADD: ;
-		asprintf(&tmpdatastr,"%lu",
+		tmpdatastr = talloc_asprintf(NULL,"%lu",
 			((struct monitor_local_data_adder *)
 				(entry->local_data))->sum);
-		asprintf(&sendstr,"%04i%s%04i%s",
+		sendstr = talloc_asprintf(tmpdatastr,"%04i%s%04i%s",
 			(int) strlen(idstr),
 			idstr,
 			(int) strlen(tmpdatastr),
 			tmpdatastr);
 		sendlist_add(sendstr,entry->sock,strlen(sendstr));
-		free(sendstr);
-		free(tmpdatastr);
+		talloc_free(tmpdatastr);
 		break;
 	case MONITOR_TOTAL: ;
-		asprintf(&tmpdatastr,"%lu",
+		tmpdatastr = talloc_asprintf(NULL,"%lu",
 			((struct monitor_local_data_total *)
 				(entry->local_data))->sum);
-                asprintf(&sendstr,"%04i%s%04i%s",
+                sendstr = talloc_asprintf(tmpdatastr,"%04i%s%04i%s",
                         (int) strlen(idstr),
                         idstr,
                         (int) strlen(tmpdatastr),
                         tmpdatastr);
                 sendlist_add(sendstr,entry->sock,strlen(sendstr));
-		free(sendstr);
-		free(tmpdatastr);
+		talloc_free(tmpdatastr);
                 break;
 	case MONITOR_LOG: ;
-		asprintf(&tmpdatastr,"%s",
+		tmpdatastr = talloc_asprintf(NULL,"%s",
 			((struct monitor_local_data_log *)
 				(entry->local_data))->log);
-		asprintf(&sendstr,"%04i%s%04i%s",
+		sendstr = talloc_asprintf(tmpdatastr,"%04i%s%04i%s",
 			(int) strlen(idstr),
 			idstr,
 			(int) strlen(tmpdatastr),
 			tmpdatastr);
 		sendlist_add(sendstr,entry->sock,strlen(sendstr));
-		free(sendstr);
-		free(tmpdatastr);
+		talloc_free(tmpdatastr);
 		break;
 	case MONITOR_READ: ;
-		asprintf(&tmpdatastr,"%lu",
+		tmpdatastr = talloc_asprintf(NULL,"%lu",
 			((struct monitor_local_data_read *)
 				(entry->local_data))->read);
-		asprintf(&sendstr,"%04i%s%04i%s",
+		sendstr = talloc_asprintf(tmpdatastr,"%04i%s%04i%s",
 			(int) strlen(idstr),
 			idstr,
 			(int) strlen(tmpdatastr),
 			tmpdatastr);
 		sendlist_add(sendstr,entry->sock,strlen(sendstr));
-		free(sendstr);
-		free(tmpdatastr);
+		talloc_free(tmpdatastr);
 		break;
         case MONITOR_WRITE: ;
-                asprintf(&tmpdatastr,"%lu",
+                tmpdatastr = talloc_asprintf(NULL,"%lu",
                         ((struct monitor_local_data_write *)
                                 (entry->local_data))->write);
-                asprintf(&sendstr,"%04i%s%04i%s",
+                sendstr = talloc_asprintf(&tmpdatastr,"%04i%s%04i%s",
                         (int) strlen(idstr),
                         idstr,
                         (int) strlen(tmpdatastr),
                         tmpdatastr);
                 sendlist_add(sendstr,entry->sock,strlen(sendstr));
-		free(sendstr);
-		free(tmpdatastr);
+		talloc_free(tmpdatastr);
                 break;
 	default: ;
 		break;
 	}
-	free(idstr);
+	talloc_free(idstr);
 }	
 			
 
@@ -690,33 +680,37 @@ void monitor_list_update( int op_id,
 				/**
 				 * log protocol
 				 * vfs_op_id,username,share,filename,domain,timestamp
-				 *
+				 * FIXME we need to get better with our talloc usage here
 				*/
-				asprintf( &op_id_str, "%i",op_id);
-				asprintf( &((struct monitor_local_data_log *)
-					entry->local_data)->log, "%04i%s" // op id
-								 "%04i%s" // username
-								 "%04i%s" // share
-								 "%04i%s" // filename
-								 "%04i%s" // domain
-								 "%04i%s", // timestamp
-								 (int) strlen(op_id_str),
-								 op_id_str,
-								 (int) strlen(username),
-								 username,
-								 (int) strlen(share),
-								 share,
-								 (int) strlen(file),
-								 file,
-								 (int) strlen(domain),
-								 domain,
-								 (int) strlen(montimestamp),
-								 montimestamp);
+				
+				op_id_str = talloc_asprintf( NULL, "%i",op_id);
+				char *tres = talloc_asprintf(op_id_str,"%04i%s" // op id
+                                                                 "%04i%s" // username
+                                                                 "%04i%s" // share
+                                                                 "%04i%s" // filename
+                                                                 "%04i%s" // domain
+                                                                 "%04i%s", // timestamp
+                                                                 (int) strlen(op_id_str),
+                                                                 op_id_str,
+                                                                 (int) strlen(username),
+                                                                 username,
+                                                                 (int) strlen(share),
+                                                                 share,
+                                                                 (int) strlen(file),
+                                                                 file,
+                                                                 (int) strlen(domain),
+                                                                 domain,
+                                                                 (int) strlen(montimestamp),
+                                                                 montimestamp);
+
+
 				DEBUG(1) syslog(LOG_DEBUG, "monitor_list_update: MONITOR_LOG:"
 					"created infostring >%s<",
 					((struct monitor_local_data_log *)
 						entry->local_data)->log);
-				free(op_id_str);
+				((struct monitor_local_data_log *) entry->local_data)->log =
+					strdup(tres);
+				talloc_free(op_id_str);
 				monitor_send_result(entry);
 				break;
 			default: ;
@@ -817,20 +811,17 @@ void monitor_list_process(int sock) {
 					entry->local_data)->list);
 				if (thr != ((struct monitor_local_data_throughput *)
 					entry->local_data)->throughput) {
-					char *idstr = NULL;
-				        asprintf(&idstr,"%i",entry->id);
+					char *idstr = talloc_asprintf(NULL, "%i",entry->id);
 					char *tmpdatastr = NULL;
-					asprintf(&tmpdatastr,"%lu",thr);
-					asprintf(&data,"%04i%s%04i%s",
+					tmpdatastr = talloc_asprintf(idstr,"%lu",thr);
+					data = talloc_asprintf(idstr,"%04i%s%04i%s",
 						(int) strlen(idstr),
 						idstr,
 						(int) strlen(tmpdatastr),
 						tmpdatastr);
 
 					sendlist_add(data,entry->sock,strlen(data));
-					free(data);
-					free(idstr);
-					free(tmpdatastr);
+					talloc_free(idstr);
 					((struct monitor_local_data_throughput *) entry->local_data)->throughput = thr;
 				} 
 			}
