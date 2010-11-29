@@ -99,7 +99,7 @@ char *query_list_run_query( sqlite3 *database, int *body_length, int *sock, int 
 	}
 	sqlite3_finalize( stmt );
 	*sock = backup->sock;
-	free(backup->data);
+	talloc_free(backup->data);
 	free(backup);
 	
 	/* When the result was NULL, we return an identifier */
@@ -141,7 +141,7 @@ int query_add( char *data, int len, int sock, int monitorid) {
 			exit(1);
 		}
 		entry = query_start;
-		entry->data = strdup(data);
+		entry->data = talloc_asprintf(NULL, "%s",data);
 		entry->length = len;
 		query_start = entry;
 		entry->next = NULL;
@@ -160,7 +160,7 @@ int query_add( char *data, int len, int sock, int monitorid) {
 	}
 	query_end->next = entry;
 	entry->next = NULL;
-	entry->data = strdup(data);
+	entry->data = talloc_asprintf(NULL,"%s",data);
 	entry->length = len;
 	query_end = entry;
 	entry->sock = sock;
