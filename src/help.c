@@ -34,6 +34,8 @@ void help_show_help()
 	printf("				a unix domain socket at		\n");
 	printf("				/var/tmp/stadsocket will be	\n");
 	printf("				used.				\n");
+	printf("-b	--database		Filename of the Sqlite3 database\n");
+	printf("				to be used.			\n");
 	printf("-d      --debug-level		Specify the debug level (0-10).	\n");
 	printf("				Default: 0.			\n");
 	printf("-o	--interactive		Don't run as daemon.		\n");
