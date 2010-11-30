@@ -19,7 +19,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 #include "../include/includes.h"
-
+#define bzero(b,len) (memset((b), '\0', (len)), (void) 0)
 /**
  * receive a data block. return 0 if the connection
  * was closed, or return the received buffer
