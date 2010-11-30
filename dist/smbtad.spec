@@ -25,7 +25,7 @@ Requires:	sqlite3 >= 3.7
 BuildRecommends: libiniparser-devel
 License:        GPLv3+
 Group:          Productivity/Networking/Samba
-Version:        1.2
+Version:        1.2.1
 Release:        1
 Summary:        A collector of smbd share usage data
 Url:            http://github.com/hhetter/smbtad
