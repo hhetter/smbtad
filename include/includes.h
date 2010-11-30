@@ -11,7 +11,8 @@
 #define _GNU_SOURCE
 
 #ifdef SOLARIS
-       #include <netinet/in.h>
+       	#include <netinet/in.h>
+	#include <sys/ddi.h>
 #endif
 
 
