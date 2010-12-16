@@ -71,19 +71,19 @@ void configuration_define_defaults( config_t *c )
 int configuration_load_key_from_file( config_t *c)
 {
         FILE *keyfile;
-        char *key = malloc(sizeof(char) * 17);
+        char *key = malloc(sizeof(char) * 25);
         int l;
         keyfile = fopen(c->keyfile, "r");
         if (keyfile == NULL) {
                 return -1;
         }
-        l = fscanf(keyfile, "%s", key);
+        l = fscanf(keyfile, "%20s", key);
         if (strlen(key) != 16) {
                 printf("ERROR: Key file in wrong format\n");
                 fclose(keyfile);
                 exit(1);
         }
-        strcpy( (char *) c->key, key);
+        strncpy( (char *) c->key, key, 20);
 	syslog(LOG_DEBUG,"KEY LOADEDi\n");
 	return 0;
 }
