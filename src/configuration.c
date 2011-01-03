@@ -61,7 +61,11 @@ void configuration_define_defaults( config_t *c )
 	c->unix_socket = 0;
 	c->unix_socket_clients = 0;
 	c->dbhandle = NULL;
+	/* AES encryption key from the VFS module to SMBTAD */
 	c->keyfile =NULL;
+	/* AES encryption key from SMBTAD to clients */
+	c->keyfile_clients = NULL;
+
 	c->query_port = 3941;
 	c->current_query_result = NULL;
 	
@@ -88,6 +92,25 @@ int configuration_load_key_from_file( config_t *c)
 	return 0;
 }
 
+int configuration_load_client_key_from_file( config_t *c)
+{
+        FILE *keyfile;
+        char *key = malloc(sizeof(char) * 25);
+        int l;
+        keyfile = fopen(c->keyfile_clients, "r");
+        if (keyfile == NULL) {
+                return -1;
+        }
+        l = fscanf(keyfile, "%20s", key);
+        if (strlen(key) != 16) {
+                printf("ERROR: Key file in wrong format\n");
+                fclose(keyfile);
+                exit(1);
+        }
+        strncpy( (char *) c->key_clients, key, 20);
+        syslog(LOG_DEBUG,"KEY LOADEDi\n");
+        return 0;
+}
 
 
 int configuration_load_config_file( config_t *c)
