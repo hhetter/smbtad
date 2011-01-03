@@ -148,6 +148,11 @@ int configuration_load_config_file( config_t *c)
 		c->keyfile = strdup(cc);
 		configuration_load_key_from_file( c);
 	}
+	cc = iniparser_getstring(Mydict,"general:keyfile_clients",NULL);
+	if (cc != NULL) {
+		c->keyfile_clients = strdup(cc);
+		configuration_load_client_key_from_file(c);
+	}
 	cc = iniparser_getstring(Mydict,"maintenance:interval",NULL);
 	if (cc != NULL) {
 		strncpy(c->maintenance_timer_str,cc,199);
@@ -202,6 +207,7 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 			{ "debug-level",1, NULL, 'd' },
 			{ "config-file",1,NULL,'c'},
 			{ "key-file",1,NULL,'k'},
+			{ "key-file-clients",1,NULL,'K'},
 			{ "database",1,NULL,'b'},
 			{ "maintenance-timer",1,NULL,'t'},
 			{ "maintenance-timer-config",1,NULL,'m'},
@@ -211,7 +217,7 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 		};
 
 		i = getopt_long( argc, argv,
-			"d:i:oc:k:q:b:t:m:un", long_options, &option_index );
+			"d:i:oc:K:k:q:b:t:m:un", long_options, &option_index );
 
 		if ( i == -1 ) break;
 
@@ -247,6 +253,10 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 			case 'k':
 				c->keyfile = strdup( optarg);
 				configuration_load_key_from_file(c);
+				break;
+			case 'K':
+				c->keyfile = strdup( optarg);
+				configuration_load_client_key_from_file(c);
 				break;
 			case 'b':
 				free(c->dbname); // allocated by default
