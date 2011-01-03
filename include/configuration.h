@@ -62,8 +62,12 @@ typedef struct configuration_data {
 	sqlite3 *dbhandle;
 	/* AES Keyfile */
 	char *keyfile;
+	/* AES keyfile for client connections */
+	char *keyfile_clients;
 	/* AES Key */
 	unsigned char key[20];
+	/* AES Key for client connections */
+	unsigned char key_clients[20];
 
 } config_t;
 pthread_mutex_t *configuration_get_lock();
