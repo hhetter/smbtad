@@ -91,6 +91,43 @@ char *protocol_decrypt( TALLOC_CTX *ctx, char *body, int len, const unsigned cha
 	return data;
 }
 
+/**
+ * Encryption of a data block with AES
+ * TALLOC_CTX *ctx      Talloc context to work on
+ * const char *akey     128bit key for the encryption
+ * const char *str      Data buffer to encrypt, \0 terminated
+ * int *len             Will be set to the length of the
+ *                      resulting data block
+ * The caller has to take care for the memory
+ * allocated on the context.
+ */
+static char *protocol_encrypt( TALLOC_CTX *ctx,
+        const char *akey, const char *str, size_t *len)
+{
+        int s1,s2,h,d;
+        AES_KEY key;
+        unsigned char filler[17]= "................";
+        char *output;
+        unsigned char crypted[18];
+        if (akey == NULL) return NULL;
+        AES_set_encrypt_key((unsigned char *) akey, 128, &key);
+        s1 = strlen(str) / 16;
+        s2 = strlen(str) % 16;
+        for (h = 0; h < s2; h++) *(filler+h)=*(str+(s1*16)+h);
+        DEBUG(9) syslog(LOG_DEBUG, "smb_traffic_analyzer_send_data_socket: created %s"
+                " as filling block.\n", filler);
+        output = talloc_array(ctx, char, (s1*16)+17 );
+        d=0;
+        for (h = 0; h < s1; h++) {
+                AES_encrypt((unsigned char *) str+(16*h), crypted, &key);
+                for (d = 0; d<16; d++) output[d+(16*h)]=crypted[d];
+        }
+        AES_encrypt( (unsigned char *) str+(16*h), filler, &key );
+        for (d = 0;d < 16; d++) output[d+(16*h)]=*(filler+d);
+        *len = (s1*16)+16;
+        return output;
+}
+
 
 /**
  * Return the length of the data block to come given a header
