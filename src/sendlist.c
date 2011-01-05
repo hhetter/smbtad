@@ -96,8 +96,10 @@ int sendlist_empty()
  */
 int sendlist_send( ) {
 	struct sendlist_item *entry;
+	struct connection_list_item *conn;
 	fd_set write_fd_set, read_fd_set;
 	FD_ZERO(&write_fd_set );
+	char *headerstr=talloc_asprintf(NULL,"000000\0");
 	connection_list_recreate_fs_sets(
                         &read_fd_set,
                         &write_fd_set);
@@ -110,13 +112,22 @@ int sendlist_send( ) {
 		pthread_mutex_unlock(&sendlist_lock);
 		return 0;
 	}
-	
+	conn = connection_list_identify(entry->sock);
+	if (conn->encrypted==1) {
+		headerstr[2]='E';
+	}
 	switch(entry->state) {
 
 	case SENDLIST_STATUS_SEND_HEADER:
+		conn = connection_list_identify(entry->sock);
+        	if (conn->encrypted==1) {
+                	headerstr[2]='E';
+			// decode the buffer here, correct entry->len!
+        	}
 		entry->header = network_create_header(NULL,
-                                "000000\0",
-                                entry->len);		
+                                headerstr,
+                                entry->len);
+		TALLOC_FREE(headerstr);		
 		entry->send_len = send(entry->sock,
 			entry->header + entry->send_len,
 			strlen(entry->header)-entry->send_len,0);
