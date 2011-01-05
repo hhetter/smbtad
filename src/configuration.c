@@ -255,7 +255,7 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 				configuration_load_key_from_file(c);
 				break;
 			case 'K':
-				c->keyfile = strdup( optarg);
+				c->keyfile_clients = strdup( optarg);
 				configuration_load_client_key_from_file(c);
 				break;
 			case 'b':

@@ -121,7 +121,15 @@ int sendlist_send( ) {
 	case SENDLIST_STATUS_SEND_HEADER:
 		conn = connection_list_identify(entry->sock);
         	if (conn->encrypted==1) {
+			char *crypted;
                 	headerstr[2]='E';
+			crypted = protocol_encrypt( NULL,
+        			const char *akey,
+				entry->data,
+				&entry->len);
+			free(entry->data);
+			entry->data = crypted;
+			
 			// decode the buffer here, correct entry->len!
         	}
 		entry->header = network_create_header(NULL,
@@ -177,7 +185,8 @@ int sendlist_send( ) {
 	}
 	/* succesfully sent the data, we can remove the item */
 	talloc_free(entry->header);
-	free(entry->data);
+	if (conn->encrypted==1) TALLOC_FREE(entry->data);
+	else free(entry->data);
 	sendlist_start=entry->next;
 	free(entry);
 	pthread_mutex_unlock(&sendlist_lock);
