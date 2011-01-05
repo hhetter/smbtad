@@ -73,4 +73,4 @@ typedef struct configuration_data {
 pthread_mutex_t *configuration_get_lock();
 int configuration_check_configuration( config_t *c );
 int configuration_parse_cmdline( config_t *c, int argc, char *argv[] );
-
+config_t *configuration_get_conf();

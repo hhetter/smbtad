@@ -32,6 +32,11 @@ int configuration_check_configuration( config_t *c );
 
 static config_t *conf;
 
+
+config_t *configuration_get_conf() {
+	return conf;
+}
+
 /* Initialize default values of the configuration.
  * Also initialize the configuration mutex.
  */
