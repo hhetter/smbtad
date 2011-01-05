@@ -46,4 +46,5 @@ int protocol_is_encrypted( char *header );
 char *protocol_get_single_data_block( TALLOC_CTX *ctx, char **go );
 char *protocol_get_single_data_block_quoted( TALLOC_CTX *ctx, char **go );
 char *protocol_decrypt( TALLOC_CTX *ctx, char *body, int len, const unsigned char *thekey);
-
+char *protocol_encrypt( TALLOC_CTX *ctx,
+        const char *akey, const char *str, size_t *len);

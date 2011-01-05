@@ -96,10 +96,11 @@ int sendlist_empty()
  */
 int sendlist_send( ) {
 	struct sendlist_item *entry;
-	struct connection_list_item *conn;
+	struct connection_struct *conn;
 	fd_set write_fd_set, read_fd_set;
+	config_t *conf = configuration_get_conf();
 	FD_ZERO(&write_fd_set );
-	char *headerstr=talloc_asprintf(NULL,"000000\0");
+	char *headerstr=talloc_asprintf(NULL,"000000");
 	connection_list_recreate_fs_sets(
                         &read_fd_set,
                         &write_fd_set);
@@ -122,20 +123,22 @@ int sendlist_send( ) {
 		conn = connection_list_identify(entry->sock);
         	if (conn->encrypted==1) {
 			char *crypted;
+			size_t len;
                 	headerstr[2]='E';
 			crypted = protocol_encrypt( NULL,
-        			const char *akey,
+        			(const char *) conf->key_clients,
 				entry->data,
-				&entry->len);
+				&len);
+			entry->len = (int) len;
 			free(entry->data);
 			entry->data = crypted;
 			
 			// decode the buffer here, correct entry->len!
-        	}
-		entry->header = network_create_header(NULL,
+        	} else 	entry->header = network_create_header(NULL,
                                 headerstr,
                                 entry->len);
 		TALLOC_FREE(headerstr);		
+
 		entry->send_len = send(entry->sock,
 			entry->header + entry->send_len,
 			strlen(entry->header)-entry->send_len,0);

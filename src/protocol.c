@@ -101,7 +101,7 @@ char *protocol_decrypt( TALLOC_CTX *ctx, char *body, int len, const unsigned cha
  * The caller has to take care for the memory
  * allocated on the context.
  */
-static char *protocol_encrypt( TALLOC_CTX *ctx,
+char *protocol_encrypt( TALLOC_CTX *ctx,
         const char *akey, const char *str, size_t *len)
 {
         int s1,s2,h,d;
