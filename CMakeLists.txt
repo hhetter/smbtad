@@ -15,7 +15,7 @@ SET(CMAKE_C_FLAGS "-Wall -D_FORTIFY_SOURCE=2")
 include(FindSqlite.cmake)
 SET(SQLITE_MINIMAL_VERSION 3.7.0)
 FIND_PACKAGE(Sqlite)
-if (NOT SQLITE_FOUND)
+if (NOT SQLITE_FOUND OR CMAKE_FORCE_EMBEDDED_SQLITE)
 	MESSAGE( STATUS "----> FYI: Seems like there're no sqlite3 development files")
 	MESSAGE( STATUS "	    or sqlite at least version >= 3.7.0 installed.")
 	MESSAGE( STATUS "	    That's ok, we will build the ")
@@ -26,6 +26,7 @@ ELSEIF (SQLITE_FOUND)
 	MESSAGE( STATUS "	    will make the build linking shared to this library.")
 	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D SQLITE_FOUND")
 ENDIF()
+
 
 SET(CMAKE_INSTALL_PREFIX /usr)
 
