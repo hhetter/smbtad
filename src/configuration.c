@@ -86,14 +86,14 @@ int configuration_load_key_from_file( config_t *c)
         if (keyfile == NULL) {
                 return -1;
         }
-        l = fscanf(keyfile, "%20s", key);
+        l = fscanf(keyfile, "%16s", key);
         if (strlen(key) != 16) {
                 printf("ERROR: Key file in wrong format\n");
                 fclose(keyfile);
                 exit(1);
         }
         strncpy( (char *) c->key, key, 20);
-	syslog(LOG_DEBUG,"KEY LOADEDi\n");
+	syslog(LOG_DEBUG,"loaded VFS module AES key.\n");
 	return 0;
 }
 
@@ -106,14 +106,14 @@ int configuration_load_client_key_from_file( config_t *c)
         if (keyfile == NULL) {
                 return -1;
         }
-        l = fscanf(keyfile, "%20s", key);
+        l = fscanf(keyfile, "%16s", key);
         if (strlen(key) != 16) {
                 printf("ERROR: Key file in wrong format\n");
                 fclose(keyfile);
                 exit(1);
         }
         strncpy( (char *) c->key_clients, key, 20);
-        syslog(LOG_DEBUG,"KEY LOADEDi\n");
+        syslog(LOG_DEBUG,"loaded client AES key.\n");
         return 0;
 }
 

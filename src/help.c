@@ -63,4 +63,8 @@ void help_show_help()
 	printf("                                Default: 1,00:00:00\n");
 	printf("-n --unix-domain-socket-cl	Will use a unix domain socket\n");
 	printf("				to connect to clients.\n");
+	printf("-k --keyfile			Keyfile for encryption to be used\n");
+	printf("				between module and smbtad.\n");
+	printf("-K --keyfile-clients		Keyfile for encryption to be used\n");
+	printf("				between smbtad and smbtatools.\n");
 }
