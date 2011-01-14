@@ -12,12 +12,12 @@ SET(CMAKE_C_FLAGS_DEBUG "-g -Wall -D_FORTIFY_SOURCE=2")
 #
 # check for sqlite3
 #
-include(FindSqlite3.cmake)
-FIND_PACKAGE(Sqlite3 REQUIRED)
-if (NOT SQLITE3_FOUND)
-	MESSAGE( FATAL_ERROR "ERROR: you'll need sqlite3 development files installed.")
-ENDIF()
-
+#include(FindSqlite3.cmake)
+#FIND_PACKAGE(Sqlite3 REQUIRED)
+#if (NOT SQLITE3_FOUND)
+#	MESSAGE( FATAL_ERROR "ERROR: you'll need sqlite3 development files installed.")
+#ENDIF()
+#
 SET(CMAKE_INSTALL_PREFIX /usr)
 
 #
@@ -79,7 +79,8 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/make_symlink.cmake "exec_program(${CMAKE_
 INCLUDE_DIRECTORIES( ${SQLITE3_INCLUDE_DIRS} ${TALLOC_INCLUDE_DIR} )
 
 SET(CurrentExe "smbtad")
-ADD_EXECUTABLE(${CurrentExe} 
+ADD_EXECUTABLE(${CurrentExe}
+	src/sqlite/sqlite3.c 
 	src/main.c 
 	src/configuration.c 
 	src/help.c 
@@ -96,7 +97,7 @@ ADD_EXECUTABLE(${CurrentExe}
 	src/sendlist.c
 	src/throughput-list.c)
 
-TARGET_LINK_LIBRARIES(${CurrentExe} ${INIPARSER_LIBRARIES} ${SQLITE3_LIBRARIES} ${TALLOC_LIBRARIES} ${Libraries} iniparser ${CMAKE_THREAD_LIBS_INIT})
+TARGET_LINK_LIBRARIES(${CurrentExe} ${INIPARSER_LIBRARIES} ${SQLITE3_LIBRARIES} ${TALLOC_LIBRARIES} ${Libraries} iniparser ${CMAKE_THREAD_LIBS_INIT} dl)
 INSTALL(TARGETS smbtad DESTINATION bin)
 
 IF (CMAKE_INSTALL_RCFILE)

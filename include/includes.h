@@ -32,7 +32,7 @@
 #include <syslog.h>
 #include <sys/select.h>
 #include <dlfcn.h>
-#include <sqlite3.h>
+#include "sqlite3.h"
 #include <talloc.h>
 
 #include "aes.h"
