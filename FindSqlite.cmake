@@ -27,6 +27,11 @@ endif ( SQLITE_INCLUDE_DIR AND SQLITE_LIBRARIES )
 
 find_path(SQLITE_INCLUDE_DIR
           NAMES sqlite3.h
+	    PATHS
+      /usr/include
+      /usr/local/include
+      /opt/local/include
+      /sw/include
          )
 
 find_library(SQLITE_LIBRARIES

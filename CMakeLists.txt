@@ -5,19 +5,28 @@ set(APPLICATION_NAME "smbtad")
 set(APPLICATION_VERSION "1.2.1")
 
 SET(CMAKE_BUILD_TYPE "Debug")
-SET(CMAKE_C_FLAGS_DEBUG "-g -Wall -D_FORTIFY_SOURCE=2")
+SET(CMAKE_C_FLAGS "-Wall -D_FORTIFY_SOURCE=2")
 #SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 
 #
 # check for sqlite3
 #
-#include(FindSqlite3.cmake)
-#FIND_PACKAGE(Sqlite3 REQUIRED)
-#if (NOT SQLITE3_FOUND)
-#	MESSAGE( FATAL_ERROR "ERROR: you'll need sqlite3 development files installed.")
-#ENDIF()
-#
+include(FindSqlite.cmake)
+SET(SQLITE_MINIMAL_VERSION 3.7.0)
+FIND_PACKAGE(Sqlite)
+if (NOT SQLITE_FOUND)
+	MESSAGE( STATUS "----> FYI: Seems like there're no sqlite3 development files")
+	MESSAGE( STATUS "	    or sqlite at least version >= 3.7.0 installed.")
+	MESSAGE( STATUS "	    That's ok, we will build the ")
+	MESSAGE( STATUS "	    sqlite amalgamation code then.")
+	SET(SQLITE_LIBRARIES "")
+ELSEIF (SQLITE_FOUND)
+	MESSAGE( STATUS "----> FYI: Nice, your system provides sqlite >= 3.7.0, we")
+	MESSAGE( STATUS "	    will make the build linking shared to this library.")
+	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D SQLITE_FOUND")
+ENDIF()
+
 SET(CMAKE_INSTALL_PREFIX /usr)
 
 #
@@ -96,8 +105,7 @@ ADD_EXECUTABLE(${CurrentExe}
 	src/monitor-list.c
 	src/sendlist.c
 	src/throughput-list.c)
-
-TARGET_LINK_LIBRARIES(${CurrentExe} ${INIPARSER_LIBRARIES} ${SQLITE3_LIBRARIES} ${TALLOC_LIBRARIES} ${Libraries} iniparser ${CMAKE_THREAD_LIBS_INIT} dl)
+TARGET_LINK_LIBRARIES(${CurrentExe} ${INIPARSER_LIBRARIES} ${SQLITE_LIBRARIES} ${TALLOC_LIBRARIES} ${Libraries} iniparser ${CMAKE_THREAD_LIBS_INIT} dl)
 INSTALL(TARGETS smbtad DESTINATION bin)
 
 IF (CMAKE_INSTALL_RCFILE)
