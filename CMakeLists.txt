@@ -13,7 +13,7 @@ SET(CMAKE_C_FLAGS "-Wall -D_FORTIFY_SOURCE=2")
 # check for sqlite3
 #
 include(FindSqlite.cmake)
-SET(SQLITE_MINIMAL_VERSION 3.7.0)
+SET(SQLITE_MIN_VERSION 3.7.0)
 FIND_PACKAGE(Sqlite)
 if (NOT SQLITE_FOUND OR CMAKE_FORCE_EMBEDDED_SQLITE)
 	MESSAGE( STATUS "----> FYI: Seems like there're no sqlite3 development files")
