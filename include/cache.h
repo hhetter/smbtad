@@ -22,7 +22,30 @@
 struct cache_entry {
 	char *data;
 	int length;
-	struct cache_entry *next;
+	struct cache_entry *left;
+	struct cache_entry *right;
+	struct cache_entry *down;
+	/* only relevant in the cache_start */
+	/* vfs ops other than read/write will be */
+	/* placed here */
+	struct cache_entry *other_ops;
+
+
+	char *username;
+	char *domain;
+	char *share;
+	char *timestamp;
+	char *usersid;
+	char *filename;
+	char *mode;
+	char *path;
+	char *result;
+	char *destination;
+	char *mondata;
+	char *len;
+	char *vfs_id;
+	char *source;
+	int op_id;
 };
 
 void cache_init();
