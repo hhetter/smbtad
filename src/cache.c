@@ -31,7 +31,7 @@ struct cache_entry *cache_end = NULL;
 TALLOC_CTX *cache_pool = NULL;
 pthread_mutex_t cache_mutex;
 void cache_update_monitor( struct cache_entry *entry);
-
+int cache_prepare_entry( TALLOC_CTX *ctx,struct cache_entry *entry);
 /*
  * init the cache system */
 void cache_init( ) {
@@ -44,32 +44,132 @@ void cache_init( ) {
  * returns -1 in case of an error
  */
 int cache_add( char *data, int len ) {
-
-	
-        struct cache_entry *entry;	
+	unsigned long int convlen = 0;
+	struct cache_entry *entry = talloc(cache_start, struct cache_entry);
+	entry->left = NULL;
+	entry->right = NULL;
+	entry->down = NULL;
+	entry->other_ops = NULL;
+	entry->data = talloc_steal( cache_start, data);
+	struct cache_entry *gotr = cache_start;
+	struct cache_entry *backup = cache_start;
 	pthread_mutex_lock(&cache_mutex);
+	cache_prepare_entry( cache_start, entry);
 	if (cache_start == NULL) {
-		// cache_pool = talloc_pool(NULL, 8*1024*1024);
-		cache_start = talloc(NULL, struct cache_entry);
-		entry = cache_start;
-		entry->data = talloc_steal( cache_start, data);
-		entry->length = len;
+		/*
+		 * first element, we just create it
+		 */
 		cache_start = entry;
-		entry->next = NULL;
-		cache_end = entry;
-		cache_update_monitor( entry); 
+		entry->left = NULL;
+		entry->right = NULL;
+		entry->down = NULL;
+		entry->other_ops = NULL;
+		cache_end = entry->other_ops;
 		pthread_mutex_unlock(&cache_mutex);
 		return 0;
 	}
-	entry = talloc(cache_start, struct cache_entry);
-	cache_end->next = entry;
-	entry->next = NULL;
-	entry->data = talloc_steal( cache_start, data);
-	entry->length = len;
-	cache_end = entry;
-	cache_update_monitor(entry);
-	pthread_mutex_unlock(&cache_mutex);
-	return 0;
+	switch(entry->op_id) {
+	case vfs_id_read:
+	case vfs_id_pread: ;
+     	case vfs_id_write:
+      	case vfs_id_pwrite: ;
+
+	while (gotr != NULL) {
+		/*
+		 * on a write or read operation, we insert-sort the
+		 * entries, and simply add the number of bytes written
+		 * to an already existing similar entry
+		 */
+		if ( gotr->username[0] == entry->username[0] ) {
+			while (gotr != NULL) {
+				/*
+			 	 * This could be a fitting entry, check it
+			 	 */
+				if (strncmp(entry->share, gotr->share, strlen(entry->share)) == 0 
+					&& strncmp(entry->username, gotr->username, strlen(entry->username)) == 0
+					&& strncmp(entry->domain, gotr->domain, strlen(entry->domain)) == 0
+					&& entry->op_id == gotr->op_id) {
+					/*
+				 	 * entry fits, add the value
+				 	 */
+					convlen = atol(entry->len)+atol(gotr->len);
+					talloc_free(gotr->len);
+					gotr->len = talloc_asprintf(cache_start,"%lu",convlen);
+					talloc_free(entry);
+					pthread_mutex_unlock(&cache_mutex);
+					return 0;
+				} else {
+				/*
+			 	 * That wasn't the right entry, it can be
+			 	 * the next down from this entry.
+			 	 */
+				backup = gotr;
+				gotr=gotr->down;
+				}
+			}
+			/*
+			 * This entry wasn't yet found, it's being added
+			 * to this list
+			 */
+			backup->down = entry;
+			pthread_mutex_unlock(&cache_mutex);
+			return 0;
+		} else if ( entry->share[0] > gotr->share[0] ) {
+			/*
+			 * continue search on the right
+			 */
+			backup = gotr;
+			gotr= gotr->right;
+			/*
+			 * create that entry if we haven't found a fitting entry
+			 *
+			*/
+			if (gotr == NULL) {
+				backup->right = entry;
+				pthread_mutex_unlock(&cache_mutex);
+				return 0;
+			}
+		} else {
+			/*
+			 * continue search on the lest
+			 *
+			*/
+			backup = gotr;
+			gotr = gotr->left;
+			/*
+			 * create that entry if we haven't found a fitting entry
+			 *
+			*/
+			if (gotr == NULL) {
+				backup->left = entry;
+				pthread_mutex_unlock(&cache_mutex);
+				return 0;
+			}
+		}
+	}
+	/*
+	 * We should never come by here. Indicates an error.
+	*/
+	break;
+	default: ;
+		/*
+		 * Just insert items as usual if they aren't READ/WRITE
+		 * operations
+		 */
+		if (cache_end == NULL) {
+			cache_start->other_ops = entry;
+			cache_end=entry;
+			pthread_mutex_unlock(&cache_mutex);
+			return 0;
+		} else {
+			cache_end->other_ops = entry;
+			cache_end=entry;
+			pthread_mutex_unlock(&cache_mutex);
+			return 0;
+		}
+		break;
+	}	
+		
 }
 
 void cache_update_monitor(struct cache_entry *entry)
@@ -163,28 +263,11 @@ void cache_update_monitor(struct cache_entry *entry)
 }
 
 
-char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
+int cache_prepare_entry( TALLOC_CTX *ctx,struct cache_entry *entry)
 {
-	TALLOC_CTX *data = talloc_pool( NULL, 2048);
-	char *montimestamp = NULL;
-	char *retstr = NULL;
-
-	char *username = NULL;
-	char *domain = NULL;
-	char *share = NULL;
-	char *timestamp = NULL;
-	char *usersid = NULL;
-	char *vfs_id = NULL;
+	TALLOC_CTX *data = talloc_pool( ctx, 2048);
 	char *go_through = entry->data;
 	char *str = NULL;
-	char *filename = NULL;
-	char *len = NULL;
-	char *mode = NULL;
-	char *result = NULL;
-	char *path = NULL;
-	char *source = NULL;
-	char *destination = NULL;
-	char *mondata = NULL;
         /* first check how many common data blocks will come */
 	str = protocol_get_single_data_block( data, &go_through);
 	int common_blocks_num = atoi(str);
@@ -196,179 +279,190 @@ char *cache_make_database_string( TALLOC_CTX *ctx,struct cache_entry *entry)
 			" Too less common data blocks! (%i), ignoring data!",
 			common_blocks_num);
                 TALLOC_FREE(data);
-		return NULL;
+		return -1;
         }
 
         /* vfs_operation_identifier */
 	str = protocol_get_single_data_block( data, &go_through);
-	int op_id = atoi(str);
-	switch(op_id) {
+	entry->op_id = atoi(str);
+	switch(entry->op_id) {
 	case vfs_id_read:
 	case vfs_id_pread:
-		vfs_id = talloc_strdup( data, "read");
+		entry->vfs_id = talloc_strdup( data, "read");
 		break;
 	case vfs_id_write:
 	case vfs_id_pwrite:
-		vfs_id = talloc_strdup(data, "write");
+		entry->vfs_id = talloc_strdup(data, "write");
 		break;
 	case vfs_id_mkdir:
-		vfs_id = talloc_strdup(data, "mkdir");
+		entry->vfs_id = talloc_strdup(data, "mkdir");
 		break;
 	case vfs_id_chdir:
-		vfs_id = talloc_strdup(data, "chdir");
+		entry->vfs_id = talloc_strdup(data, "chdir");
 		break;
 	case vfs_id_rename:
-		vfs_id = talloc_strdup(data, "rename");
+		entry->vfs_id = talloc_strdup(data, "rename");
 		break;
 	case vfs_id_rmdir:
-		vfs_id = talloc_strdup(data, "rmdir");
+		entry->vfs_id = talloc_strdup(data, "rmdir");
 		break;
 	case vfs_id_open:
-		vfs_id = talloc_strdup(data, "open");
+		entry->vfs_id = talloc_strdup(data, "open");
 		break;
 	case vfs_id_close:
-		vfs_id = talloc_strdup(data, "close");
+		entry->vfs_id = talloc_strdup(data, "close");
 		break;
 	}
 
 	/* in case we received a vfs_id that we don't support, return NULL */
-	if (vfs_id == NULL) {
+	if (entry->vfs_id == NULL) {
 		syslog(LOG_DEBUG,"Unsupported VFS function!");
 		TALLOC_FREE(data);
-		return NULL;
+		return -2;
 	}
         /* username */
-        username = protocol_get_single_data_block_quoted( data, &go_through );
+        entry->username = protocol_get_single_data_block_quoted( data, &go_through );
         /* user's SID */
-        usersid = protocol_get_single_data_block_quoted( data, &go_through );
+        entry->usersid = protocol_get_single_data_block_quoted( data, &go_through );
         /* share */
-        share = protocol_get_single_data_block_quoted( data, &go_through );
+        entry->share = protocol_get_single_data_block_quoted( data, &go_through );
         /* domain */
-        domain = protocol_get_single_data_block_quoted( data, &go_through );
+        entry->domain = protocol_get_single_data_block_quoted( data, &go_through );
         /* timestamp */
-        timestamp = protocol_get_single_data_block_quoted( data, &go_through );
+        entry->timestamp = protocol_get_single_data_block_quoted( data, &go_through );
 
 
 	/* now receive the VFS function depending arguments */
-	switch( op_id) {
+	switch( entry->op_id) {
 	case vfs_id_read:
 	case vfs_id_pread: ;
-		filename = protocol_get_single_data_block_quoted( data, &go_through );
-		len = protocol_get_single_data_block( data, &go_through);
-                if (len == 0) {
-			retstr=NULL;
-			break;
-		}
-		retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
-			"username, usersid, share, domain, timestamp,"
-			"filename, length) VALUES ("
-			"%s,%s,%s,%s,%s,"
-			"%s,%s);",
-			vfs_id,username,usersid,share,domain,timestamp,
-			filename,len);
-		mondata = len;
+		entry->filename = protocol_get_single_data_block_quoted( data, &go_through );
+		entry->len = protocol_get_single_data_block( data, &go_through);
+		entry->mondata = entry->len;
 		break;
 	case vfs_id_write:
 	case vfs_id_pwrite: ;
-                filename= protocol_get_single_data_block_quoted( data,&go_through );
-                len = protocol_get_single_data_block( data,&go_through);
-                if (len == 0) {
-			retstr=NULL;
-			break;
-                }
-		retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
-                        "username, usersid, share, domain, timestamp,"
-                        "filename, length) VALUES ("
-                        "%s,%s,%s,%s,%s,"
-                        "%s,%s);",
-                        vfs_id,username,usersid,share,domain,timestamp,
-                        filename,len);
-		mondata = len;
+                entry->filename= protocol_get_single_data_block_quoted( data,&go_through );
+                entry->len = protocol_get_single_data_block( data,&go_through);
+		entry->mondata = entry->len;
                 break;
 	case vfs_id_mkdir: ;
-		path = protocol_get_single_data_block_quoted( data,&go_through);
-		mode = protocol_get_single_data_block_quoted( data,&go_through);
-		result=protocol_get_single_data_block( data,&go_through);
-		retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
-			"username, usersid, share, domain, timestamp,"
-			"path, mode, result) VALUES ("
-			"%s,%s,%s,%s,%s,"
-			"%s,%s,%s);",
-			vfs_id,username,usersid,share,domain,timestamp,
-			path, mode, result);
+		entry->path = protocol_get_single_data_block_quoted( data,&go_through);
+		entry->mode = protocol_get_single_data_block_quoted( data,&go_through);
+		entry->result=protocol_get_single_data_block( data,&go_through);
 		break;
 	case vfs_id_chdir: ;
-		path = protocol_get_single_data_block_quoted( data,&go_through);
-		result = protocol_get_single_data_block( data,&go_through);
-		retstr = talloc_asprintf( ctx, "INSERT INTO %s ("
-			"username, usersid, share, domain, timestamp,"
-			"path, result) VALUES ("
-			"%s,%s,%s,%s,%s,"
-			"%s,%s);",
-			vfs_id,username,usersid,share,domain,timestamp,
-			path,result);
+		entry->path = protocol_get_single_data_block_quoted( data,&go_through);
+		entry->result = protocol_get_single_data_block( data,&go_through);
 		break;
 	case vfs_id_open: ;
-		filename = protocol_get_single_data_block_quoted(data,&go_through);
-		mode = protocol_get_single_data_block_quoted(data,&go_through);
-		result = protocol_get_single_data_block(data,&go_through);
-                retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
-                        "username, usersid, share, domain, timestamp,"
-                        "filename, mode, result) VALUES ("
-                        "%s,%s,%s,%s,%s,"
-                        "%s,%s,%s);",
-                        vfs_id,username,usersid,share,domain,timestamp,
-                        filename, mode, result);
+		entry->filename = protocol_get_single_data_block_quoted(data,&go_through);
+		entry->mode = protocol_get_single_data_block_quoted(data,&go_through);
+		entry->result = protocol_get_single_data_block(data,&go_through);
 		break;
 	case vfs_id_close: ;
-		filename = protocol_get_single_data_block_quoted(data,&go_through);
-		result = protocol_get_single_data_block(data,&go_through);
-                retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
-                        "username, usersid, share, domain, timestamp,"
-                        "filename, result) VALUES ("
-                        "%s,%s,%s,%s,%s,"
-                        "%s,%s);",
-                        vfs_id,username,usersid,share,domain,timestamp,
-                        filename,result);
+		entry->filename = protocol_get_single_data_block_quoted(data,&go_through);
+		entry->result = protocol_get_single_data_block(data,&go_through);
 		break;
 	case vfs_id_rename: ;
-		source = protocol_get_single_data_block_quoted(data,&go_through);
-		destination = protocol_get_single_data_block_quoted(data,&go_through);
-		result = protocol_get_single_data_block(data,&go_through);
+		entry->source = protocol_get_single_data_block_quoted(data,&go_through);
+		entry->destination = protocol_get_single_data_block_quoted(data,&go_through);
+		entry->result = protocol_get_single_data_block(data,&go_through);
+		break;
+
+	}
+	if (entry->filename == NULL) entry->filename = talloc_asprintf(data,"\"*\"");
+	return 0;
+}
+
+
+char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
+{
+	/*
+	 * create a database string from the given metadata in a cache entry
+	 */
+	char *retstr=NULL;
+	switch( entry->op_id ) {
+        case vfs_id_rename: ;
                 retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
                         "source, destination, result) VALUES ("
                         "%s,%s,%s,%s,%s,"
                         "%s,%s,%s);",
-                        vfs_id,username,usersid,share,domain,timestamp,
-                        source,destination,result);
+                        entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
+                        entry->source,entry->destination,entry->result);
 		break;
-
-	}
-
-	if (filename == NULL) filename = talloc_asprintf(data,"\"*\"");
-
-	DEBUG(1) syslog(LOG_DEBUG,
-		"Calling monitor_list update with:"
-		"username: %s, "
-		"usersid : %s, "
-		"share   : %s, "
-		"filename: %s, "
-		"domain  : %s, "
-		"montimestamp: %s",
-		username,
-		usersid,
-		share,
-		filename,
-		domain,
-		montimestamp);
-
-		
-
-	/* free everything no longer needed */
-	TALLOC_FREE(data);
+        case vfs_id_close: ;
+                retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
+                        "username, usersid, share, domain, timestamp,"
+                        "filename, result) VALUES ("
+                        "%s,%s,%s,%s,%s,"
+                        "%s,%s);",
+                        entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
+                        entry->filename,entry->result);
+                break;
+        case vfs_id_open: ;
+                retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
+                        "username, usersid, share, domain, timestamp,"
+                        "filename, mode, result) VALUES ("
+                        "%s,%s,%s,%s,%s,"
+                        "%s,%s,%s);",
+                        entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
+                        entry->filename,entry->mode,entry->result);
+                break;
+        case vfs_id_chdir: ;
+                retstr = talloc_asprintf( ctx, "INSERT INTO %s ("
+                        "username, usersid, share, domain, timestamp,"
+                        "path, result) VALUES ("
+                        "%s,%s,%s,%s,%s,"
+                        "%s,%s);",
+                        entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
+                        entry->path,entry->result);
+                break;
+        case vfs_id_mkdir: ;
+                retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
+                        "username, usersid, share, domain, timestamp,"
+                        "path, mode, result) VALUES ("
+                        "%s,%s,%s,%s,%s,"
+                        "%s,%s,%s);",
+                        entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
+                        entry->path, entry->mode, entry->result);
+                break;
+        case vfs_id_write:
+        case vfs_id_pwrite: ;
+                if (atol(entry->len)== 0) {
+                        retstr=NULL;
+                        break;
+                }
+                retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
+                        "username, usersid, share, domain, timestamp,"
+                        "filename, length) VALUES ("
+                        "%s,%s,%s,%s,%s,"
+                        "%s,%s);",
+                        entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
+                        entry->filename,entry->len);
+                entry->mondata = entry->len;
+                break;	
+        case vfs_id_read:
+        case vfs_id_pread: ;
+                if (atol(entry->len) == 0) {
+                        retstr=NULL;
+                        break;
+                }
+                retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
+                        "username, usersid, share, domain, timestamp,"
+                        "filename, length) VALUES ("
+                        "%s,%s,%s,%s,%s,"
+                        "%s,%s);",
+                        entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
+                        entry->filename,entry->len);
+                entry->mondata = entry->len;
+                break;
+	default: ;
+	}	
 	return retstr;
 }
+
 
 /* 
  * sqlite >= 3.7.0 allows WAL. We will use this feature.
@@ -395,6 +489,7 @@ void do_db( struct configuration_data *config, char *dbstring)
 {
 	sqlite3 *database = config->dbhandle;
 	int rc = -1;
+	syslog(LOG_DEBUG,"%s",dbstring); 
 	char *erg = 0;
 	while (rc != SQLITE_OK) {
 		rc = sqlite3_exec(database, dbstring,0,0,&erg);
@@ -406,6 +501,22 @@ void do_db( struct configuration_data *config, char *dbstring)
 	}
 	
 }
+
+void cleanup_cache( struct configuration_data *config,
+	struct cache_entry *entry)
+{
+	char *dbstring;
+	if (entry->other_ops != NULL) cleanup_cache(config, entry->other_ops);
+	if (entry->left != NULL) cleanup_cache(config, entry->left);
+	if (entry->right != NULL) cleanup_cache(config, entry->right);
+	if (entry->down != NULL) cleanup_cache(config, entry->down);
+	dbstring = cache_create_database_string(NULL,entry);
+	do_db(config,dbstring);
+	talloc_free(dbstring);
+}	
+	
+	
+
 
 /*
  * cache_manager runs as a detached thread. Every half second,
@@ -442,16 +553,13 @@ void cache_manager(struct configuration_data *config )
        		cache_start = NULL;
         	cache_end = NULL;
         	pthread_mutex_unlock(&cache_mutex);
-		/* store all existing entries into the database */
-		do_db(config,"BEGIN TRANSACTION;");
-		while (go_through != NULL) {
-			char *a = cache_make_database_string(database_str, go_through );
-			if (a!= NULL) do_db(config,a);
-			TALLOC_FREE(a);
-			go_through = go_through->next;
+		if (backup != NULL) {
+			/* store all existing entries into the database */
+			do_db(config,"BEGIN TRANSACTION;");
+			cleanup_cache( config,backup);
+			do_db(config,"COMMIT;");
+			TALLOC_FREE(backup);
 		}
-		if (backup != NULL) TALLOC_FREE(backup);
-		do_db(config,"COMMIT;"); 
 
 		if (maintenance_count == maintenance_c_val) {
 			char String[400];
