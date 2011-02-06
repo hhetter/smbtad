@@ -50,7 +50,7 @@ int cache_add( char *data, int len ) {
 	entry->right = NULL;
 	entry->down = NULL;
 	entry->other_ops = NULL;
-	entry->data = talloc_steal( cache_start, data);
+	entry->data = talloc_steal( entry, data);
 	struct cache_entry *gotr = cache_start;
 	struct cache_entry *backup = cache_start;
 	pthread_mutex_lock(&cache_mutex);
