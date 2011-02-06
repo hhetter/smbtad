@@ -68,7 +68,10 @@ typedef struct configuration_data {
 	unsigned char key[20];
 	/* AES Key for client connections */
 	unsigned char key_clients[20];
-
+	/* precision is used by the cache, it's value specifies the */
+	/* life time of the cache in seconds, during this time it */
+	/* sums up similar VFS R/W entries. Default is 5.	*/
+	int precision;
 } config_t;
 pthread_mutex_t *configuration_get_lock();
 int configuration_check_configuration( config_t *c );

@@ -42,7 +42,6 @@ void help_show_help()
 	printf("				(Runs as daemon by default)	\n");
 	printf("-c      --config-file		Use configuration file given.	\n");
 	printf("-q	--query-port		Specify the port to be used for \n");
-
 	printf("				clients.			\n");
 	printf("-t --maintenance-timer <value>  specify the time intervall to\n");
 	printf("                                to start the database \n");
@@ -67,4 +66,6 @@ void help_show_help()
 	printf("				between module and smbtad.\n");
 	printf("-K --keyfile-clients		Keyfile for encryption to be used\n");
 	printf("				between smbtad and smbtatools.\n");
+	printf("-p --precision			Precision value for the build-in\n");
+	printf("				cache. Default is 5.\n");
 }

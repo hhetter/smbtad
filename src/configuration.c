@@ -70,7 +70,8 @@ void configuration_define_defaults( config_t *c )
 	c->keyfile =NULL;
 	/* AES encryption key from SMBTAD to clients */
 	c->keyfile_clients = NULL;
-
+	/* precision is a factor for the cache, which is summing up similar R/W VFS entries */
+	c->precision = 5;
 	c->query_port = 3941;
 	c->current_query_result = NULL;
 	
@@ -143,6 +144,8 @@ int configuration_load_config_file( config_t *c)
                 free(c->dbname);
                 c->dbname= strdup( cc);
         }
+	cc = iniparser_getstring(Mydict,"general:precision",NULL);
+	if (cc != NULL) c->precision = atoi(cc);
 
 	cc = iniparser_getstring(Mydict,"general:debug_level",NULL);
 	if (cc != NULL) {
@@ -218,11 +221,12 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 			{ "maintenance-timer-config",1,NULL,'m'},
 			{ "unix-domain-socket",0,NULL,'u'},
 			{ "unix-domain-socket-cl",0,NULL,'n'},
+			{ "precision",1,NULL,'p'},
 			{ 0,0,0,0 }
 		};
 
 		i = getopt_long( argc, argv,
-			"d:i:oc:K:k:q:b:t:m:un", long_options, &option_index );
+			"d:i:oc:K:k:q:b:t:m:unp:", long_options, &option_index );
 
 		if ( i == -1 ) break;
 
@@ -267,6 +271,9 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 				free(c->dbname); // allocated by default
 				// setting
 				c->dbname = strdup( optarg );
+				break;
+			case 'p':
+				c->precision = atoi(optarg);
 				break;
 			default	:
 				printf("ERROR: unkown option.\n\n");
@@ -346,7 +353,12 @@ int configuration_check_configuration( config_t *c )
                         " value is zero.\n");
                 exit (0);
         }
-//        signal(SIGALRM,run_maintenance);
-//        alarm(c->maintenance_seconds);
+	// check precision cache value
+	if (c->precision<0) {
+		printf("\n\nERROR: the precision value for the cache cannot\n");
+		printf("be negative!\n");
+	}
+
+
 	return 0;
 }
