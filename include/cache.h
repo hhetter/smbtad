@@ -42,7 +42,7 @@ struct cache_entry {
 	char *result;
 	char *destination;
 	char *mondata;
-	char *len;
+	unsigned long int len;
 	char *vfs_id;
 	char *source;
 	int op_id;

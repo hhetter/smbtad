@@ -70,32 +70,30 @@ int cache_add( char *data, int len ) {
 	}
 	switch(entry->op_id) {
 	case vfs_id_read:
-	case vfs_id_pread: ;
+	case vfs_id_pread: 
      	case vfs_id_write:
-      	case vfs_id_pwrite: ;
-
+      	case vfs_id_pwrite:
 	while (gotr != NULL) {
 		/*
 		 * on a write or read operation, we insert-sort the
 		 * entries, and simply add the number of bytes written
 		 * to an already existing similar entry
 		 */
-		if ( gotr->username[0] == entry->username[0] ) {
+		DEBUG(5) syslog(LOG_DEBUG,"cache: comparing %s vs %s",entry->filename,gotr->filename);
+		if ( entry->filename[1] == gotr->filename[1] ) {
 			while (gotr != NULL) {
 				/*
 			 	 * This could be a fitting entry, check it
 			 	 */
-				if (strncmp(entry->share, gotr->share, strlen(entry->share)) == 0 
+				if ( entry->op_id == gotr->op_id && strncmp(entry->share, gotr->share, strlen(entry->share)) == 0
+					&& strncmp(entry->filename, gotr->filename, strlen(entry->filename)) == 0
 					&& strncmp(entry->username, gotr->username, strlen(entry->username)) == 0
-					&& strncmp(entry->domain, gotr->domain, strlen(entry->domain)) == 0
-					&& entry->op_id == gotr->op_id) {
+					&& strncmp(entry->domain, gotr->domain, strlen(entry->domain)) == 0) {
 					/*
 				 	 * entry fits, add the value
 				 	 */
-					convlen = atol(entry->len)+atol(gotr->len);
-					talloc_free(gotr->len);
-					gotr->len = talloc_asprintf(cache_start,"%lu",convlen);
-					talloc_free(entry);
+					DEBUG(5) syslog(LOG_DEBUG,"cache : adding value.");
+					gotr->len = gotr->len + entry->len;
 					pthread_mutex_unlock(&cache_mutex);
 					return 0;
 				} else {
@@ -105,19 +103,22 @@ int cache_add( char *data, int len ) {
 			 	 */
 				backup = gotr;
 				gotr=gotr->down;
+				DEBUG(5) syslog(LOG_DEBUG,"cache: going down on that entry...");
 				}
 			}
 			/*
 			 * This entry wasn't yet found, it's being added
 			 * to this list
 			 */
+			DEBUG(5) syslog(LOG_DEBUG,"cache: entry created after moving down");
 			backup->down = entry;
 			pthread_mutex_unlock(&cache_mutex);
 			return 0;
-		} else if ( entry->share[0] > gotr->share[0] ) {
+		} else if ( entry->filename[1] > gotr->filename[1] ) {
 			/*
 			 * continue search on the right
 			 */
+			DEBUG(5) syslog(LOG_DEBUG,"cache: right... as %s > %s",entry->filename,gotr->filename);
 			backup = gotr;
 			gotr= gotr->right;
 			/*
@@ -126,14 +127,16 @@ int cache_add( char *data, int len ) {
 			*/
 			if (gotr == NULL) {
 				backup->right = entry;
+				DEBUG(5) syslog(LOG_DEBUG,"cache: entry created after moving right.");
 				pthread_mutex_unlock(&cache_mutex);
 				return 0;
 			}
-		} else {
+		} else if ( entry->filename[1] < gotr->filename[1]) {
 			/*
-			 * continue search on the lest
+			 * continue search on the left
 			 *
 			*/
+			DEBUG(5) syslog(LOG_DEBUG,"cache: left... as %s < %s",entry->filename,gotr->filename);
 			backup = gotr;
 			gotr = gotr->left;
 			/*
@@ -142,6 +145,7 @@ int cache_add( char *data, int len ) {
 			*/
 			if (gotr == NULL) {
 				backup->left = entry;
+				DEBUG(5) syslog(LOG_DEBUG,"cache: entry created after moving left.");
 				pthread_mutex_unlock(&cache_mutex);
 				return 0;
 			}
@@ -184,7 +188,7 @@ void cache_update_monitor(struct cache_entry *entry)
         char *go_through = entry->data;
         char *str = NULL;
         char *filename = NULL;
-        char *len = NULL;
+        unsigned long int len = 0;
         char *mode = NULL;
         char *result = NULL;
         char *path = NULL;
@@ -223,14 +227,14 @@ void cache_update_monitor(struct cache_entry *entry)
         case vfs_id_read:
         case vfs_id_pread: ;
                 filename = protocol_get_single_data_block_quoted( data, &go_through );
-                len = protocol_get_single_data_block( data, &go_through);
-                mondata = len;
+                mondata = protocol_get_single_data_block( data, &go_through);
+                len = atol(mondata);
                 break;
         case vfs_id_write:
         case vfs_id_pwrite: ;
                 filename= protocol_get_single_data_block_quoted( data,&go_through );
-                len = protocol_get_single_data_block( data,&go_through);
-                mondata = len;
+                mondata = protocol_get_single_data_block( data,&go_through);
+		len = atol(mondata);
                 break;
         case vfs_id_mkdir: ;
                 path = protocol_get_single_data_block_quoted( data,&go_through);
@@ -337,14 +341,12 @@ int cache_prepare_entry( TALLOC_CTX *ctx,struct cache_entry *entry)
 	case vfs_id_read:
 	case vfs_id_pread: ;
 		entry->filename = protocol_get_single_data_block_quoted( data, &go_through );
-		entry->len = protocol_get_single_data_block( data, &go_through);
-		entry->mondata = entry->len;
+		entry->len = atol(protocol_get_single_data_block( data, &go_through));
 		break;
 	case vfs_id_write:
 	case vfs_id_pwrite: ;
                 entry->filename= protocol_get_single_data_block_quoted( data,&go_through );
-                entry->len = protocol_get_single_data_block( data,&go_through);
-		entry->mondata = entry->len;
+                entry->len = atol(protocol_get_single_data_block( data,&go_through));
                 break;
 	case vfs_id_mkdir: ;
 		entry->path = protocol_get_single_data_block_quoted( data,&go_through);
@@ -430,7 +432,7 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                 break;
         case vfs_id_write:
         case vfs_id_pwrite: ;
-                if (atol(entry->len)== 0) {
+                if (entry->len == 0) {
                         retstr=NULL;
                         break;
                 }
@@ -438,14 +440,14 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                         "username, usersid, share, domain, timestamp,"
                         "filename, length) VALUES ("
                         "%s,%s,%s,%s,%s,"
-                        "%s,%s);",
+                        "%s,%lu);",
                         entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
                         entry->filename,entry->len);
                 entry->mondata = entry->len;
                 break;	
         case vfs_id_read:
         case vfs_id_pread: ;
-                if (atol(entry->len) == 0) {
+                if (entry->len == 0) {
                         retstr=NULL;
                         break;
                 }
@@ -453,7 +455,7 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                         "username, usersid, share, domain, timestamp,"
                         "filename, length) VALUES ("
                         "%s,%s,%s,%s,%s,"
-                        "%s,%s);",
+                        "%s,%lu);",
                         entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
                         entry->filename,entry->len);
                 entry->mondata = entry->len;
@@ -548,7 +550,6 @@ void cache_manager(struct configuration_data *config )
 		sleep(5);
 		maintenance_count++;
         	pthread_mutex_lock(&cache_mutex);
-        	struct cache_entry *go_through = cache_start;
 		struct cache_entry *backup = cache_start;
        		cache_start = NULL;
         	cache_end = NULL;
