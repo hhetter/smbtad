@@ -43,7 +43,7 @@ void cache_init( ) {
  * adds an entry to the cache
  * returns -1 in case of an error
  */
-int cache_add( char *data, int len ) {
+int cache_add( char *data, int len,struct configuration_data *config ) {
 	struct cache_entry *entry = talloc(cache_start, struct cache_entry);
 	entry->left = NULL;
 	entry->right = NULL;
@@ -87,7 +87,8 @@ int cache_add( char *data, int len ) {
 				if ( entry->op_id == gotr->op_id && strncmp(entry->share, gotr->share, strlen(entry->share)) == 0
 					&& strncmp(entry->filename, gotr->filename, strlen(entry->filename)) == 0
 					&& strncmp(entry->username, gotr->username, strlen(entry->username)) == 0
-					&& strncmp(entry->domain, gotr->domain, strlen(entry->domain)) == 0) {
+					&& strncmp(entry->domain, gotr->domain, strlen(entry->domain)) == 0
+					&& config->precision != 0) {
 					/*
 				 	 * entry fits, add the value
 				 	 */
@@ -536,14 +537,19 @@ void cache_manager(struct configuration_data *config )
 		"mkdir",
 		NULL,
 	};
-	int maintenance_c_val = config->maintenance_seconds / 5;
+	int maintenance_c_val;
+	if (config->precision>0)
+		maintenance_c_val = config->maintenance_seconds / config->precision;
+	else maintenance_c_val = config->maintenance_seconds;
+
 	int maintenance_count = 0;
         pthread_detach(pthread_self());
 	/* backup the start and make it possible to
 	 * allocate a new cache beginning
 	 */
 	while (1 == 1) {
-		sleep(5);
+		if (config->precision != 0) sleep(config->precision);
+		else sleep(5);
 		maintenance_count++;
         	pthread_mutex_lock(&cache_mutex);
 		struct cache_entry *backup = cache_start;

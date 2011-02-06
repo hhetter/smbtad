@@ -49,6 +49,6 @@ struct cache_entry {
 };
 
 void cache_init();
-int cache_add( char *data, int len );
+int cache_add( char *data, int len,struct configuration_data *config );
 void cache_manager( struct configuration_data *config);
 void cache_query_thread(struct configuration_data *config);

@@ -250,7 +250,7 @@ int network_handle_data( int i, config_t *c )
 					"Adding to cache:  %s | len = %i",
 					connection->body,
 					connection->blocklen); 
-				cache_add(connection->body, connection->blocklen);
+				cache_add(connection->body, connection->blocklen,c);
 			}
 
 			if (connection->connection_function == SOCK_TYPE_DB_QUERY) {
@@ -292,7 +292,7 @@ int network_handle_data( int i, config_t *c )
 					connection->body,
 					connection->blocklen);
 				cache_add(connection->body,
-					connection->blocklen);
+					connection->blocklen,c);
 			}
 			if (connection->connection_function == SOCK_TYPE_DB_QUERY) {
 				DEBUG(1) syslog(LOG_DEBUG,
