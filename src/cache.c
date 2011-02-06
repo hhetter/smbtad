@@ -44,7 +44,6 @@ void cache_init( ) {
  * returns -1 in case of an error
  */
 int cache_add( char *data, int len ) {
-	unsigned long int convlen = 0;
 	struct cache_entry *entry = talloc(cache_start, struct cache_entry);
 	entry->left = NULL;
 	entry->right = NULL;
@@ -173,7 +172,7 @@ int cache_add( char *data, int len ) {
 		}
 		break;
 	}	
-		
+	return 0;		
 }
 
 void cache_update_monitor(struct cache_entry *entry)
@@ -443,7 +442,6 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                         "%s,%lu);",
                         entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
                         entry->filename,entry->len);
-                entry->mondata = entry->len;
                 break;	
         case vfs_id_read:
         case vfs_id_pread: ;
@@ -458,7 +456,6 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                         "%s,%lu);",
                         entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
                         entry->filename,entry->len);
-                entry->mondata = entry->len;
                 break;
 	default: ;
 	}	
@@ -545,7 +542,6 @@ void cache_manager(struct configuration_data *config )
 	/* backup the start and make it possible to
 	 * allocate a new cache beginning
 	 */
-	TALLOC_CTX *database_str = talloc_pool(NULL, 2000);
 	while (1 == 1) {
 		sleep(5);
 		maintenance_count++;
