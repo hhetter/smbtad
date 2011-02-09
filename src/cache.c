@@ -44,6 +44,7 @@ void cache_init( ) {
  * returns -1 in case of an error
  */
 int cache_add( char *data, int len,struct configuration_data *config ) {
+	pthread_mutex_lock(&cache_mutex);
 	struct cache_entry *entry = talloc(cache_start, struct cache_entry);
 	entry->left = NULL;
 	entry->right = NULL;
@@ -52,7 +53,6 @@ int cache_add( char *data, int len,struct configuration_data *config ) {
 	entry->data = talloc_steal( entry, data);
 	struct cache_entry *gotr = cache_start;
 	struct cache_entry *backup = cache_start;
-	pthread_mutex_lock(&cache_mutex);
 	cache_prepare_entry( cache_start, entry);
 	if (cache_start == NULL) {
 		/*
