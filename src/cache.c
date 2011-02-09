@@ -64,6 +64,14 @@ int cache_add( char *data, int len,struct configuration_data *config ) {
 		entry->down = NULL;
 		entry->other_ops = NULL;
 		cache_end = entry->other_ops;
+		/* if the first element is a */
+		/* operation not using a filename */
+		/* then create a fake filename for */
+		/* the sorting */
+		if (entry->op_id == vfs_id_mkdir ||
+		    entry->op_id == vfs_id_chdir ||
+		    entry->op_id == vfs_id_rename)
+			entry->filename=talloc_strdup(entry,"\"*\"");
 		pthread_mutex_unlock(&cache_mutex);
 		return 0;
 	}
@@ -373,7 +381,6 @@ int cache_prepare_entry( TALLOC_CTX *ctx,struct cache_entry *entry)
 		break;
 
 	}
-	if (entry->filename == NULL) entry->filename = talloc_asprintf(data,"\"*\"");
 	return 0;
 }
 
@@ -489,7 +496,6 @@ void do_db( struct configuration_data *config, char *dbstring)
 {
 	sqlite3 *database = config->dbhandle;
 	int rc = -1;
-	syslog(LOG_DEBUG,"%s",dbstring); 
 	char *erg = 0;
 	while (rc != SQLITE_OK) {
 		rc = sqlite3_exec(database, dbstring,0,0,&erg);
