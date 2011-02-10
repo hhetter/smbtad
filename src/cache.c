@@ -566,7 +566,6 @@ void cache_manager(struct configuration_data *config )
 			do_db(config,"BEGIN TRANSACTION;");
 			cleanup_cache( config,backup);
 			do_db(config,"COMMIT;");
-			TALLOC_FREE(backup);
 		}
 
 		if (maintenance_count == maintenance_c_val) {
