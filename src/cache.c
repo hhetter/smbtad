@@ -53,7 +53,7 @@ int cache_add( char *data, int len,struct configuration_data *config ) {
 	entry->data = talloc_steal( entry, data);
 	struct cache_entry *gotr = cache_start;
 	struct cache_entry *backup = cache_start;
-	cache_prepare_entry( cache_start, entry);
+	cache_prepare_entry( entry, entry);
 	if (cache_start == NULL) {
 		/*
 		 * first element, we just create it
