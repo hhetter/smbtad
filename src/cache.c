@@ -275,9 +275,8 @@ void cache_update_monitor(struct cache_entry *entry)
 }
 
 
-int cache_prepare_entry( TALLOC_CTX *ctx,struct cache_entry *entry)
+int cache_prepare_entry( TALLOC_CTX *data,struct cache_entry *entry)
 {
-	TALLOC_CTX *data = talloc_pool( ctx, 2048);
 	char *go_through = entry->data;
 	char *str = NULL;
         /* first check how many common data blocks will come */
