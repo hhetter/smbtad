@@ -92,11 +92,16 @@ int cache_add( char *data, int len,struct configuration_data *config ) {
 				/*
 			 	 * This could be a fitting entry, check it
 			 	 */
-				if ( entry->op_id == gotr->op_id && strncmp(entry->share, gotr->share, strlen(entry->share)) == 0
-					&& strncmp(entry->filename, gotr->filename, strlen(entry->filename)) == 0
-					&& strncmp(entry->username, gotr->username, strlen(entry->username)) == 0
-					&& strncmp(entry->domain, gotr->domain, strlen(entry->domain)) == 0
-					&& config->precision != 0) {
+				if ( entry->op_id == gotr->op_id
+					&& config->precision != 0
+					&& strncmp(entry->share,
+						gotr->share, strlen(entry->share)) == 0
+					&& strncmp(entry->filename,
+						gotr->filename, strlen(entry->filename)) == 0
+					&& strncmp(entry->username,
+						gotr->username, strlen(entry->username)) == 0
+					&& strncmp(entry->domain,
+						gotr->domain, strlen(entry->domain)) == 0) {
 					/*
 				 	 * entry fits, add the value
 				 	 */
