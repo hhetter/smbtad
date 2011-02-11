@@ -230,50 +230,50 @@ void cache_update_monitor(struct cache_entry *entry)
         str = protocol_get_single_data_block( data, &go_through);
         int op_id = atoi(str);
         /* username */
-        username = protocol_get_single_data_block_quoted( data, &go_through );
+        username = protocol_get_single_data_block( data, &go_through );
         /* user's SID */
-        usersid = protocol_get_single_data_block_quoted( data, &go_through );
+        usersid = protocol_get_single_data_block( data, &go_through );
         /* share */
-        share = protocol_get_single_data_block_quoted( data, &go_through );
+        share = protocol_get_single_data_block( data, &go_through );
         /* domain */
-        domain = protocol_get_single_data_block_quoted( data, &go_through );
+        domain = protocol_get_single_data_block( data, &go_through );
         /* timestamp */
-        timestamp = protocol_get_single_data_block_quoted( data, &go_through );
+        timestamp = protocol_get_single_data_block( data, &go_through );
         /* now receive the VFS function depending arguments */
         switch( op_id) {
         case vfs_id_read:
         case vfs_id_pread: ;
-                filename = protocol_get_single_data_block_quoted( data, &go_through );
+                filename = protocol_get_single_data_block( data, &go_through );
                 mondata = protocol_get_single_data_block( data, &go_through);
                 len = atol(mondata);
                 break;
         case vfs_id_write:
         case vfs_id_pwrite: ;
-                filename= protocol_get_single_data_block_quoted( data,&go_through );
+                filename= protocol_get_single_data_block( data,&go_through );
                 mondata = protocol_get_single_data_block( data,&go_through);
 		len = atol(mondata);
                 break;
         case vfs_id_mkdir: ;
-                path = protocol_get_single_data_block_quoted( data,&go_through);
-                mode = protocol_get_single_data_block_quoted( data,&go_through);
+                path = protocol_get_single_data_block( data,&go_through);
+                mode = protocol_get_single_data_block( data,&go_through);
                 result=protocol_get_single_data_block( data,&go_through);
                 break;
         case vfs_id_chdir: ;
-                path = protocol_get_single_data_block_quoted( data,&go_through);
+                path = protocol_get_single_data_block( data,&go_through);
                 result = protocol_get_single_data_block( data,&go_through);
                 break;
         case vfs_id_open: ;
-                filename = protocol_get_single_data_block_quoted(data,&go_through);
-                mode = protocol_get_single_data_block_quoted(data,&go_through);
+                filename = protocol_get_single_data_block(data,&go_through);
+                mode = protocol_get_single_data_block(data,&go_through);
                 result = protocol_get_single_data_block(data,&go_through);
                 break;
         case vfs_id_close: ;
-                filename = protocol_get_single_data_block_quoted(data,&go_through);
+                filename = protocol_get_single_data_block(data,&go_through);
                 result = protocol_get_single_data_block(data,&go_through);
                 break;
         case vfs_id_rename: ;
-                source = protocol_get_single_data_block_quoted(data,&go_through);
-                destination = protocol_get_single_data_block_quoted(data,&go_through);
+                source = protocol_get_single_data_block(data,&go_through);
+                destination = protocol_get_single_data_block(data,&go_through);
                 result = protocol_get_single_data_block(data,&go_through);
                 break;
 
@@ -341,50 +341,50 @@ int cache_prepare_entry( TALLOC_CTX *data,struct cache_entry *entry)
 		return -2;
 	}
         /* username */
-        entry->username = protocol_get_single_data_block_quoted( data, &go_through );
+        entry->username = protocol_get_single_data_block( data, &go_through );
         /* user's SID */
-        entry->usersid = protocol_get_single_data_block_quoted( data, &go_through );
+        entry->usersid = protocol_get_single_data_block( data, &go_through );
         /* share */
-        entry->share = protocol_get_single_data_block_quoted( data, &go_through );
+        entry->share = protocol_get_single_data_block( data, &go_through );
         /* domain */
-        entry->domain = protocol_get_single_data_block_quoted( data, &go_through );
+        entry->domain = protocol_get_single_data_block( data, &go_through );
         /* timestamp */
-        entry->timestamp = protocol_get_single_data_block_quoted( data, &go_through );
+        entry->timestamp = protocol_get_single_data_block( data, &go_through );
 
 
 	/* now receive the VFS function depending arguments */
 	switch( entry->op_id) {
 	case vfs_id_read:
 	case vfs_id_pread: ;
-		entry->filename = protocol_get_single_data_block_quoted( data, &go_through );
+		entry->filename = protocol_get_single_data_block( data, &go_through );
 		entry->len = atol(protocol_get_single_data_block( data, &go_through));
 		break;
 	case vfs_id_write:
 	case vfs_id_pwrite: ;
-                entry->filename= protocol_get_single_data_block_quoted( data,&go_through );
+                entry->filename= protocol_get_single_data_block( data,&go_through );
                 entry->len = atol(protocol_get_single_data_block( data,&go_through));
                 break;
 	case vfs_id_mkdir: ;
-		entry->path = protocol_get_single_data_block_quoted( data,&go_through);
-		entry->mode = protocol_get_single_data_block_quoted( data,&go_through);
+		entry->path = protocol_get_single_data_block( data,&go_through);
+		entry->mode = protocol_get_single_data_block( data,&go_through);
 		entry->result=protocol_get_single_data_block( data,&go_through);
 		break;
 	case vfs_id_chdir: ;
-		entry->path = protocol_get_single_data_block_quoted( data,&go_through);
+		entry->path = protocol_get_single_data_block( data,&go_through);
 		entry->result = protocol_get_single_data_block( data,&go_through);
 		break;
 	case vfs_id_open: ;
-		entry->filename = protocol_get_single_data_block_quoted(data,&go_through);
-		entry->mode = protocol_get_single_data_block_quoted(data,&go_through);
+		entry->filename = protocol_get_single_data_block(data,&go_through);
+		entry->mode = protocol_get_single_data_block(data,&go_through);
 		entry->result = protocol_get_single_data_block(data,&go_through);
 		break;
 	case vfs_id_close: ;
-		entry->filename = protocol_get_single_data_block_quoted(data,&go_through);
+		entry->filename = protocol_get_single_data_block(data,&go_through);
 		entry->result = protocol_get_single_data_block(data,&go_through);
 		break;
 	case vfs_id_rename: ;
-		entry->source = protocol_get_single_data_block_quoted(data,&go_through);
-		entry->destination = protocol_get_single_data_block_quoted(data,&go_through);
+		entry->source = protocol_get_single_data_block(data,&go_through);
+		entry->destination = protocol_get_single_data_block(data,&go_through);
 		entry->result = protocol_get_single_data_block(data,&go_through);
 		break;
 

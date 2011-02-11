@@ -145,46 +145,27 @@ int protocol_get_data_block_length( char *header )
  * char *data_pointer	This char shall point to the begin of the data block,
  *			it is set by the function to the beginning of the
  *			next data block.
- * The function returns a data block. The memory must be freed by the caller.
+ * The talloc context is included for compatibility reasons, older
+ * versions of this function created a newly allocated string
  */
 char *protocol_get_single_data_block( TALLOC_CTX *ctx, char **data_pointer )
 {
-	char length[6];
-	char *data;
-	int l;
-	memcpy( length, *data_pointer, 4);
-	length[4] = '\0';
-	l = atoi(length);
-	data = talloc_array( ctx, char, l+1); //malloc(sizeof(char) * (l+1));
-	memcpy( data, *data_pointer + 4, l);
-	data[ l ] = '\0';
-        *data_pointer = *data_pointer + l + 4;
-	return data;
+	/* get the length of the coming block first */
+	char backup = *(*data_pointer + 5);
+	char *toreturn = *data_pointer + 5;
+	*(*data_pointer + 5) = '\0';
+	int l = atoi(*data_pointer+1);
+	DEBUG(9) syslog(LOG_DEBUG,
+		"protocol_get_single_data_block: Length: %i",l);
+	/* now recreate string */
+	*(*data_pointer +5) = backup;
+	*(*data_pointer + 5 + l) = '\0';
+	*data_pointer=*data_pointer + l + 4;
+	DEBUG(9) syslog(LOG_DEBUG,
+		"protocol_get_single_data_block: Returning >%s<",toreturn);
+	return toreturn;
 }
 
-/**
- * Parse a single data block and return a quoted string.
- * char *data_pointer   This char shall point to the begin of the data block,
- *                      it is set by the function to the beginning of the
- *                      next data block.
- * The function returns a data block. The memory must be freed by the caller.
- */
-char *protocol_get_single_data_block_quoted( TALLOC_CTX *ctx, char **data_pointer )
-{
-        char length[6];
-        char *data;
-        int l;
-        memcpy( length, *data_pointer, 4);
-        length[4] = '\0';
-        l = atoi(length);
-        data = talloc_array( ctx,char, l+4 ); // malloc(sizeof(char) * (l+4));
-	data[0] = '\"';
-        memcpy( data+1, *data_pointer + 4, l);
-        data[ l+1] = '\"';
-	data[ l+2] = '\0';
-        *data_pointer = *data_pointer + l + 4;
-        return data;
-}
 
 
 /**
