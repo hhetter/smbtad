@@ -404,8 +404,8 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                 retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
                         "source, destination, result) VALUES ("
-                        "%s,%s,%s,%s,%s,"
-                        "%s,%s,%s);",
+                        "\"%s\",\"%s\",\"%s\",\"%s\",\"%s\","
+                        "\"%s\",\"%s\",%s);",
                         entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
                         entry->source,entry->destination,entry->result);
 		break;
@@ -413,8 +413,8 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                 retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
                         "filename, result) VALUES ("
-                        "%s,%s,%s,%s,%s,"
-                        "%s,%s);",
+                        "\"%s\",\"%s\",\"%s\",\"%s\",\"%s\","
+                        "\"%s\",%s);",
                         entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
                         entry->filename,entry->result);
                 break;
@@ -422,8 +422,8 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                 retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
                         "filename, mode, result) VALUES ("
-                        "%s,%s,%s,%s,%s,"
-                        "%s,%s,%s);",
+                        "\"%s\",\"%s\",\"%s\",\"%s\",\"%s\","
+                        "\"%s\",%s,%s);",
                         entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
                         entry->filename,entry->mode,entry->result);
                 break;
@@ -431,8 +431,8 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                 retstr = talloc_asprintf( ctx, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
                         "path, result) VALUES ("
-                        "%s,%s,%s,%s,%s,"
-                        "%s,%s);",
+                        "\"%s\",\"%s\",\"%s\",\"%s\",\"%s\","
+                        "\"%s\",%s);",
                         entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
                         entry->path,entry->result);
                 break;
@@ -440,8 +440,8 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                 retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
                         "path, mode, result) VALUES ("
-                        "%s,%s,%s,%s,%s,"
-                        "%s,%s,%s);",
+                        "\"%s\",\"%s\",\"%s\",\"%s\",\"%s\","
+                        "\"%s\",%s,%s);",
                         entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
                         entry->path, entry->mode, entry->result);
                 break;
@@ -454,8 +454,8 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                 retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
                         "filename, length) VALUES ("
-                        "%s,%s,%s,%s,%s,"
-                        "%s,%lu);",
+                        "\"%s\",\"%s\",\"%s\",\"%s\",\"%s\","
+                        "\"%s\",%lu);",
                         entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
                         entry->filename,entry->len);
                 break;	
@@ -468,8 +468,8 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                 retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
                         "username, usersid, share, domain, timestamp,"
                         "filename, length) VALUES ("
-                        "%s,%s,%s,%s,%s,"
-                        "%s,%lu);",
+                        "\"%s\",\"%s\",\"%s\",\"%s\",\"%s\","
+                        "\"%s\",%lu);",
                         entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
                         entry->filename,entry->len);
                 break;
