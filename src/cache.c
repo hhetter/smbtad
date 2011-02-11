@@ -88,6 +88,7 @@ int cache_add( char *data, int len,struct configuration_data *config ) {
 		 */
 		DEBUG(5) syslog(LOG_DEBUG,"cache: comparing %s vs %s",entry->filename,gotr->filename);
 		if ( entry->filename[1] == gotr->filename[1] ) {
+			struct cache_entry *base_entry = gotr;
 			while (gotr != NULL) {
 				/*
 			 	 * This could be a fitting entry, check it
@@ -125,7 +126,9 @@ int cache_add( char *data, int len,struct configuration_data *config ) {
 			 * to this list
 			 */
 			DEBUG(5) syslog(LOG_DEBUG,"cache: entry created after moving down");
-			backup->down = entry;
+			backup = base_entry->down;
+			base_entry->down = entry;
+			entry->down = backup;
 			pthread_mutex_unlock(&cache_mutex);
 			return 0;
 		} else if ( entry->filename[1] > gotr->filename[1] ) {
