@@ -151,15 +151,15 @@ int protocol_get_data_block_length( char *header )
 char *protocol_get_single_data_block( TALLOC_CTX *ctx, char **data_pointer )
 {
 	/* get the length of the coming block first */
-	char backup = *(*data_pointer + 5);
-	char *toreturn = *data_pointer + 5;
-	*(*data_pointer + 5) = '\0';
+	char backup = *(*data_pointer + 4);
+	char *toreturn = *data_pointer + 4;
+	*(*data_pointer + 4) = '\0';
 	int l = atoi(*data_pointer+1);
 	DEBUG(9) syslog(LOG_DEBUG,
 		"protocol_get_single_data_block: Length: %i",l);
 	/* now recreate string */
-	*(*data_pointer +5) = backup;
-	*(*data_pointer + 5 + l) = '\0';
+	*(*data_pointer +4) = backup;
+	*(*data_pointer + 4 + l) = '\0';
 	*data_pointer=*data_pointer + l + 4;
 	DEBUG(9) syslog(LOG_DEBUG,
 		"protocol_get_single_data_block: Returning >%s<",toreturn);
