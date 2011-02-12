@@ -516,15 +516,15 @@ void do_db( struct configuration_data *config, char *dbstring)
 	
 }
 
-void cleanup_cache( struct configuration_data *config,
+void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
 	struct cache_entry *entry)
 {
 	char *dbstring;
-	if (entry->other_ops != NULL) cleanup_cache(config, entry->other_ops);
-	if (entry->left != NULL) cleanup_cache(config, entry->left);
-	if (entry->right != NULL) cleanup_cache(config, entry->right);
-	if (entry->down != NULL) cleanup_cache(config, entry->down);
-	dbstring = cache_create_database_string(NULL,entry);
+	if (entry->other_ops != NULL) cleanup_cache(ctx,config, entry->other_ops);
+	if (entry->left != NULL) cleanup_cache(ctx,config, entry->left);
+	if (entry->right != NULL) cleanup_cache(ctx,config, entry->right);
+	if (entry->down != NULL) cleanup_cache(ctx,config, entry->down);
+	dbstring = cache_create_database_string(ctx,entry);
 	do_db(config,dbstring);
 	talloc_free(dbstring);
 	talloc_free(entry);
@@ -568,14 +568,16 @@ void cache_manager(struct configuration_data *config )
 		maintenance_count++;
         	pthread_mutex_lock(&cache_mutex);
 		struct cache_entry *backup = cache_start;
+		TALLOC_CTX *dbpool = talloc_pool(NULL,2048);
        		cache_start = NULL;
         	cache_end = NULL;
 		if (backup != NULL) {
 			/* store all existing entries into the database */
 			do_db(config,"BEGIN TRANSACTION;");
-			cleanup_cache( config,backup);
+			cleanup_cache( dbpool,config,backup);
 			do_db(config,"COMMIT;");
 		}
+		talloc_free(dbpool);
 		pthread_mutex_unlock(&cache_mutex);
 
 		if (maintenance_count == maintenance_c_val) {
