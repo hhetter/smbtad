@@ -570,13 +570,13 @@ void cache_manager(struct configuration_data *config )
 		struct cache_entry *backup = cache_start;
        		cache_start = NULL;
         	cache_end = NULL;
+		pthread_mutex_unlock(&cache_mutex);
 		if (backup != NULL) {
 			/* store all existing entries into the database */
 			do_db(config,"BEGIN TRANSACTION;");
 			cleanup_cache( config,backup);
 			do_db(config,"COMMIT;");
 		}
-		pthread_mutex_unlock(&cache_mutex);
 
 		if (maintenance_count == maintenance_c_val) {
 			char String[400];
