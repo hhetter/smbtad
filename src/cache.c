@@ -520,14 +520,65 @@ void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
 	struct cache_entry *entry)
 {
 	char *dbstring;
-	if (entry->other_ops != NULL) cleanup_cache(ctx,config, entry->other_ops);
-	if (entry->left != NULL) cleanup_cache(ctx,config, entry->left);
-	if (entry->right != NULL) cleanup_cache(ctx,config, entry->right);
-	if (entry->down != NULL) cleanup_cache(ctx,config, entry->down);
-	dbstring = cache_create_database_string(ctx,entry);
+	struct cache_entry *go = cache_start;
+	struct cache_entry *backup = go;
+	struct cache_entry *backup2 = NULL;
+	struct cache_entry *down =NULL;
+	// left
+	go = go->left;
+	while (go != NULL) {
+		backup = go->left;
+		dbstring = cache_create_database_string(ctx,go);
+		do_db(config,dbstring);
+		// go down
+		down = go->down;
+		while (down != NULL) {
+			backup2 = down->down;
+			dbstring = cache_create_database_string(ctx,down);
+			do_db(config,dbstring);
+			talloc_free(dbstring);
+			talloc_free(down);
+			down = backup2;
+		}
+		talloc_free(dbstring);
+		talloc_free(go);
+		go = backup;
+	}
+	// right
+	go = cache_start->right;
+        while (go != NULL) {
+                backup = go->right;
+                dbstring = cache_create_database_string(ctx,go);
+                do_db(config,dbstring);
+                // go down
+                down = go->down;
+                while (down != NULL) { 
+                        backup2 = down->down;
+                        dbstring = cache_create_database_string(ctx,down);
+                        do_db(config,dbstring);
+                        talloc_free(dbstring);
+                        talloc_free(down);
+                        down = backup2;
+                }
+                talloc_free(dbstring);
+                talloc_free(go);
+                go = backup;
+        }
+	// other_ops
+	go = cache_start->other_ops;
+	while (go != NULL) {
+		backup = go->other_ops;
+		dbstring = cache_create_database_string(ctx,go);
+		do_db(config,dbstring);
+		talloc_free(dbstring);
+		talloc_free(go);
+		go = backup;
+	}
+	// delete tree begin
+	dbstring = cache_create_database_string(ctx,cache_start);
 	do_db(config,dbstring);
 	talloc_free(dbstring);
-	talloc_free(entry);
+	talloc_free(cache_start);
 }	
 	
 	
