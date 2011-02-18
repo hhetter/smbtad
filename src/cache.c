@@ -520,7 +520,7 @@ void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
 	struct cache_entry *entry)
 {
 	char *dbstring;
-	struct cache_entry *go = cache_start;
+	struct cache_entry *go = entry;
 	struct cache_entry *backup = go;
 	struct cache_entry *backup2 = NULL;
 	struct cache_entry *down =NULL;
@@ -545,7 +545,7 @@ void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
 		go = backup;
 	}
 	// right
-	go = cache_start->right;
+	go = entry->right;
         while (go != NULL) {
                 backup = go->right;
                 dbstring = cache_create_database_string(ctx,go);
@@ -565,7 +565,7 @@ void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
                 go = backup;
         }
 	// other_ops
-	go = cache_start->other_ops;
+	go = entry->other_ops;
 	while (go != NULL) {
 		backup = go->other_ops;
 		dbstring = cache_create_database_string(ctx,go);
@@ -578,7 +578,7 @@ void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
 	dbstring = cache_create_database_string(ctx,cache_start);
 	do_db(config,dbstring);
 	talloc_free(dbstring);
-	talloc_free(cache_start);
+	talloc_free(entry);
 }	
 	
 	
