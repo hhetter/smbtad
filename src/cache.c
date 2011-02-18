@@ -530,6 +530,7 @@ void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
 		backup = go->left;
 		dbstring = cache_create_database_string(ctx,go);
 		do_db(config,dbstring);
+		talloc_free(dbstring);
 		// go down
 		down = go->down;
 		while (down != NULL) {
@@ -540,7 +541,6 @@ void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
 			talloc_free(down);
 			down = backup2;
 		}
-		talloc_free(dbstring);
 		talloc_free(go);
 		go = backup;
 	}
@@ -550,6 +550,7 @@ void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
                 backup = go->right;
                 dbstring = cache_create_database_string(ctx,go);
                 do_db(config,dbstring);
+		talloc_free(dbstring);
                 // go down
                 down = go->down;
                 while (down != NULL) { 
@@ -560,7 +561,6 @@ void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
                         talloc_free(down);
                         down = backup2;
                 }
-                talloc_free(dbstring);
                 talloc_free(go);
                 go = backup;
         }
@@ -575,9 +575,9 @@ void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
 		go = backup;
 	}
 	// delete tree begin
-	dbstring = cache_create_database_string(ctx,cache_start);
+	dbstring = cache_create_database_string(ctx,entry);
 	do_db(config,dbstring);
-	talloc_free(dbstring);
+	if (dbstring != NULL) talloc_free(dbstring);
 	talloc_free(entry);
 }	
 	
