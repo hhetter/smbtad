@@ -72,6 +72,8 @@ typedef struct configuration_data {
 	/* life time of the cache in seconds, during this time it */
 	/* sums up similar VFS R/W entries. Default is 5.	*/
 	int precision;
+	/* if use_db = 0, no sqlite handling will be done. */
+	int use_db;
 } config_t;
 pthread_mutex_t *configuration_get_lock();
 int configuration_check_configuration( config_t *c );
