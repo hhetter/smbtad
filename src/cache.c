@@ -633,6 +633,7 @@ void cache_manager(struct configuration_data *config )
 		TALLOC_CTX *dbpool = talloc_pool(NULL,2048);
        		cache_start = NULL;
         	cache_end = NULL;
+		pthread_mutex_unlock(&cache_mutex);
 		if (backup != NULL) {
 			/* store all existing entries into the database */
 			do_db(config,"BEGIN TRANSACTION;");
@@ -640,7 +641,6 @@ void cache_manager(struct configuration_data *config )
 			do_db(config,"COMMIT;");
 		}
 		talloc_free(dbpool);
-		pthread_mutex_unlock(&cache_mutex);
 
 		if (maintenance_count == maintenance_c_val) {
 			char String[400];
