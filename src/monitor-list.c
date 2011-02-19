@@ -312,22 +312,6 @@ int monitor_list_filter_apply( struct monitor_item *entry,
 	char *domain)
 {
 
-	/* create local unqouted copies of the data */
-	char uusername[strlen(username)];
-	strncpy(uusername,username+1,strlen(username)-2);
-	uusername[strlen(username)-2]='\0';
-	char uusersid[strlen(usersid)];
-	strncpy(uusersid,usersid+1,strlen(usersid)-2);
-	uusersid[strlen(usersid)-2]='\0';
-	char ushare[strlen(share)];
-	strncpy(ushare,share+1,strlen(share)-2);
-	ushare[strlen(share)-2]='\0';
-	char ufile[strlen(file)];
-	strncpy(ufile,file+1,strlen(file)-2);
-	ufile[strlen(file)-2]='\0';
-	char udomain[strlen(domain)];
-	strncpy(udomain,domain+1,strlen(domain)-2);
-	udomain[strlen(domain)-2]='\0';
         DEBUG(1) syslog(LOG_DEBUG, "monitor_list_apply: entry data:"
                 "entry->username : |%s|vs|%s|, "
                 "entry->usersid  : |%s|vs|%s|, "
@@ -335,28 +319,28 @@ int monitor_list_filter_apply( struct monitor_item *entry,
 		"entry->file	 : %s, "
                 "entry->domain   : %s. ",
                 entry->username,
-		uusername,
+		username,
 		entry->usersid, 
-		uusersid,
+		usersid,
 		entry->share,
 		entry->file,
 		entry->domain);
 
 
 	if (strcmp(entry->username,"*") != 0) {
-		if (strcmp(entry->username, uusername)!=0) return 0;
+		if (strcmp(entry->username, username)!=0) return 0;
 	}
 	if (strcmp(entry->usersid,"*") != 0) {
-		if (strcmp(entry->usersid, uusersid)!=0) return 0;
+		if (strcmp(entry->usersid, usersid)!=0) return 0;
 	}
 	if (strcmp(entry->share,"*") != 0) {
-		if (strcmp(entry->share, ushare)!=0) return 0;
+		if (strcmp(entry->share, share)!=0) return 0;
 	}
 	if (strcmp(entry->file,"*") != 0) {
-		if (strcmp(entry->file, ufile)!=0) return 0;
+		if (strcmp(entry->file, file)!=0) return 0;
 	}
 	if (strcmp(entry->domain,"*") != 0) {
-		if (strcmp(entry->domain, udomain)!=0) return 0;
+		if (strcmp(entry->domain, domain)!=0) return 0;
 	}
 	DEBUG(1) syslog(LOG_DEBUG, "monitor_list_apply: "
 		"monitor applied succesfully.");
@@ -556,7 +540,7 @@ void monitor_list_update( int op_id,
 	char *usersid,
 	char *share,
 	char *file,
-	char *domain, char *data, char *montimestamp)
+	char *domain, unsigned long int data, char *montimestamp)
 {
 	struct monitor_item *entry = monlist_start;
 	char *op_id_str = NULL;
@@ -587,7 +571,7 @@ void monitor_list_update( int op_id,
 						entry->local_data)->sum =
 						((struct monitor_local_data_total *)
 						entry->local_data)->sum +
-						atol(data);
+						data;
 					monitor_send_result(entry);
 					break;
 				}
@@ -600,7 +584,7 @@ void monitor_list_update( int op_id,
                                                 entry->local_data)->sum =
                                                 ((struct monitor_local_data_total *)
                                                 entry->local_data)->sum +
-                                                atol(data);
+                                                data;
                                         monitor_send_result(entry);
                                         break;
 				} 
@@ -609,7 +593,7 @@ void monitor_list_update( int op_id,
 				if ((op_id == vfs_id_read ||
 					op_id == vfs_id_pread)) {
 					((struct monitor_local_data_read *)
-					entry->local_data)->read = atol(data);
+					entry->local_data)->read = data;
 					monitor_send_result(entry);
 					break;
 				}
@@ -618,7 +602,7 @@ void monitor_list_update( int op_id,
 				if ((op_id == vfs_id_write ||
 					op_id == vfs_id_pwrite)) { 
 					((struct monitor_local_data_write *)
-					entry->local_data)->write = atol(data);
+					entry->local_data)->write = data;
 					monitor_send_result(entry);
 					break;
 				}
