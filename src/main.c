@@ -30,13 +30,11 @@ int main(int argc, char *argv[])
 	config_t conf;
 	
 	pthread_t thread;
-	pthread_t thread2;
 	pthread_t thread3;
 	cache_init();
 	query_init();
 	sendlist_init();
 	monitor_list_init();
-	throughput_list_init();
 	/* parse command line */
 	if ( configuration_parse_cmdline( &conf, argc, argv ) <0 ) exit(1);
 	/* global debug level */
@@ -49,7 +47,6 @@ int main(int argc, char *argv[])
 
        	pthread_create(&thread,NULL,(void *)&cache_manager,(void *) &conf);
 	pthread_create(&thread3,NULL,(void *)&cache_query_thread, (void *) &conf);
-	pthread_create(&thread2,NULL,(void *)&monitor_timer,NULL);
 	/* enter the main network function. */
 	network_handle_connections( &conf );
 	exit(0);
