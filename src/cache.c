@@ -288,6 +288,8 @@ int cache_prepare_entry( TALLOC_CTX *data,struct cache_entry *entry)
 {
 	char *go_through = entry->data;
 	char *str = NULL;
+	char *dummy = NULL;
+	int t;
         /* first check how many common data blocks will come */
 	str = protocol_get_single_data_block( data, &go_through);
 	int common_blocks_num = atoi(str);
@@ -350,6 +352,15 @@ int cache_prepare_entry( TALLOC_CTX *data,struct cache_entry *entry)
         entry->domain = protocol_get_single_data_block( data, &go_through );
         /* timestamp */
         entry->timestamp = protocol_get_single_data_block( data, &go_through );
+	
+	/**
+	 * In case the protocol transfers more common data blocks
+	 * ignore them if we don't support them yet. This has recently
+	 * happened in the Samba master and 3.6.0 branch as we have
+	 * added support for the IP address of the client to the protocol
+	 */
+	for ( t=0; t < common_blocks_num-6; t++)
+		dummy = protocol_get_single_data_block( data, &go_through);
 
 
 	/* now receive the VFS function depending arguments */
