@@ -26,7 +26,7 @@ void help_show_help()
 	printf("SMB Traffic Analyzer daemon version %s\n", STAD2_VERSION);
 	printf("%s\n", SMBTA_LICENSE);
 	printf("\n");
-	printf("(C) 2008-2010 Holger Hetterich <ozzy@metal-district.de>	\n");
+	printf("(C) 2008-2011 Holger Hetterich <ozzy@metal-district.de>	\n");
 	printf("\n");
 	printf("-i	--inet-port		Specifiy the port to be used.	\n");
 	printf("				Default: 3490.			\n");
@@ -68,4 +68,7 @@ void help_show_help()
 	printf("				between smbtad and smbtatools.\n");
 	printf("-p --precision			Precision value for the build-in\n");
 	printf("				cache. Default is 5.\n");
+	printf("-U --use-db			Specify 0 or 1 as argument. If\n");
+	printf("				this is 0, no sqlite handling\n");
+	printf("				will be done. Default is 1.\n");
 }

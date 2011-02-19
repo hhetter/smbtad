@@ -54,6 +54,15 @@ int cache_add( char *data, int len,struct configuration_data *config ) {
 	struct cache_entry *gotr = cache_start;
 	struct cache_entry *backup = cache_start;
 	cache_prepare_entry( entry, entry);
+	/**
+	 * cache_prepare_entry already called the monitors.
+	 * If we don't handle sqlite, we can go out here!
+	 */
+	if (config->use_db == 0) {
+		talloc_free(entry);
+		pthread_mutex_unlock(&cache_mutex);
+		return 0;
+	}
 	if (cache_start == NULL) {
 		/*
 		 * first element, we just create it

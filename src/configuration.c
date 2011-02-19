@@ -74,7 +74,17 @@ void configuration_define_defaults( config_t *c )
 	c->precision = 5;
 	c->query_port = 3941;
 	c->current_query_result = NULL;
-	
+	/**
+	 * if use_db == 0, no sqlite handling will be done.
+	 * this is useful if smbtad shall only be used for rrddriver or
+	 * smbtamonitor.
+	 * Be aware that the behaviour of some monitors might change,
+	 * for example the TOTAL monitor simply begins with 0 instead
+	 * of the result of an sql query to sum up the number of bytes
+	 * that have been written or read.
+	 * Also, a database will be created, but it will be left empty.
+	 */
+	c->use_db = 1;	
 	pthread_mutex_init(&config_mutex,NULL);
 }
 
@@ -146,6 +156,9 @@ int configuration_load_config_file( config_t *c)
         }
 	cc = iniparser_getstring(Mydict,"general:precision",NULL);
 	if (cc != NULL) c->precision = atoi(cc);
+
+	cc = iniparser_getstring(Mydict,"general:use_db",NULL);
+	if (cc != NULL) c->use_db = atoi(cc);
 
 	cc = iniparser_getstring(Mydict,"general:debug_level",NULL);
 	if (cc != NULL) {
@@ -222,11 +235,12 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 			{ "unix-domain-socket",0,NULL,'u'},
 			{ "unix-domain-socket-cl",0,NULL,'n'},
 			{ "precision",1,NULL,'p'},
+			{ "use-db",1,NULL,'D'},
 			{ 0,0,0,0 }
 		};
 
 		i = getopt_long( argc, argv,
-			"d:i:oc:K:k:q:b:t:m:unp:", long_options, &option_index );
+			"d:i:oc:K:k:q:b:t:m:unp:U:", long_options, &option_index );
 
 		if ( i == -1 ) break;
 
@@ -274,6 +288,9 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 				break;
 			case 'p':
 				c->precision = atoi(optarg);
+				break;
+			case 'U':
+				c->use_db = atoi(optarg);
 				break;
 			default	:
 				printf("ERROR: unkown option.\n\n");
@@ -357,8 +374,12 @@ int configuration_check_configuration( config_t *c )
 	if (c->precision<0) {
 		printf("\n\nERROR: the precision value for the cache cannot\n");
 		printf("be negative!\n");
+		exit(0);
 	}
-
-
+	// check use_db
+	if (c->use_db<0 || c->use_db>1) {
+		printf("\n\nERROR: use_db must be 0 or 1.\n");
+		exit(0);
+	}
 	return 0;
 }
