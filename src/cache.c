@@ -195,92 +195,14 @@ int cache_add( char *data, int len,struct configuration_data *config ) {
 
 void cache_update_monitor(struct cache_entry *entry)
 {
-        TALLOC_CTX *data = talloc_pool( NULL, 2048);
-
-        char *username = NULL;
-        char *domain = NULL;
-        char *share = NULL;
-        char *timestamp = NULL;
-        char *usersid = NULL;
-        char *go_through = entry->data;
-        char *str = NULL;
-        char *filename = NULL;
-        unsigned long int len = 0;
-        char *mode = NULL;
-        char *result = NULL;
-        char *path = NULL;
-        char *source = NULL;
-        char *destination = NULL;
-        char *mondata = NULL;
-        /* first check how many common data blocks will come */
-        str = protocol_get_single_data_block( data, &go_through);
-        int common_blocks_num = atoi(str);
-        /**
-         * don't run a newer smbtad with an older VFS module
-         */
-        if (common_blocks_num < 6) {
-                syslog(LOG_DEBUG, "FATAL: Protocol error!"
-                        " Too less common data blocks! (%i), ignoring data!",
-                        common_blocks_num);
-                TALLOC_FREE(data);
-                return;
-        }
-
-        /* vfs_operation_identifier */
-        str = protocol_get_single_data_block( data, &go_through);
-        int op_id = atoi(str);
-        /* username */
-        username = protocol_get_single_data_block( data, &go_through );
-        /* user's SID */
-        usersid = protocol_get_single_data_block( data, &go_through );
-        /* share */
-        share = protocol_get_single_data_block( data, &go_through );
-        /* domain */
-        domain = protocol_get_single_data_block( data, &go_through );
-        /* timestamp */
-        timestamp = protocol_get_single_data_block( data, &go_through );
-        /* now receive the VFS function depending arguments */
-        switch( op_id) {
-        case vfs_id_read:
-        case vfs_id_pread: ;
-                filename = protocol_get_single_data_block( data, &go_through );
-                mondata = protocol_get_single_data_block( data, &go_through);
-                len = atol(mondata);
-                break;
-        case vfs_id_write:
-        case vfs_id_pwrite: ;
-                filename= protocol_get_single_data_block( data,&go_through );
-                mondata = protocol_get_single_data_block( data,&go_through);
-		len = atol(mondata);
-                break;
-        case vfs_id_mkdir: ;
-                path = protocol_get_single_data_block( data,&go_through);
-                mode = protocol_get_single_data_block( data,&go_through);
-                result=protocol_get_single_data_block( data,&go_through);
-                break;
-        case vfs_id_chdir: ;
-                path = protocol_get_single_data_block( data,&go_through);
-                result = protocol_get_single_data_block( data,&go_through);
-                break;
-        case vfs_id_open: ;
-                filename = protocol_get_single_data_block(data,&go_through);
-                mode = protocol_get_single_data_block(data,&go_through);
-                result = protocol_get_single_data_block(data,&go_through);
-                break;
-        case vfs_id_close: ;
-                filename = protocol_get_single_data_block(data,&go_through);
-                result = protocol_get_single_data_block(data,&go_through);
-                break;
-        case vfs_id_rename: ;
-                source = protocol_get_single_data_block(data,&go_through);
-                destination = protocol_get_single_data_block(data,&go_through);
-                result = protocol_get_single_data_block(data,&go_through);
-                break;
-
-        }
-        if (filename == NULL) filename = talloc_asprintf(data,"\"*\"");
-	monitor_list_update( op_id, username, usersid, share,filename,domain, mondata, timestamp);
-        TALLOC_FREE(data);
+	monitor_list_update( entry->op_id,
+		entry->username,
+		entry->usersid,
+		entry->share,
+		entry->filename,
+		entry->domain,
+		entry->len,
+		entry->timestamp);
 }
 
 
@@ -289,6 +211,7 @@ int cache_prepare_entry( TALLOC_CTX *data,struct cache_entry *entry)
 	char *go_through = entry->data;
 	char *str = NULL;
 	char *dummy = NULL;
+	entry->len = 0;
 	int t;
         /* first check how many common data blocks will come */
 	str = protocol_get_single_data_block( data, &go_through);
@@ -400,6 +323,8 @@ int cache_prepare_entry( TALLOC_CTX *data,struct cache_entry *entry)
 		break;
 
 	}
+	/* With the encoded entry, we call the monitors to action */
+	cache_update_monitor(entry);
 	return 0;
 }
 
