@@ -28,7 +28,6 @@ ELSEIF (SQLITE_FOUND)
 ENDIF()
 
 
-SET(CMAKE_INSTALL_PREFIX /usr)
 
 #
 # check for talloc
