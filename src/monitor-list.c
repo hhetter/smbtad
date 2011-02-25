@@ -90,54 +90,21 @@ int monitor_list_add( char *data,int sock) {
         return entry->id;
 }
 
-int monitor_list_delete( int id ) {
+int monitor_list_delete_by_socket( int sock ) {
 	struct monitor_item *entry = monlist_start;
 	struct monitor_item *before = monlist_start;
 	if (entry == NULL) return -1;
 	while (entry != NULL) {
-		if (entry->id == id) {
+		if (entry->sock == sock) {
 			free(entry->data);
-			before->next=entry->next;
+			before->next = entry->next;
 			free(entry);
 			return 0;
 		}
-		entry=entry->next;
-	}
-	return -1; // id was not found
-}
-
-
-
-/**
- * delete any monitors associated to the given
- * socket (int sock)
- */
-void monitor_list_delete_by_socket( int sock ) {
-	struct monitor_item *entry = monlist_start;
-	struct monitor_item *before = monlist_start;
-	if (entry == NULL) return;
-	while (entry != NULL) {
-		if (entry->sock==sock) {
-			DEBUG(1) syslog(LOG_DEBUG,
-				"monitor_list_delete_by_socket: "
-				"Removing monitor on socket %i",
-				entry->sock);
-			free(entry->data);
-
-			if (before == monlist_start) {
-				entry=before->next;
-				monlist_start = before->next;
-				free(before);
-				before = monlist_start;
-				continue;
-			}
-			before->next = entry->next;
-			free(entry);
-		}
 		before = entry;
-		entry=entry->next;
-		
+		entry = entry->next;
 	}
+	return -1; // socket wasn't found
 }
 
 

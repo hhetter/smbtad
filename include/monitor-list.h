@@ -96,7 +96,7 @@ void monitor_list_update( int op_id,
 	char *file,
         char *domain, unsigned long int data, char *montimestamp);
 
-void monitor_list_delete_by_socket( int sock );
+int monitor_list_delete_by_socket( int sock );
 void monitor_list_set_init_result(char *res, int monitorid);
 
 
