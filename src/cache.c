@@ -117,8 +117,8 @@ int cache_add( char *data, int len,struct configuration_data *config ) {
 				 	 */
 					DEBUG(5) syslog(LOG_DEBUG,"cache : adding value.");
 					gotr->len = gotr->len + entry->len;
-					pthread_mutex_unlock(&cache_mutex);
 					talloc_free(entry);
+					pthread_mutex_unlock(&cache_mutex);
 					return 0;
 				} else {
 				/*
