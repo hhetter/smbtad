@@ -375,7 +375,69 @@ int network_create_unix_socket(char *name)
         return s;
 }
 
+/**
+ * sends *data over the network to socket sock, length
+ * containing the length of the data package.
+ * Create a header, specify encryption and encrypt if
+ * needed.
+ */
+void network_send_data( char *data, int sock, int length)
+{
+	fd_set write_fd_set, read_fd_set;
+	/* encryption changes the length of the data package */
+	size_t len = (size_t) length;
+	int send_len = 0;
+	char *senddata = data;
+	struct connection_struct *conn = NULL;
+	config_t *conf = configuration_get_conf();
+	FD_ZERO(&write_fd_set );
+	char *headerstr=talloc_asprintf(NULL,"000000");
+	char *crypted = NULL;
+	char *header = NULL;
 
+	/* Make sure we can write to the socket */
+	while ( !FD_ISSET(sock, &write_fd_set) ) {
+		connection_list_recreate_fs_sets(
+			&read_fd_set,
+			&write_fd_set);
+		int h = connection_list_max() + 1;
+		select( h,
+			NULL, &write_fd_set, NULL,NULL);
+	}
+
+	/* get the connection struct according to the socket */
+	conn = connection_list_identify(sock);
+	/* enable encryption if required, mark the header byte */
+	/* and encrypt the content */
+	if (conn->encrypted==1) {
+                headerstr[2]='E';
+		crypted = protocol_encrypt( NULL,
+			(const char *) conf->key_clients,
+			data,
+			&len);
+		senddata = crypted;
+        }
+	
+	header = network_create_header(NULL, headerstr, len);
+	talloc_free(headerstr);
+
+	/* send header */
+	while ( send_len != strlen(header) ) {
+		send_len = send_len + send(sock,
+                        header + send_len,
+                        strlen(header)-send_len,0);
+	}
+	/* send data */
+ 	send_len = 0;
+	while ( send_len != len) {
+		send_len = send_len + send(sock,
+			senddata + send_len,
+			len - send_len,0);
+	}
+
+	talloc_free(crypted);
+}
+			
 /**
  * Run select() on the server handle, and call
  * the required functions to handle data.

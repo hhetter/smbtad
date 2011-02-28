@@ -440,7 +440,7 @@ void cache_query_thread(struct configuration_data *config)
                 int monitorid = 0;
                 char *res = query_list_run_query(database,
 			&res_len, &res_socket, &monitorid);
-		if (res != NULL && monitorid ==0) sendlist_add(res,res_socket,res_len);
+		if (res != NULL && monitorid ==0) network_send_data(res,res_socket,res_len);
 		if (res != NULL && monitorid !=0) monitor_list_set_init_result(res, monitorid);
 	}
 }
