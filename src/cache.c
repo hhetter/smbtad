@@ -222,6 +222,15 @@ int cache_prepare_entry( TALLOC_CTX *data,struct cache_entry *entry)
 	char *dummy = NULL;
 	entry->len = 0;
 	int t;
+	/* Nullify all data in an entry */
+	entry->username = NULL;
+	entry->usersid = NULL;
+	entry->share = NULL;
+	entry->filename = NULL;
+	entry->domain = NULL;
+	entry->len = 0;
+	entry->timestamp = NULL;
+
         /* first check how many common data blocks will come */
 	str = protocol_get_single_data_block( data, &go_through);
 	int common_blocks_num = atoi(str);
