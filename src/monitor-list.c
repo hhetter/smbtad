@@ -296,6 +296,9 @@ int monitor_list_filter_apply( struct monitor_item *entry,
 		entry->file,
 		entry->domain);
 
+	if (entry->username == NULL || entry->usersid == NULL
+		|| entry->share == NULL || entry->file == NULL
+		|| entry->domain == NULL) return 0;
 
 	if (strcmp(entry->username,"*") != 0) {
 		if (strcmp(entry->username, username)!=0) return 0;
