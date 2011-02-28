@@ -433,7 +433,7 @@ void monitor_send_result( struct monitor_item *entry)
 			idstr,
 			(int) strlen(tmpdatastr),
 			tmpdatastr);
-		sendlist_add(sendstr,entry->sock,strlen(sendstr));
+		network_send_data(sendstr,entry->sock,strlen(sendstr));
 		talloc_free(tmpdatastr);
 		break;
 	case MONITOR_TOTAL: ;
@@ -445,7 +445,7 @@ void monitor_send_result( struct monitor_item *entry)
                         idstr,
                         (int) strlen(tmpdatastr),
                         tmpdatastr);
-                sendlist_add(sendstr,entry->sock,strlen(sendstr));
+                network_send_data(sendstr,entry->sock,strlen(sendstr));
 		talloc_free(tmpdatastr);
                 break;
 	case MONITOR_LOG: ;
@@ -457,7 +457,7 @@ void monitor_send_result( struct monitor_item *entry)
 			idstr,
 			(int) strlen(tmpdatastr),
 			tmpdatastr);
-		sendlist_add(sendstr,entry->sock,strlen(sendstr));
+		network_send_data(sendstr,entry->sock,strlen(sendstr));
 		talloc_free(tmpdatastr);
 		break;
 	case MONITOR_READ: ;
@@ -469,7 +469,7 @@ void monitor_send_result( struct monitor_item *entry)
 			idstr,
 			(int) strlen(tmpdatastr),
 			tmpdatastr);
-		sendlist_add(sendstr,entry->sock,strlen(sendstr));
+		network_send_data(sendstr,entry->sock,strlen(sendstr));
 		talloc_free(tmpdatastr);
 		break;
         case MONITOR_WRITE: ;
@@ -481,7 +481,7 @@ void monitor_send_result( struct monitor_item *entry)
                         idstr,
                         (int) strlen(tmpdatastr),
                         tmpdatastr);
-                sendlist_add(sendstr,entry->sock,strlen(sendstr));
+                network_send_data(sendstr,entry->sock,strlen(sendstr));
 		talloc_free(tmpdatastr);
                 break;
 
@@ -681,7 +681,7 @@ void monitor_list_process(int sock) {
 		case MONITOR_IDENTIFY: ;
 			/* Identification: send the id to the client */
 			data = talloc_asprintf(NULL,"0010%010i",entry->id);
-			sendlist_add(data,entry->sock,strlen(data));
+			network_send_data(data,entry->sock,strlen(data));
 			talloc_free(data);
 			DEBUG(1) syslog(LOG_DEBUG,"monitor_list_process: identification done.");
 			entry->state = MONITOR_INITIALIZE;

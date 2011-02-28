@@ -102,8 +102,7 @@ ADD_EXECUTABLE(${CurrentExe}
 	src/database.c
 	src/crypto/aes.c
 	src/crypto/rijndael-alg-fst.c
-	src/monitor-list.c
-	src/sendlist.c)
+	src/monitor-list.c)
 TARGET_LINK_LIBRARIES(${CurrentExe} ${INIPARSER_LIBRARIES} ${SQLITE_LIBRARIES} ${TALLOC_LIBRARIES} ${Libraries} iniparser ${CMAKE_THREAD_LIBS_INIT} dl)
 INSTALL(TARGETS smbtad DESTINATION bin)
 

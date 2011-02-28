@@ -56,7 +56,6 @@
 #include "query_list.h"
 #include "database.h"
 #include "monitor-list.h"
-#include "sendlist.h"
 #include "throughput-list.h"
 
 /* define TALLOC_FREE when older talloc versions are used */

@@ -33,7 +33,6 @@ int main(int argc, char *argv[])
 	pthread_t thread3;
 	cache_init();
 	query_init();
-	sendlist_init();
 	monitor_list_init();
 	/* parse command line */
 	if ( configuration_parse_cmdline( &conf, argc, argv ) <0 ) exit(1);
