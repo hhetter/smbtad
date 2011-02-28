@@ -498,6 +498,7 @@ void monitor_list_update( int op_id,
 	char *file,
 	char *domain, unsigned long int data, char *montimestamp)
 {
+	char *fname;
 	struct monitor_item *entry = monlist_start;
 	char *op_id_str = NULL;
 	while (entry != NULL) {
@@ -567,29 +568,35 @@ void monitor_list_update( int op_id,
 				/**
 				 * log protocol
 				 * vfs_op_id,username,share,filename,domain,timestamp
-				 * FIXME we need to get better with our talloc usage here
+				 * 
 				*/
 				
 				op_id_str = talloc_asprintf( NULL, "%i",op_id);
+				/**
+				 * if the filename is NULL, for example in a chdir operation,
+				 * create a "\0" based fake filename
+				 */
+				if (file == NULL) fname=talloc_asprintf(NULL," ");
+				else fname = file;
 				char *tres = talloc_asprintf(op_id_str,"%04i%s" // op id
-                                                                 "%04i%s" // username
-                                                                 "%04i%s" // share
-                                                                 "%04i%s" // filename
-                                                                 "%04i%s" // domain
-                                                                 "%04i%s", // timestamp
-                                                                 (int) strlen(op_id_str),
-                                                                 op_id_str,
-                                                                 (int) strlen(username),
-                                                                 username,
-                                                                 (int) strlen(share),
-                                                                 share,
-                                                                 (int) strlen(file),
-                                                                 file,
-                                                                 (int) strlen(domain),
-                                                                 domain,
-                                                                 (int) strlen(montimestamp),
-                                                                 montimestamp);
-
+                                	"%04i%s" // username
+					"%04i%s" // share
+					"%04i%s" // filename
+					"%04i%s" // domain
+					"%04i%s", // timestamp
+					(int) strlen(op_id_str),
+					op_id_str,
+					(int) strlen(username),
+					username,
+					(int) strlen(share),
+					share,
+					(int) strlen(fname),
+					fname,
+					(int) strlen(domain),
+					domain,
+					(int) strlen(montimestamp),
+					montimestamp);
+				if (file == NULL) talloc_free(fname);
 
 				DEBUG(1) syslog(LOG_DEBUG, "monitor_list_update: MONITOR_LOG:"
 					"created infostring >%s<",
