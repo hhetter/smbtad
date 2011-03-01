@@ -402,7 +402,7 @@ void network_send_data( char *data, int sock, int length)
 	int h = connection_list_max() + 1;
 	select( h,
 		NULL, &write_fd_set, NULL,NULL);
-	if ( !FD_ISSET(sock, &write_fd_set) ) {
+	if ( FD_ISSET(sock, &write_fd_set) ) {
 		/* get the connection struct according to the socket */
 		conn = connection_list_identify(sock);
 		/* enable encryption if required, mark the header byte */
