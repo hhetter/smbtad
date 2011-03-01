@@ -55,6 +55,14 @@ void daemon_daemonize( config_t *c )
 	setsid(); /* get a new process group */
 	signal(SIGCHLD,SIG_IGN); /* ignore child */
 	signal(SIGTSTP,SIG_IGN); /* ignore tty signals 	*/
+	/**
+	 * Ignore SIGPIPE, so that we don't run into broken
+	 * pipe should a client disappear while we are sending
+	 * data to it. There is an
+	 * easier solution by using MSG_NOSIGNAL with send,
+	 * but this is not supported by all operating systems.
+	 */
+	signal(SIGPIPE,SIG_IGN);
 	signal(SIGTTOU,SIG_IGN);
 	signal(SIGTTIN,SIG_IGN);
 	/* catch term */
