@@ -396,46 +396,45 @@ void network_send_data( char *data, int sock, int length)
 	char *header = NULL;
 
 	/* Make sure we can write to the socket */
-	while ( !FD_ISSET(sock, &write_fd_set) ) {
-		connection_list_recreate_fs_sets(
+	connection_list_recreate_fs_sets(
 			&read_fd_set,
 			&write_fd_set);
-		int h = connection_list_max() + 1;
-		select( h,
-			NULL, &write_fd_set, NULL,NULL);
-	}
-
-	/* get the connection struct according to the socket */
-	conn = connection_list_identify(sock);
-	/* enable encryption if required, mark the header byte */
-	/* and encrypt the content */
-	if (conn->encrypted==1) {
-                headerstr[2]='E';
-		crypted = protocol_encrypt( NULL,
-			(const char *) conf->key_clients,
-			data,
-			&len);
-		senddata = crypted;
-        }
+	int h = connection_list_max() + 1;
+	select( h,
+		NULL, &write_fd_set, NULL,NULL);
+	if ( !FD_ISSET(sock, &write_fd_set) ) {
+		/* get the connection struct according to the socket */
+		conn = connection_list_identify(sock);
+		/* enable encryption if required, mark the header byte */
+		/* and encrypt the content */
+		if (conn->encrypted==1) {
+                	headerstr[2]='E';
+			crypted = protocol_encrypt( NULL,
+				(const char *) conf->key_clients,
+				data,
+				&len);
+			senddata = crypted;
+        	}
 	
-	header = network_create_header(NULL, headerstr, len);
-	talloc_free(headerstr);
+		header = network_create_header(NULL, headerstr, len);
+		talloc_free(headerstr);
 
-	/* send header */
-	while ( send_len != strlen(header) ) {
-		send_len = send_len + send(sock,
-                        header + send_len,
-                        strlen(header)-send_len,0);
-	}
-	/* send data */
- 	send_len = 0;
-	while ( send_len != len) {
-		send_len = send_len + send(sock,
-			senddata + send_len,
-			len - send_len,0);
-	}
+		/* send header */
+		while ( send_len != strlen(header) ) {
+			send_len = send_len + send(sock,
+                        	header + send_len,
+                        	strlen(header)-send_len,0);
+		}
+		/* send data */
+ 		send_len = 0;
+		while ( send_len != len) {
+			send_len = send_len + send(sock,
+				senddata + send_len,
+				len - send_len,0);
+		}
 
-	talloc_free(crypted);
+		talloc_free(crypted);
+	}
 }
 			
 /**
