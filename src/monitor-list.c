@@ -602,7 +602,7 @@ void monitor_list_update( int op_id,
 				if (file == NULL) talloc_free(fname);
 				if (tres == NULL) { // could'nd allocate
 						talloc_free(op_id_str);
-						break;
+						return;
 				}
 				((struct monitor_local_data_log *) entry->local_data)->log =
 					strdup(tres);
