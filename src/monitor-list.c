@@ -600,13 +600,16 @@ void monitor_list_update( int op_id,
 					(int) strlen(montimestamp),
 					montimestamp);
 				if (file == NULL) talloc_free(fname);
-
+				if (tres == NULL) { // could'nd allocate
+						talloc_free(op_id_str);
+						break;
+				}
+				((struct monitor_local_data_log *) entry->local_data)->log =
+					strdup(tres);
 				DEBUG(1) syslog(LOG_DEBUG, "monitor_list_update: MONITOR_LOG:"
 					"created infostring >%s<",
 					((struct monitor_local_data_log *)
 						entry->local_data)->log);
-				((struct monitor_local_data_log *) entry->local_data)->log =
-					strdup(tres);
 				talloc_free(op_id_str);
 				monitor_send_result(entry);
 				break;
