@@ -25,9 +25,11 @@ struct monitor_item *monlist_end = NULL;
 
 int monitor_id = 1;
 int monitor_timer_flag = 0;
+pthread_mutex_t monlock;
 
 void monitor_list_init()
 {
+	pthread_mutex_init(&monlock, NULL);
 }
 
 /*
@@ -91,6 +93,7 @@ int monitor_list_add( char *data,int sock) {
 }
 
 int monitor_list_delete_by_socket( int sock ) {
+	pthread_mutex_lock(&monlock);
 	struct monitor_item *entry = monlist_start;
 	struct monitor_item *before = monlist_start;
 	if (entry == NULL) return -1;
@@ -105,7 +108,8 @@ int monitor_list_delete_by_socket( int sock ) {
 		before = entry;
 		entry = entry->next;
 	}
-	return -1; // socket wasn't found
+	pthread_mutex_unlock(&monlock);
+	return 0;
 }
 
 
@@ -624,6 +628,7 @@ void monitor_list_set_init_result(char *res, int monitorid) {
 	 * we assume that internal queries only return
 	 * single numbers at this point
 	 */
+	pthread_mutex_lock(&monlock);
 	struct monitor_item *entry = monlist_start;
 	if (monlist_start == NULL) {
 		syslog(LOG_DEBUG,"ERROR: trying to initialize a"
@@ -631,6 +636,11 @@ void monitor_list_set_init_result(char *res, int monitorid) {
 		exit(1);
 	}
 	entry = monitor_list_get_by_id(monitorid);
+	if (entry == NULL) { // The monitor might already have been
+			     // removed (disconnected)
+			pthread_mutex_unlock(&monlock);
+			return;
+	}
 	switch(entry->function) {
 	case MONITOR_ADD: ;
 		/**
@@ -663,6 +673,7 @@ void monitor_list_set_init_result(char *res, int monitorid) {
 	default: ;
 		break;
 	}
+	pthread_mutex_unlock(&monlock);
 }
 
 		
