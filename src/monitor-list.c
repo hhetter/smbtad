@@ -96,7 +96,10 @@ int monitor_list_delete_by_socket( int sock ) {
 	pthread_mutex_lock(&monlock);
 	struct monitor_item *entry = monlist_start;
 	struct monitor_item *before = monlist_start;
-	if (entry == NULL) return -1;
+	if (entry == NULL) {
+		pthread_mutex_unlock(&monlock);
+		return -1;
+	}
 	while (entry != NULL) {
 		if (entry->sock == sock) {
 			free(entry->data);
