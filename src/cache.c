@@ -300,8 +300,15 @@ int cache_prepare_entry( TALLOC_CTX *data,struct cache_entry *entry)
 	 * happened in the Samba master and 3.6.0 branch as we have
 	 * added support for the IP address of the client to the protocol
 	 */
-	for ( t=0; t < common_blocks_num-6; t++)
+	for ( t=0; t < common_blocks_num-6; t++) {
 		dummy = protocol_get_single_data_block( data, &go_through);
+		if (dummy == NULL) {
+			syslog(LOG_DEBUG,"Fatal: Expected more common data but\n"
+				"received NULL!");
+			TALLOC_FREE(data);
+			return -2;
+		}
+	}
 
 
 	/* now receive the VFS function depending arguments */
