@@ -385,7 +385,8 @@ void network_send_data( char *data, int sock, int length)
 {
 	fd_set write_fd_set, read_fd_set;
 	/* encryption changes the length of the data package */
-	size_t len = (size_t) length;
+	ssize_t len = (size_t) length;
+	ssize_t check = 0;
 	int send_len = 0;
 	char *senddata = data;
 	struct connection_struct *conn = NULL;
@@ -418,19 +419,32 @@ void network_send_data( char *data, int sock, int length)
 	
 		header = network_create_header(NULL, headerstr, len);
 		talloc_free(headerstr);
-
+		
 		/* send header */
 		while ( send_len != strlen(header) ) {
-			send_len = send_len + send(sock,
-                        	header + send_len,
-                        	strlen(header)-send_len,0);
+			check = send(sock, header + send_len,
+				strlen(header) - send_len,0);
+			if (check == -1) {
+				// send returns error, looks like we lost
+				// the client
+				talloc_free(crypted);
+				return;
+			}
+			send_len = send_len + check;
 		}
 		/* send data */
  		send_len = 0;
+		
 		while ( send_len != len) {
-			send_len = send_len + send(sock,
-				senddata + send_len,
+			check = send(sock, senddata + send_len,
 				len - send_len,0);
+			if (check == -1) {
+				// send returns error, looks like we lost
+				// the client
+				talloc_free(crypted);
+				return;
+			}
+			send_len = send_len + check;
 		}
 
 		talloc_free(crypted);
