@@ -121,7 +121,7 @@ void network_close_connection(int i)
 void network_close_connections()
 {
 	struct connection_struct *connection = connection_list_begin();
-	struct connection_struct *connection2 = connection;
+	struct connection_struct *connection2;
 	while (connection != NULL) {
 		close(connection->mysocket);
 		monitor_list_delete_by_socket(connection->mysocket);
@@ -481,7 +481,6 @@ void network_handle_connections( config_t *c )
 	connection_list_add( c->vfs_socket, SOCK_TYPE_DATA );
 	connection_list_add( c->query_socket, SOCK_TYPE_DB_QUERY);
 	for (;;) {
-		z = 0;
 		connection_list_recreate_fs_sets(
 			&read_fd_set,
 			&write_fd_set);
@@ -495,19 +494,33 @@ void network_handle_connections( config_t *c )
 		for( i = 0; i < h; ++i) {
 			if (FD_ISSET(i,&read_fd_set)) {
 				int sr;
-				if ( i == c->vfs_socket)
+				if ( i == c->vfs_socket) {
 					sr = network_accept_connection(
 						c,
 						&remote_inet,
 						&remote_unix,
-						SOCK_TYPE_DATA); 
-				else if ( i == c->query_socket)
+						SOCK_TYPE_DATA);
+					if (sr == -1) {
+						// ignore connection if something
+						// went wrong
+						syslog(LOG_DEBUG,"ERROR:"
+						"unable to accept connection.");
+						break;
+					}
+				} else if ( i == c->query_socket) {
 					sr = network_accept_connection(
 						c,
 						&remote_inet,
 						&remote_unix,
 						SOCK_TYPE_DB_QUERY);
-				else {
+					if (sr == -1) {
+						// ignore connection if something
+						// went wrong
+						syslog(LOG_DEBUG,"ERROR:"
+						"unable to accept connection.");
+						break;
+					}
+				} else {
 					network_handle_data(i,c);
 					monitor_list_process(i);
 				}

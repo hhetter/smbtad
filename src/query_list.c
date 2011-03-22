@@ -72,6 +72,9 @@ char *query_list_run_query( sqlite3 *database, int *body_length, int *sock, int 
 		strlen(backup->data),
 		&stmt,
 		&zErrmsg);
+	if ( o != SQLITE_OK ) {
+		syslog(LOG_DEBUG,"Database Error.");
+	}
 	/* internal query by a monitor ? */
 	if (backup->monitorid != 0) *monitorid = backup->monitorid;
 	DEBUG(1) syslog(LOG_DEBUG,"query_list_run_query: running %s, monitorid = %i",

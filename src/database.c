@@ -22,6 +22,23 @@
 #include "../include/includes.h"
 #define CREATE_COMMONS "vfs_id integer,username varchar,usersid varchar,share varchar,domain varchar,timestamp DATE,"
 
+/**
+ * check the database result
+ * and ignore if tables already exist
+ */
+void check_db(int rc, sqlite3 *db, char **err)
+{
+	if (rc != SQLITE_OK) {
+		/**
+		 * we currently ignore sqlite errors at this stage,
+		 * as it is most likely just an already existing table.
+		 * TODO: check if we only have an existing table or
+		 * something different.
+		 */
+		sqlite3_free(err);
+	}
+}
+
 
 /*
  * Create a database and setup the required tables
@@ -46,52 +63,54 @@ sqlite3 *database_create( char *filename )
 		"CREATE TABLE write ("
 		 CREATE_COMMONS
 		"filename varchar, length integer )",NULL,0,&zErrormsg);
+	check_db(rc,db,&zErrormsg);
 	/* read/pread */
 	rc = sqlite3_exec( db, \
 		"CREATE TABLE read ("
 		 CREATE_COMMONS
 		"filename varchar, length integer )",NULL,0,&zErrormsg);
+	check_db(rc,db,&zErrormsg);
 	/* mkdir */
 	rc = sqlite3_exec( db, \
 		"CREATE TABLE mkdir ("
 		 CREATE_COMMONS
 		"path varchar, mode varchar, result integer )",NULL,0,&zErrormsg);
+	check_db(rc,db,&zErrormsg);
 	/* rmdir */
 	rc = sqlite3_exec( db, \
 		"CREATE TABLE rmdir ("
 		 CREATE_COMMONS
 		"path varchar, mode varchar, result integer )",NULL,0,&zErrormsg);
+	check_db(rc,db,&zErrormsg);
 	/* rename */
 	rc = sqlite3_exec( db, \
 		"CREATE TABLE rename ("
 		CREATE_COMMONS
 		"source varchar, destination varchar, result integer)",NULL,0,&zErrormsg);
+	check_db(rc,db,&zErrormsg);
 	/* chdir */
 	rc = sqlite3_exec( db, \
 		"CREATE TABLE chdir ("
 		 CREATE_COMMONS
 		"path varchar, result integer)", NULL,0, &zErrormsg);
+	check_db(rc,db,&zErrormsg);
 	/* open */
 	rc = sqlite3_exec( db, \
 		"CREATE TABLE open ("
 		 CREATE_COMMONS
 		"filename varchar, mode varchar, result integer)",NULL,0,&zErrormsg);
+	check_db(rc,db,&zErrormsg);
 	/* close */
 	rc = sqlite3_exec( db, \
 		"CREATE TABLE close ("
 		CREATE_COMMONS
 		"filename varchar, result integer)",NULL,0,&zErrormsg);
-
+	check_db(rc,db,&zErrormsg);
 
 	/* set journal mode to WAL. sqlite >= 3.2.7 is required. */
 	rc = sqlite3_exec( db, \
 		"PRAGMA journal_mode = WAL",NULL,0,&zErrormsg);
-
-	if (zErrormsg != NULL) {
-		printf("FATAL: Error creating database. Exiting.");
-		exit(1);
-	}
-
+	check_db(rc,db,&zErrormsg);
 	return db;
 }
 

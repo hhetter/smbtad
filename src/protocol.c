@@ -117,7 +117,6 @@ char *protocol_encrypt( TALLOC_CTX *ctx,
         DEBUG(9) syslog(LOG_DEBUG, "smb_traffic_analyzer_send_data_socket: created %s"
                 " as filling block.\n", filler);
         output = talloc_array(ctx, char, (s1*16)+17 );
-        d=0;
         for (h = 0; h < s1; h++) {
                 AES_encrypt((unsigned char *) str+(16*h), crypted, &key);
                 for (d = 0; d<16; d++) output[d+(16*h)]=crypted[d];

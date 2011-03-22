@@ -98,6 +98,10 @@ int configuration_load_key_from_file( config_t *c)
                 return -1;
         }
         l = fscanf(keyfile, "%16s", key);
+	if ( l == EOF ) {
+		printf("Error reading keyfile: %s\n",strerror(errno));
+		exit(1);
+	}
         if (strlen(key) != 16) {
                 printf("ERROR: Key file in wrong format\n");
                 fclose(keyfile);
@@ -118,6 +122,10 @@ int configuration_load_client_key_from_file( config_t *c)
                 return -1;
         }
         l = fscanf(keyfile, "%16s", key);
+	if ( l == EOF ) {
+		printf("Error reading keyfile: %s\n",strerror(errno));
+		exit(1);
+	}
         if (strlen(key) != 16) {
                 printf("ERROR: Key file in wrong format\n");
                 fclose(keyfile);

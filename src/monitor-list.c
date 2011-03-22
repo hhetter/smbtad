@@ -121,7 +121,7 @@ int monitor_list_delete_by_socket( int sock ) {
  */
 void monitor_list_delete_all() {
 	struct monitor_item *entry = monlist_start;
-	struct monitor_item *n = monlist_start;
+	struct monitor_item *n;
 	while (entry != NULL) {
 		n=entry->next;
 		free(entry->data);
@@ -382,7 +382,7 @@ void monitor_initialize( struct monitor_item *entry)
 	case MONITOR_TOTAL: ;
 		((struct monitor_local_data_total *)
 			entry->local_data)->sum = 0;
-		char *request;
+		char *request = NULL;
 		if (strcmp(entry->param,"R")==0) {
 			request = talloc_asprintf(NULL,
 				"select sum(length) from read where ");
@@ -393,7 +393,9 @@ void monitor_initialize( struct monitor_item *entry)
 			request = talloc_asprintf(NULL,
 				"select sum(length) from write UNION "
 				"select sum(length) from read where ");
-		} else { // FIXME! We have to remove this monitor now !
+		} else { // ignore the monitor if it uses wrong parameters
+			syslog(LOG_DEBUG,"ERROR: wrong monitor parameter!");
+			break;
 			}
 		char *cond = monitor_list_create_sql_cond(NULL, entry);
 		request = talloc_asprintf(NULL,"%s %s",request,cond);
@@ -646,7 +648,7 @@ void monitor_list_set_init_result(char *res, int monitorid) {
 	 * single numbers at this point
 	 */
 	pthread_mutex_lock(&monlock);
-	struct monitor_item *entry = monlist_start;
+	struct monitor_item *entry;
 	if (monlist_start == NULL) {
 		syslog(LOG_DEBUG,"ERROR: trying to initialize a"
 			" monitor but the monitor list is empty!");
