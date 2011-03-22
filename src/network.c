@@ -385,7 +385,7 @@ void network_send_data( char *data, int sock, int length)
 {
 	fd_set write_fd_set, read_fd_set;
 	/* encryption changes the length of the data package */
-	ssize_t len = (size_t) length;
+	ssize_t len = (ssize_t) length;
 	ssize_t check = 0;
 	int send_len = 0;
 	char *senddata = data;
@@ -413,7 +413,7 @@ void network_send_data( char *data, int sock, int length)
 			crypted = protocol_encrypt( NULL,
 				(const char *) conf->key_clients,
 				data,
-				&len);
+				(size_t *) &len);
 			senddata = crypted;
         	}
 	
