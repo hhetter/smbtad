@@ -52,7 +52,7 @@ int cache_add( char *data, int len,struct configuration_data *config ) {
 	entry->other_ops = NULL;
 	entry->data = talloc_steal( entry, data);
 	struct cache_entry *gotr = cache_start;
-	struct cache_entry *backup = cache_start;
+	struct cache_entry *backup;
 	cache_prepare_entry( entry, entry);
 	/**
 	 * cache_prepare_entry already called the monitors.
@@ -125,7 +125,6 @@ int cache_add( char *data, int len,struct configuration_data *config ) {
 			 	 * That wasn't the right entry, it can be
 			 	 * the next down from this entry.
 			 	 */
-				backup = gotr;
 				gotr=gotr->down;
 				DEBUG(5) syslog(LOG_DEBUG,"cache: going down on that entry...");
 				}
@@ -482,7 +481,7 @@ void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
 {
 	char *dbstring;
 	struct cache_entry *go = entry;
-	struct cache_entry *backup = go;
+	struct cache_entry *backup;
 	struct cache_entry *backup2 = NULL;
 	struct cache_entry *down =NULL;
 	// left
