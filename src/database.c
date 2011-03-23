@@ -35,7 +35,6 @@ void check_db(int rc, sqlite3 *db, char **err)
 		 * TODO: check if we only have an existing table or
 		 * something different.
 		 */
-		sqlite3_free(err);
 	}
 }
 
