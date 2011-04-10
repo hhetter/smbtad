@@ -8,7 +8,17 @@ SET(CMAKE_BUILD_TYPE "Debug")
 SET(CMAKE_C_FLAGS "-Wall -D_FORTIFY_SOURCE=2")
 #SET(CMAKE_VERBOSE_MAKEFILE ON)
 
-
+#
+# check for libdbi
+#
+include(FindLibDBI.cmake)
+FIND_PACKAGE(LibDBI)
+if (NOT LIBDBI_INCLUDE_DIR)
+	MESSAGE( FATAL_ERROR "ERROR: you will need the libdbi development files installed.")
+ENDIF()
+if (LIBDBI_INCLUDE_DIR)
+	INCLUDE_DIRECTORIES(${LIBDBI_INCLUDE_DIR})
+ENDIF()
 #
 # check for talloc
 #
