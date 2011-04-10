@@ -65,7 +65,8 @@ void configuration_define_defaults( config_t *c )
 	c->dbg = 0; // debug level
 	c->unix_socket = 0;
 	c->unix_socket_clients = 0;
-	c->dbhandle = NULL;
+	/* FIXME: REMOVE dbhandle, for sqlite
+	// c->dbhandle = NULL;
 	/* AES encryption key from the VFS module to SMBTAD */
 	c->keyfile =NULL;
 	/* AES encryption key from SMBTAD to clients */
@@ -231,12 +232,10 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 
 		static struct option long_options[] = {\
 			{ "inet-port", 1, NULL, 'i' },
-			{ "query-port",1, NULL, 'q' },
 			{ "interactive", 0, NULL, 'o' },
 			{ "debug-level",1, NULL, 'd' },
 			{ "config-file",1,NULL,'c'},
 			{ "key-file",1,NULL,'k'},
-			{ "key-file-clients",1,NULL,'K'},
 			{ "database",1,NULL,'b'},
 			{ "maintenance-timer",1,NULL,'t'},
 			{ "maintenance-timer-config",1,NULL,'m'},
@@ -248,7 +247,7 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 		};
 
 		i = getopt_long( argc, argv,
-			"d:i:oc:K:k:q:b:t:m:unp:U:", long_options, &option_index );
+			"d:i:oc:k:q:b:t:m:unp:U:", long_options, &option_index );
 
 		if ( i == -1 ) break;
 
@@ -274,9 +273,6 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 			case 'd':
 				c->dbg = atoi( optarg );
 				break;
-			case 'q':
-				c->query_port = atoi( optarg);
-				break;
 			case 'c':
 				c->config_file = strdup( optarg );
 				configuration_load_config_file(c);
@@ -284,10 +280,6 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 			case 'k':
 				c->keyfile = strdup( optarg);
 				configuration_load_key_from_file(c);
-				break;
-			case 'K':
-				c->keyfile_clients = strdup( optarg);
-				configuration_load_client_key_from_file(c);
 				break;
 			case 'b':
 				free(c->dbname); // allocated by default
