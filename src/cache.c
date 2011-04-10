@@ -442,24 +442,12 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
 /* 
  * sqlite >= 3.7.0 allows WAL. We will use this feature.
  * Run as a thread and run any query that is waiting.
+ * void cache_query_thread(struct configuration_data *config)
+ * has been removed.
  */
-void cache_query_thread(struct configuration_data *config)
-{
-	pthread_detach(pthread_self());
-	sqlite3 *database = config->dbhandle;
-	/* run a query and add the result to the sendlist */
-	while (1 == 1) {
-		usleep(5000);
-                int res_len;
-                int res_socket;
-                int monitorid = 0;
-                char *res = query_list_run_query(database,
-			&res_len, &res_socket, &monitorid);
-		if (res != NULL && monitorid ==0) network_send_data(res,res_socket,res_len);
-		if (res != NULL && monitorid !=0) monitor_list_set_init_result(res, monitorid);
-	}
-}
 
+/*
+ * FIXME: REPLACE THIS FUNCTION WITH SOMETHING GENERAL
 void do_db( struct configuration_data *config, char *dbstring)
 {
 	sqlite3 *database = config->dbhandle;
@@ -475,7 +463,7 @@ void do_db( struct configuration_data *config, char *dbstring)
 	}
 	
 }
-
+*/
 void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
 	struct cache_entry *entry)
 {
