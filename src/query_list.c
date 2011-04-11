@@ -33,6 +33,7 @@ int query_add( char *data, int len, int sock, int monitorid) {
 		monitor_list_add(data,sock);
 		return 0;
 	}
+	return 0;
 }
 
 
