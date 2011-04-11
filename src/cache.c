@@ -56,7 +56,7 @@ int cache_add( char *data, int len,struct configuration_data *config ) {
 	cache_prepare_entry( entry, entry);
 	/**
 	 * cache_prepare_entry already called the monitors.
-	 * If we don't handle sqlite, we can go out here!
+	 * If we don't handle databases, we can go out here!
 	 */
 	if (config->use_db == 0) {
 		talloc_free(entry);
@@ -438,32 +438,30 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
 	return retstr;
 }
 
-
-/* 
- * sqlite >= 3.7.0 allows WAL. We will use this feature.
- * Run as a thread and run any query that is waiting.
- * void cache_query_thread(struct configuration_data *config)
- * has been removed.
- */
-
-/*
- * FIXME: REPLACE THIS FUNCTION WITH SOMETHING GENERAL
 void do_db( struct configuration_data *config, char *dbstring)
 {
-	sqlite3 *database = config->dbhandle;
-	int rc = -1;
-	char *erg = 0;
-	while (rc != SQLITE_OK) {
-		rc = sqlite3_exec(database, dbstring,0,0,&erg);
-		if (rc != SQLITE_OK) {
-			syslog(LOG_DEBUG,"sqlite error: %s",erg);
-			sqlite3_free(erg);
-			sleep(1); // sleep a second then try again
+	int rc;
+	int try;
+	dbi_result result;
+	/** 
+	 * Check if the connection is alive. We try ten times
+	 * to restore the connection if not
+	 */
+	for (try = 0; try < 10; try++) {
+		rc = dbi_conn_ping( config->DBIconn );
+		if (rc == 1) {
+			result = dbi_conn_query(config->DBIconn, dbstring);
+			if (result == NULL) rc = 0; else break;
 		}
+		if (rc == 0) database_connect(config);
 	}
-	
+	if (rc == 0 ) {
+		syslog(LOG_DEBUG, "ERROR: Database handling error!");
+		return;
+	}
+	dbi_result_free(result);
 }
-*/
+
 void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
 	struct cache_entry *entry)
 {
