@@ -22,23 +22,6 @@
 #include "../include/includes.h"
 #define CREATE_COMMONS "vfs_id integer,username varchar,usersid varchar,share varchar,domain varchar,timestamp DATE,"
 
-/**
- * check the database result
- * and ignore if tables already exist
- */
-void check_db(int rc, sqlite3 *db, char **err)
-{
-	if (rc != SQLITE_OK) {
-		/**
-		 * we currently ignore sqlite errors at this stage,
-		 * as it is most likely just an already existing table.
-		 * TODO: check if we only have an existing table or
-		 * something different.
-		 */
-		sqlite3_free(err);
-	}
-}
-
 
 /*
  * Create a database connection and setup the required tables
