@@ -24,8 +24,6 @@
 typedef struct configuration_data {
 	/* Number of the port to use */
 	int port;
-	/* portnumber for clients who query */
-	int query_port;
 	/* the maintenance timer strings */
         /* user given string argument, as to when the maintenance       */
         /* routine should start.                                        */
@@ -45,34 +43,31 @@ typedef struct configuration_data {
 	/* 1 if a unix domain socket is used for the connection to the	*/
 	/* module.							*/
 	int unix_socket;
-	/* 1 if a unix domain socket is used for the connection the the */
-	/* client 							*/
-	int unix_socket_clients;
 	/* run time configuration */
         /* integers used to separate the time for the maintenance run   */
         int mdays,mminutes,mseconds,mhours;
 	int vfs_socket;
-	int query_socket;
 	char *current_query_result;
 	int current_query_result_len;
 	int result_socket;
-	/* file to use for the database */
+	/* Database connection */
+	/* hostname to connect to*/
+	char *dbhost;
+	/* name of the database */
 	char *dbname;
-	/* the db handle */
-	sqlite3 *dbhandle;
+	/* user of the db */
+	char *dbuser;
+	/* password of the user */
+	char *dbpassword;
 	/* AES Keyfile */
 	char *keyfile;
-	/* AES keyfile for client connections */
-	char *keyfile_clients;
 	/* AES Key */
 	unsigned char key[20];
-	/* AES Key for client connections */
-	unsigned char key_clients[20];
 	/* precision is used by the cache, it's value specifies the */
 	/* life time of the cache in seconds, during this time it */
 	/* sums up similar VFS R/W entries. Default is 5.	*/
 	int precision;
-	/* if use_db = 0, no sqlite handling will be done. */
+	/* if use_db = 0, no db handling will be done. */
 	int use_db;
 } config_t;
 pthread_mutex_t *configuration_get_lock();
