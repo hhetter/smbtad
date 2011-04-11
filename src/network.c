@@ -80,7 +80,9 @@ int network_accept_connection( config_t *c,
 	int sr;
 	int sock = 0;
 	if (type == SOCK_TYPE_DATA) 	sock = c->vfs_socket;
-	if ( (c->unix_socket == 1 && type == SOCK_TYPE_DATA)) {
+	if (type == SOCK_TYPE_DB_QUERY) sock = c->query_socket;
+	if ( (c->unix_socket == 1 && type == SOCK_TYPE_DATA) || 
+           (c->unix_socket_clients == 1 && type == SOCK_TYPE_DB_QUERY)) {
 		if ( (sr = accept( sock,
 				(struct sockaddr *) remote_unix, &t)) == -1) {
 			syslog(LOG_DEBUG,

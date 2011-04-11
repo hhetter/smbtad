@@ -137,7 +137,9 @@ int configuration_load_config_file( config_t *c)
 
 	cc = iniparser_getstring( Mydict, "network:query_port",NULL);
 	if (cc != NULL) c->query_port = atoi(cc);
-	
+
+	cc = iniparser_getstring (Mydict, "network:unix_domain_socket_clients",NULL);
+	if (cc!= NULL) c->unix_socket_clients = 1;
 
 	if ( Mydict == NULL ) return -1;
 	cc = iniparser_getstring (Mydict, "network:unix_domain_socket",NULL);
@@ -181,6 +183,12 @@ int configuration_load_config_file( config_t *c)
 		c->keyfile = strdup(cc);
 		configuration_load_key_from_file( c);
 	}
+	cc = iniparser_getstring(Mydict,"general:keyfile_clients",NULL);
+	if (cc != NULL) {
+		c->keyfile_clients = strdup(cc);
+		configuration_load_client_key_from_file(c);
+	}
+
 	cc = iniparser_getstring(Mydict,"maintenance:interval",NULL);
 	if (cc != NULL) {
 		strncpy(c->maintenance_timer_str,cc,199);
