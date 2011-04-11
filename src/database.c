@@ -41,77 +41,145 @@ void check_db(int rc, sqlite3 *db, char **err)
 
 
 /*
- * Create a database and setup the required tables
+ * Create a database connection and setup the required tables
+ * returns 0 if fine, 1 on error
  */
-sqlite3 *database_create( char *filename )
+int database_connect( configuration_data *conf )
 {
-
-	sqlite3 *db;
 	int rc;
-	char *zErrormsg = NULL;
-	rc=sqlite3_open( filename,&db);
-	if ( rc ) {
+	/**
+	 * Initialize the DBI layer
+	 */
+	if ( conf->dbdriver == NULL) {
 		syslog(LOG_DAEMON,
-                        "plugin-sqlite3 : ERROR: Can't open Database :"
-                        " %s, exiting.\n",
-                        sqlite3_errmsg(db));
-                return NULL;
-        }
+			"ERROR: drivername == NULL. Exiting.\n");
+		return 1;
+	}
+	rc = dbi_initialize(NULL);
+	if ( rc == -1 ) {
+		syslog(LOG_DAEMON,
+			"DBI: ERROR dbi_initialize. Exiting.\n");
+		return 1;
+	}
+	conf->DBIconn = dbi_conn_new(conf->dbdriver);
+	if (conn == NULL) {
+		syslog(LOG_DAEMON,
+			"DBI: ERROR dbi_conn_new, with driver %s.",
+			drivername);
+		return NULL;
+	}
 
+	dbi_conn_set_option(conf->DBIconn, "host", conf->dbhost);
+	dbi_conn_set_option(conf->DBIconn, "username", conf->dbuser);
+	dbi_conn_set_option(conf->DBIconn, "password", conf->dbpassword);
+	dbi_conn_set_option(conf->DBIconn, "dbname", conf->dbname);
+	dbi_conn_set_option(conf->DBIconn, "encoding", "UTF-8");
+	if ( dbi_conn_connect(conf->DBIconn) < 0) {
+		syslog(LOG_DAEMON,
+			"DBI: could not connect, please check options.");
+		return 1;
+	}
+	return 0;
+}
+
+/**
+ * Create the initial tables of the database, to be called at first
+ * startup.
+ * return 0 on success, 1 if fail
+ */
+int database_create_tables( configuration_data *conf )
+{
+	dbi_result result;
 	/* write/pwrite */
-	rc = sqlite3_exec( db, \
+	result = dbi_conn_query( conf->DBIconn,
 		"CREATE TABLE write ("
 		 CREATE_COMMONS
-		"filename varchar, length integer )",NULL,0,&zErrormsg);
-	check_db(rc,db,&zErrormsg);
+		"filename varchar, length integer )");
+	if (result == NULL) {
+		syslog(LOG_DEBUG,"create tables : could not create
+			the write/pwrite table!");
+		return 1;
+	}
+
 	/* read/pread */
-	rc = sqlite3_exec( db, \
+	result = dbi_conn_query( conf->DBIconn,
 		"CREATE TABLE read ("
 		 CREATE_COMMONS
-		"filename varchar, length integer )",NULL,0,&zErrormsg);
-	check_db(rc,db,&zErrormsg);
+		"filename varchar, length integer )");
+	if (result == NULL) {
+		syslog(LOG_DEBUG,"create tables : could not create"
+			"the read/pread table!");
+		return 1;
+	}
+
 	/* mkdir */
-	rc = sqlite3_exec( db, \
+	result = dbi_conn_query( conf->DBIconn,
 		"CREATE TABLE mkdir ("
 		 CREATE_COMMONS
-		"path varchar, mode varchar, result integer )",NULL,0,&zErrormsg);
-	check_db(rc,db,&zErrormsg);
+		"path varchar, mode varchar, result integer )");
+	if (result == NULL) {
+		syslog(LOG_DEBUG,"create tables: could not create"
+			"the mkdir table!");
+		return 1;
+	}
+
 	/* rmdir */
-	rc = sqlite3_exec( db, \
+	result = dbi_conn_query( conf->DBIconn,
 		"CREATE TABLE rmdir ("
 		 CREATE_COMMONS
-		"path varchar, mode varchar, result integer )",NULL,0,&zErrormsg);
-	check_db(rc,db,&zErrormsg);
+		"path varchar, mode varchar, result integer )");
+	if (result == NULL) {
+		syslog(LOG_DEBUG,"create tables: could not create"
+			"the rmdir table!");
+		return 1;
+	}
+
+
 	/* rename */
-	rc = sqlite3_exec( db, \
+	result = dbi_conn_query( conf->DBIconn,
 		"CREATE TABLE rename ("
 		CREATE_COMMONS
-		"source varchar, destination varchar, result integer)",NULL,0,&zErrormsg);
-	check_db(rc,db,&zErrormsg);
+		"source varchar, destination varchar, result integer)");
+	if (result == NULL) {
+		syslog(LOG_DEBUG,"create tables: could not create"
+			"the rename table!");
+		return 1;
+	}
+
 	/* chdir */
-	rc = sqlite3_exec( db, \
+	result = dbi_conn_query( conf->DBIconn,
 		"CREATE TABLE chdir ("
 		 CREATE_COMMONS
-		"path varchar, result integer)", NULL,0, &zErrormsg);
-	check_db(rc,db,&zErrormsg);
+		"path varchar, result integer)");
+	if (result == NULL) {
+		syslog(LOG_DEBUG,"create tables: could not create"
+			"the chdir table!");
+		return 1;
+	}
+
 	/* open */
-	rc = sqlite3_exec( db, \
+	result = dbi_conn_query( conf->DBIconn,
 		"CREATE TABLE open ("
 		 CREATE_COMMONS
-		"filename varchar, mode varchar, result integer)",NULL,0,&zErrormsg);
-	check_db(rc,db,&zErrormsg);
+		"filename varchar, mode varchar, result integer)");
+	if (result == NULL) {
+		syslog(LOG_DEBUG,"create tables: could not create"
+			"the open table!");
+		return 1;
+	}
+
 	/* close */
-	rc = sqlite3_exec( db, \
+	result = dbi_conn_query( conf->DBIconn,
 		"CREATE TABLE close ("
 		CREATE_COMMONS
-		"filename varchar, result integer)",NULL,0,&zErrormsg);
-	check_db(rc,db,&zErrormsg);
+		"filename varchar, result integer)");
+	if (result == NULL) {
+		syslog(LOG_DEBUG,"create tables: could not create"
+			"the close table!");
+		return 1;
+	}
 
-	/* set journal mode to WAL. sqlite >= 3.2.7 is required. */
-	rc = sqlite3_exec( db, \
-		"PRAGMA journal_mode = WAL",NULL,0,&zErrormsg);
-	check_db(rc,db,&zErrormsg);
-	return db;
+	return 0;
 }
 
 
