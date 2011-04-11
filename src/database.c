@@ -27,7 +27,7 @@
  * Create a database connection and setup the required tables
  * returns 0 if fine, 1 on error
  */
-int database_connect( configuration_data *conf )
+int database_connect( struct configuration_data *conf )
 {
 	int rc;
 	/**
@@ -45,11 +45,11 @@ int database_connect( configuration_data *conf )
 		return 1;
 	}
 	conf->DBIconn = dbi_conn_new(conf->dbdriver);
-	if (conn == NULL) {
+	if (conf->DBIconn == NULL) {
 		syslog(LOG_DAEMON,
 			"DBI: ERROR dbi_conn_new, with driver %s.",
-			drivername);
-		return NULL;
+			conf->dbdriver);
+		return 1;
 	}
 
 	dbi_conn_set_option(conf->DBIconn, "host", conf->dbhost);
@@ -70,7 +70,7 @@ int database_connect( configuration_data *conf )
  * startup.
  * return 0 on success, 1 if fail
  */
-int database_create_tables( configuration_data *conf )
+int database_create_tables( struct configuration_data *conf )
 {
 	dbi_result result;
 
@@ -80,8 +80,8 @@ int database_create_tables( configuration_data *conf )
 		 CREATE_COMMONS
 		"filename varchar, length integer )");
 	if (result == NULL) {
-		syslog(LOG_DEBUG,"create tables : could not create
-			the write/pwrite table!");
+		syslog(LOG_DEBUG,"create tables : could not create"
+			"the write/pwrite table!");
 		return 1;
 	}
 	dbi_result_free(result);
