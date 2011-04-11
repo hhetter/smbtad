@@ -19,7 +19,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-
+#include <dbi.h>
 
 typedef struct configuration_data {
 	/* Number of the port to use */
@@ -57,8 +57,12 @@ typedef struct configuration_data {
 	char *dbname;
 	/* user of the db */
 	char *dbuser;
+	/* driver for DBI */
+	char *dbdriver;
 	/* password of the user */
 	char *dbpassword;
+	/* DBI connection */
+	dbi_conn DBIconn;
 	/* AES Keyfile */
 	char *keyfile;
 	/* AES Key */
