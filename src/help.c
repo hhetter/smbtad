@@ -41,6 +41,7 @@ void help_show_help()
 	printf("				used.				\n");
 	printf("-d      --debug-level		Specify the debug level (0-10).	\n");
 	printf("				Default: 0.			\n");
+	printf("-q	--query-port		Port to be used for clients.	\n");
 	printf("-o	--interactive		Don't run as daemon.		\n");
 	printf("				(Runs as daemon by default)	\n");
 	printf("-c      --config-file		Use configuration file given.	\n");
