@@ -24,6 +24,12 @@
 typedef struct configuration_data {
 	/* Number of the port to use */
 	int port;
+	/* portnumber for clients who query */
+	int query_port;
+	/* 1 if a unix domain socket is used for the connection the the */
+	/* client                                                       */
+	int unix_socket_clients;
+	int query_socket;
 	/* the maintenance timer strings */
         /* user given string argument, as to when the maintenance       */
         /* routine should start.                                        */
@@ -67,6 +73,9 @@ typedef struct configuration_data {
 	char *keyfile;
 	/* AES Key */
 	unsigned char key[20];
+	/* AES Key for client connections */
+	unsigned char key_clients[20];
+
 	/* precision is used by the cache, it's value specifies the */
 	/* life time of the cache in seconds, during this time it */
 	/* sums up similar VFS R/W entries. Default is 5.	*/

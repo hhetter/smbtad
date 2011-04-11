@@ -48,6 +48,11 @@ void configuration_define_defaults( config_t *c )
 	c->dbdriver = NULL;
 	c->dbpassword = NULL;
 	c->port = 3940;
+	c->unix_socket_clients = 0;
+	/* AES encryption key from SMBTAD to clients */
+	c->keyfile_clients = NULL;
+	c->query_port = 3941;
+
 	strcpy( c->maintenance_timer_str, "01:00:00" );
 	strcpy( c->maint_run_time_str, "01,00:00:00" );
 	c->daemon = 1;
@@ -99,12 +104,40 @@ int configuration_load_key_from_file( config_t *c)
 	return 0;
 }
 
+int configuration_load_client_key_from_file( config_t *c)
+{
+        FILE *keyfile;
+        char *key = malloc(sizeof(char) * 25);
+        int l;
+        keyfile = fopen(c->keyfile_clients, "r");
+        if (keyfile == NULL) {
+                return -1;
+        }
+        l = fscanf(keyfile, "%16s", key);
+       if ( l == EOF ) {
+               printf("Error reading keyfile: %s\n",strerror(errno));
+               exit(1);
+       }
+        if (strlen(key) != 16) {
+               printf("ERROR: Key file in wrong format\n");
+                fclose(keyfile);
+                exit(1);
+        }
+        strncpy( (char *) c->key_clients, key, 20);
+        syslog(LOG_DEBUG,"loaded client AES key.\n");
+        return 0;
+}
+
+
 int configuration_load_config_file( config_t *c)
 {
 	dictionary *Mydict;
 	Mydict=iniparser_load( c->config_file);
 	char *cc;
 
+	cc = iniparser_getstring( Mydict, "network:query_port",NULL);
+	if (cc != NULL) c->query_port = atoi(cc);
+	
 
 	if ( Mydict == NULL ) return -1;
 	cc = iniparser_getstring (Mydict, "network:unix_domain_socket",NULL);
@@ -205,21 +238,29 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 			{ "interactive", 0, NULL, 'o' },
 			{ "debug-level",1, NULL, 'd' },
 			{ "config-file",1,NULL,'c'},
+			{ "unix-domain-socket-cl",0,NULL,'n'},
 			{ "key-file",1,NULL,'k'},
 			{ "maintenance-timer",1,NULL,'t'},
 			{ "maintenance-timer-config",1,NULL,'m'},
 			{ "unix-domain-socket",0,NULL,'u'},
 			{ "precision",1,NULL,'p'},
 			{ "use-db",1,NULL,'D'},
+			{ "query-port",1,NULL,'q'},
 			{ 0,0,0,0 }
 		};
 
 		i = getopt_long( argc, argv,
-			"d:i:oc:k:q:t:m:up:U:M:N:U:H:P:", long_options, &option_index );
+			"nd:i:oc:k:q:t:m:up:U:M:N:U:H:P:", long_options, &option_index );
 
 		if ( i == -1 ) break;
 
 		switch (i) {
+			case 'q':
+				c->query_port = atoi(optarg);
+				break;
+			case 'n':
+				c->unix_socket_clients = 1;
+				break;
 			case 'S':
 				c->dbuser = strdup(optarg);
 				break;
