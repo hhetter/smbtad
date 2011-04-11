@@ -73,6 +73,7 @@ int database_connect( configuration_data *conf )
 int database_create_tables( configuration_data *conf )
 {
 	dbi_result result;
+
 	/* write/pwrite */
 	result = dbi_conn_query( conf->DBIconn,
 		"CREATE TABLE write ("
@@ -83,6 +84,7 @@ int database_create_tables( configuration_data *conf )
 			the write/pwrite table!");
 		return 1;
 	}
+	dbi_result_free(result);
 
 	/* read/pread */
 	result = dbi_conn_query( conf->DBIconn,
@@ -94,6 +96,7 @@ int database_create_tables( configuration_data *conf )
 			"the read/pread table!");
 		return 1;
 	}
+	dbi_result_free(result);
 
 	/* mkdir */
 	result = dbi_conn_query( conf->DBIconn,
@@ -105,6 +108,7 @@ int database_create_tables( configuration_data *conf )
 			"the mkdir table!");
 		return 1;
 	}
+	dbi_result_free(result);
 
 	/* rmdir */
 	result = dbi_conn_query( conf->DBIconn,
@@ -116,7 +120,7 @@ int database_create_tables( configuration_data *conf )
 			"the rmdir table!");
 		return 1;
 	}
-
+	dbi_result_free(result);
 
 	/* rename */
 	result = dbi_conn_query( conf->DBIconn,
@@ -128,6 +132,7 @@ int database_create_tables( configuration_data *conf )
 			"the rename table!");
 		return 1;
 	}
+	dbi_result_free(result);
 
 	/* chdir */
 	result = dbi_conn_query( conf->DBIconn,
@@ -139,6 +144,7 @@ int database_create_tables( configuration_data *conf )
 			"the chdir table!");
 		return 1;
 	}
+	dbi_result_free(result);
 
 	/* open */
 	result = dbi_conn_query( conf->DBIconn,
@@ -150,6 +156,7 @@ int database_create_tables( configuration_data *conf )
 			"the open table!");
 		return 1;
 	}
+	dbi_result_free(result);
 
 	/* close */
 	result = dbi_conn_query( conf->DBIconn,
@@ -161,6 +168,7 @@ int database_create_tables( configuration_data *conf )
 			"the close table!");
 		return 1;
 	}
+	dbi_result_free(result);
 
 	return 0;
 }
