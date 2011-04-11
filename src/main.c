@@ -48,7 +48,6 @@ int main(int argc, char *argv[])
 	daemon_daemonize( &conf );
 
        	pthread_create(&thread,NULL,(void *)&cache_manager,(void *) &conf);
-	pthread_create(&thread3,NULL,(void *)&cache_query_thread, (void *) &conf);
 	/* enter the main network function. */
 	network_handle_connections( &conf );
 	exit(0);
