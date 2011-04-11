@@ -66,6 +66,6 @@ void help_show_help()
 	printf("-p --precision			Precision value for the build-in\n");
 	printf("				cache. Default is 5.\n");
 	printf("-U --use-db			Specify 0 or 1 as argument. If\n");
-	printf("				this is 0, no sqlite handling\n");
+	printf("				this is 0, no database handling\n");
 	printf("				will be done. Default is 1.\n");
 }
