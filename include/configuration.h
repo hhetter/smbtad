@@ -71,6 +71,8 @@ typedef struct configuration_data {
 	dbi_conn DBIconn;
 	/* AES Keyfile */
 	char *keyfile;
+	/* AES Keyfile for clients */
+	char *keyfile_clients;
 	/* AES Key */
 	unsigned char key[20];
 	/* AES Key for client connections */
