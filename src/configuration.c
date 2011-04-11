@@ -253,16 +253,21 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 			{ "unix-domain-socket",0,NULL,'u'},
 			{ "precision",1,NULL,'p'},
 			{ "use-db",1,NULL,'D'},
+			{ "key-file-clients",1,NULL,'K'},
 			{ "query-port",1,NULL,'q'},
 			{ 0,0,0,0 }
 		};
 
 		i = getopt_long( argc, argv,
-			"nd:i:oc:k:q:t:m:up:U:M:N:U:H:P:", long_options, &option_index );
+			"nd:i:oc:k:q:t:m:up:U:M:N:H:P:K:", long_options, &option_index );
 
 		if ( i == -1 ) break;
 
 		switch (i) {
+			case 'K':
+				c->keyfile_clients = strdup( optarg);
+				configuration_load_client_key_from_file(c);
+				break;
 			case 'q':
 				c->query_port = atoi(optarg);
 				break;
