@@ -6,7 +6,7 @@ set(APPLICATION_VERSION "1.0")
 
 SET(CMAKE_BUILD_TYPE "Debug")
 SET(CMAKE_C_FLAGS "-Wall -D_FORTIFY_SOURCE=2")
-#SET(CMAKE_VERBOSE_MAKEFILE ON)
+SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 #
 # check for libdbi
@@ -19,6 +19,8 @@ ENDIF()
 if (LIBDBI_INCLUDE_DIR)
 	INCLUDE_DIRECTORIES(${LIBDBI_INCLUDE_DIR})
 ENDIF()
+
+
 #
 # check for talloc
 #
@@ -75,7 +77,7 @@ ENDIF()
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/make_symlink.cmake "exec_program(${CMAKE_COMMAND} ARGS -E create_symlink /etc/init.d/smbtad /usr/sbin/rcsmbtad)")
 
 
-INCLUDE_DIRECTORIES( ${TALLOC_INCLUDE_DIR} )
+INCLUDE_DIRECTORIES( ${LIBDBI_INCLUDE_DIR} ${TALLOC_INCLUDE_DIR} )
 
 SET(CurrentExe "smbtad")
 ADD_EXECUTABLE(${CurrentExe}
@@ -92,7 +94,7 @@ ADD_EXECUTABLE(${CurrentExe}
 	src/crypto/aes.c
 	src/crypto/rijndael-alg-fst.c
 	src/monitor-list.c)
-TARGET_LINK_LIBRARIES(${CurrentExe} ${INIPARSER_LIBRARIES} ${TALLOC_LIBRARIES} ${Libraries} iniparser ${CMAKE_THREAD_LIBS_INIT} dl)
+TARGET_LINK_LIBRARIES(${CurrentExe} ${LIBDBI_LIBRARIES} ${INIPARSER_LIBRARIES} ${TALLOC_LIBRARIES} ${Libraries} iniparser ${CMAKE_THREAD_LIBS_INIT} dl)
 INSTALL(TARGETS smbtad DESTINATION bin)
 
 IF (CMAKE_INSTALL_RCFILE)

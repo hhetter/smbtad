@@ -32,12 +32,7 @@
 #include <syslog.h>
 #include <sys/select.h>
 #include <dlfcn.h>
-
-#ifndef SQLITE_FOUND
-	#include "../src/sqlite/sqlite3.h"
-#else
-	#include <sqlite3.h>
-#endif
+#include <dbi.h>
 
 #include <talloc.h>
 
