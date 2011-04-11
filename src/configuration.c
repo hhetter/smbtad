@@ -1,5 +1,5 @@
 /* 
- * stad2 
+ * smbtad 
  * capture transfer data from the vfs_smb_traffic_analyzer module, and store
  * the data via various plugins
  *
@@ -42,21 +42,11 @@ config_t *configuration_get_conf() {
  */
 void configuration_define_defaults( config_t *c )
 {
-	char *home = getenv("HOME");
-	if (home == NULL) {
-		printf("\nError retrieving the users home directory.\n");
-		printf("Database file will be forced to:\n");
-		printf("'/var/lib/staddb'\n\n");
-		c->dbname = strdup("/var/lib/staddb");
-	} else {
-		c->dbname = (char *) malloc(sizeof(char) * (strlen(home) + 50));
-		c->dbname = strcpy(c->dbname,home);
-		strcat(c->dbname,"/.smbtad");
-		/* create the directory when it doesn't exist */
-		mkdir(c->dbname, S_IFDIR | S_IRWXU | S_IRWXG | S_IRWXO);
-		strcat(c->dbname,"/staddb");
-	}
-
+	c->dbname = NULL;
+	c->dbhost = NULL;
+	c->dbuser = NULL;
+	c->dbdriver = NULL;
+	c->dbpassword = NULL;
 	c->port = 3940;
 	strcpy( c->maintenance_timer_str, "01:00:00" );
 	strcpy( c->maint_run_time_str, "01,00:00:00" );
@@ -64,19 +54,15 @@ void configuration_define_defaults( config_t *c )
 	c->config_file = NULL;
 	c->dbg = 0; // debug level
 	c->unix_socket = 0;
-	c->unix_socket_clients = 0;
-	/* FIXME: REMOVE dbhandle, for sqlite
-	// c->dbhandle = NULL;
 	/* AES encryption key from the VFS module to SMBTAD */
 	c->keyfile =NULL;
-	/* AES encryption key from SMBTAD to clients */
-	c->keyfile_clients = NULL;
-	/* precision is a factor for the cache, which is summing up similar R/W VFS entries */
+	/** precision is a factor for the cache,
+	 * which is summing up similar R/W VFS entries
+	 * */
 	c->precision = 5;
-	c->query_port = 3941;
 	c->current_query_result = NULL;
 	/**
-	 * if use_db == 0, no sqlite handling will be done.
+	 * if use_db == 0, no database handling will be done.
 	 * this is useful if smbtad shall only be used for rrddriver or
 	 * smbtamonitor.
 	 * Be aware that the behaviour of some monitors might change,
@@ -113,31 +99,6 @@ int configuration_load_key_from_file( config_t *c)
 	return 0;
 }
 
-int configuration_load_client_key_from_file( config_t *c)
-{
-        FILE *keyfile;
-        char *key = malloc(sizeof(char) * 25);
-        int l;
-        keyfile = fopen(c->keyfile_clients, "r");
-        if (keyfile == NULL) {
-                return -1;
-        }
-        l = fscanf(keyfile, "%16s", key);
-	if ( l == EOF ) {
-		printf("Error reading keyfile: %s\n",strerror(errno));
-		exit(1);
-	}
-        if (strlen(key) != 16) {
-                printf("ERROR: Key file in wrong format\n");
-                fclose(keyfile);
-                exit(1);
-        }
-        strncpy( (char *) c->key_clients, key, 20);
-        syslog(LOG_DEBUG,"loaded client AES key.\n");
-        return 0;
-}
-
-
 int configuration_load_config_file( config_t *c)
 {
 	dictionary *Mydict;
@@ -155,14 +116,26 @@ int configuration_load_config_file( config_t *c)
 	cc = iniparser_getstring( Mydict, "network:port_number",NULL);
 	if (cc != NULL) c->port = atoi(cc);
 
-	cc = iniparser_getstring( Mydict, "network:query_port",NULL);
-	if (cc != NULL) c->query_port = atoi(cc);
-
-        cc = iniparser_getstring(Mydict,"database:sqlite_filename",NULL);
+        cc = iniparser_getstring(Mydict,"database:name",NULL);
         if ( cc != NULL ) {
-                free(c->dbname);
                 c->dbname= strdup( cc);
         }
+	cc = iniparser_getstring(Mydict,"database:host",NULL);
+	if ( cc != NULL) {
+		c->dbhost=strdup(cc);
+	}
+	cc = iniparser_getstring(Mydict,"database:driver",NULL);
+	if ( cc != NULL) {
+		c->dbdriver=strdup(cc);
+	}
+	cc = iniparser_getstring(Mydict,"database:user",NULL);
+	if ( cc != NULL) {
+		c->dbuser = strdup(cc);
+	}
+	cc = iniparser_getstring(Mydict,"database:password",NULL);
+	if ( cc != NULL) {
+		c->dbpassword = strdup(cc);
+	}
 	cc = iniparser_getstring(Mydict,"general:precision",NULL);
 	if (cc != NULL) c->precision = atoi(cc);
 
@@ -232,31 +205,46 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 
 		static struct option long_options[] = {\
 			{ "inet-port", 1, NULL, 'i' },
+			{ "dbdriver",1,NULL,'M'},
+			{ "dbname",1,NULL,'N'},
+			{ "dbuser",1,NULL,'S'},
+			{ "dbhost",1,NULL,'H'},
+			{ "dbpassword",1,NULL,'P'},
 			{ "interactive", 0, NULL, 'o' },
 			{ "debug-level",1, NULL, 'd' },
 			{ "config-file",1,NULL,'c'},
 			{ "key-file",1,NULL,'k'},
-			{ "database",1,NULL,'b'},
 			{ "maintenance-timer",1,NULL,'t'},
 			{ "maintenance-timer-config",1,NULL,'m'},
 			{ "unix-domain-socket",0,NULL,'u'},
-			{ "unix-domain-socket-cl",0,NULL,'n'},
 			{ "precision",1,NULL,'p'},
 			{ "use-db",1,NULL,'D'},
 			{ 0,0,0,0 }
 		};
 
 		i = getopt_long( argc, argv,
-			"d:i:oc:k:q:b:t:m:unp:U:", long_options, &option_index );
+			"d:i:oc:k:q:t:m:up:U:M:N:U:H:P:", long_options, &option_index );
 
 		if ( i == -1 ) break;
 
 		switch (i) {
+			case 'S':
+				c->dbuser = strdup(optarg);
+				break;
+			case 'M':
+				c->dbdriver = strdup(optarg);
+				break;
+			case 'N':
+				c->dbname = strdup(optarg);
+				break;
+			case 'H':
+				c->dbhost = strdup(optarg);
+				break;
+			case 'P':
+				c->dbpassword = strdup(optarg);
+				break;
 			case 'u':
 				c->unix_socket = 1;
-				break;
-			case 'n':
-				c->unix_socket_clients = 1;
 				break;
 			case 'i':
 				c->port = atoi( optarg );
@@ -282,8 +270,6 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 				configuration_load_key_from_file(c);
 				break;
 			case 'b':
-				free(c->dbname); // allocated by default
-				// setting
 				c->dbname = strdup( optarg );
 				break;
 			case 'p':

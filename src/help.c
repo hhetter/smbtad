@@ -1,5 +1,5 @@
 /* 
- * stad 
+ * smbtad 
  * capture transfer data from the vfs_smb_traffic_analyzer module, and store
  * the data via various plugins
  *
@@ -28,21 +28,22 @@ void help_show_help()
 	printf("\n");
 	printf("(C) 2008-2011 Holger Hetterich <ozzy@metal-district.de>	\n");
 	printf("\n");
+	printf("-S	--dbuser		Specifiy the user for the database.\n");
+	printf("-H 	--dbhost		Specifiy the host of the database.\n");
+	printf("-P	--dbpassword		Specifiy to password to access the db.\n");
+	printf("-M	--dbdriver		Specify the libDBI driver to use.\n");
+	printf("-N	--dbname		Specify the name of the database.\n");
 	printf("-i	--inet-port		Specifiy the port to be used.	\n");
 	printf("				Default: 3490.			\n");
 	printf("-u	--unix-domain-socket	If this parameter is specified, \n");
 	printf("				a unix domain socket at		\n");
 	printf("				/var/tmp/stadsocket will be	\n");
 	printf("				used.				\n");
-	printf("-b	--database		Filename of the Sqlite3 database\n");
-	printf("				to be used.			\n");
 	printf("-d      --debug-level		Specify the debug level (0-10).	\n");
 	printf("				Default: 0.			\n");
 	printf("-o	--interactive		Don't run as daemon.		\n");
 	printf("				(Runs as daemon by default)	\n");
 	printf("-c      --config-file		Use configuration file given.	\n");
-	printf("-q	--query-port		Specify the port to be used for \n");
-	printf("				clients.			\n");
 	printf("-t --maintenance-timer <value>  specify the time intervall to\n");
 	printf("                                to start the database \n");
 	printf("                                maintenance routine. Format is\n");
@@ -60,12 +61,8 @@ void help_show_help()
 	printf("                                maintenance routine.\n");
 	printf("                                Format is: DAYS, HH:MM:SS\n");
 	printf("                                Default: 1,00:00:00\n");
-	printf("-n --unix-domain-socket-cl	Will use a unix domain socket\n");
-	printf("				to connect to clients.\n");
 	printf("-k --keyfile			Keyfile for encryption to be used\n");
 	printf("				between module and smbtad.\n");
-	printf("-K --keyfile-clients		Keyfile for encryption to be used\n");
-	printf("				between smbtad and smbtatools.\n");
 	printf("-p --precision			Precision value for the build-in\n");
 	printf("				cache. Default is 5.\n");
 	printf("-U --use-db			Specify 0 or 1 as argument. If\n");
