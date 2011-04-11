@@ -32,14 +32,17 @@ int main(int argc, char *argv[])
 	pthread_t thread;
 	pthread_t thread3;
 	cache_init();
-	query_init();
 	monitor_list_init();
 	/* parse command line */
 	if ( configuration_parse_cmdline( &conf, argc, argv ) <0 ) exit(1);
 	/* global debug level */
 	_DBG = conf.dbg;
 	/* set the db */
-	conf.dbhandle = database_create(conf.dbname);
+	if ( database_connect(&conf) == 1) {
+		printf("Error connecting to the database.\n"
+			"please check syslog.\n");
+		exit(1);
+	}
 
 	/* become a daemon, depending on configuration	*/
 	daemon_daemonize( &conf );

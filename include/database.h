@@ -1,5 +1,5 @@
 /*
- * stad database services
+ * smbtad database services
  *
  *
  *
@@ -19,10 +19,9 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /*
  * Create a database and setup the required tables
  */
-sqlite3 *database_create( char *filename );
+int database_connect( struct configuration_data *conf );
 
 

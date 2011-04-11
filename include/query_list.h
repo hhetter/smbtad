@@ -20,15 +20,4 @@
  */
 
 
-struct query_entry {
-	char *data;
-	int length;
-	int sock;
-	int monitorid;
-	struct query_entry *next;
-};
-
-void query_init();
 int query_add( char *data, int len,int sock, int monitorid );
-void query_manager( sqlite3 *db);
-char *query_list_run_query( sqlite3 *database, int *body_length, int *sock, int *monitorid);
