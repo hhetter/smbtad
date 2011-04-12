@@ -442,6 +442,7 @@ void do_db( struct configuration_data *config, char *dbstring)
 {
 	int rc;
 	int try;
+	const char *error;
 	dbi_result result;
 	/** 
 	 * Check if the connection is alive. We try ten times
@@ -451,6 +452,8 @@ void do_db( struct configuration_data *config, char *dbstring)
 		rc = dbi_conn_ping( config->DBIconn );
 		if (rc == 1) {
 			result = dbi_conn_query(config->DBIconn, dbstring);
+			dbi_conn_error(config->DBIconn,&error);
+			syslog(LOG_DEBUG,"DBI: %s",error);
 			if (result == NULL) rc = 0; else break;
 		}
 		if (rc == 0) database_connect(config);
