@@ -49,6 +49,7 @@ int database_connect( struct configuration_data *conf )
 		printf("DBI: ERROR dbi_conn_new, with driver %s.\n",
 			conf->dbdriver);
 		dbi_conn_error(conf->DBIconn, &dberror);
+		printf("DBI: %s\n",dberror);
 		return 1;
 	}
 
@@ -60,6 +61,7 @@ int database_connect( struct configuration_data *conf )
 	if ( dbi_conn_connect(conf->DBIconn) < 0) {
 		printf("DBI: could not connect, please check options.\n");
 		dbi_conn_error(conf->DBIconn,&dberror);
+		printf("DBI: %s\n",dberror);
 		return 1;
 	}
 	if (conf->dbsetup == 1) {
