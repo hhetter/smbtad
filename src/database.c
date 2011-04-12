@@ -21,6 +21,7 @@
 
 #include "../include/includes.h"
 #define CREATE_COMMONS "vfs_id integer,username varchar,usersid varchar,share varchar,domain varchar,timestamp DATE,"
+int database_create_tables( struct configuration_data *conf );
 
 
 /*
@@ -61,6 +62,15 @@ int database_connect( struct configuration_data *conf )
 		syslog(LOG_DAEMON,
 			"DBI: could not connect, please check options.");
 		return 1;
+	}
+	if (conf->dbsetup == 1) {
+		if (database_create_tables(conf) == 0) {
+			printf("\nSuccesfully created database tables.\n");
+			exit(0);
+		} else {
+			printf("\nError creating database tables!\n");
+			exit(0);
+		}
 	}
 	return 0;
 }
