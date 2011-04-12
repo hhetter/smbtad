@@ -261,7 +261,7 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 		};
 
 		i = getopt_long( argc, argv,
-			"Tnd:i:oc:k:q:t:m:up:U:M:N:H:P:K:", long_options, &option_index );
+			"S:Tnd:i:oc:k:q:t:m:up:U:M:N:H:P:K:", long_options, &option_index );
 
 		if ( i == -1 ) break;
 
