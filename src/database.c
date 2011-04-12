@@ -31,25 +31,24 @@ int database_create_tables( struct configuration_data *conf );
 int database_connect( struct configuration_data *conf )
 {
 	int rc;
+	const char *dberror;
 	/**
 	 * Initialize the DBI layer
 	 */
 	if ( conf->dbdriver == NULL) {
-		syslog(LOG_DAEMON,
-			"ERROR: drivername == NULL. Exiting.\n");
+		printf("ERROR: drivername == NULL. Exiting.\n");
 		return 1;
 	}
 	rc = dbi_initialize(NULL);
 	if ( rc == -1 ) {
-		syslog(LOG_DAEMON,
-			"DBI: ERROR dbi_initialize. Exiting.\n");
+		printf("DBI: ERROR dbi_initialize. Exiting.\n");
 		return 1;
 	}
 	conf->DBIconn = dbi_conn_new(conf->dbdriver);
 	if (conf->DBIconn == NULL) {
-		syslog(LOG_DAEMON,
-			"DBI: ERROR dbi_conn_new, with driver %s.",
+		printf("DBI: ERROR dbi_conn_new, with driver %s.\n",
 			conf->dbdriver);
+		dbi_conn_error(conf->DBIconn, &dberror);
 		return 1;
 	}
 
@@ -59,8 +58,8 @@ int database_connect( struct configuration_data *conf )
 	dbi_conn_set_option(conf->DBIconn, "dbname", conf->dbname);
 	dbi_conn_set_option(conf->DBIconn, "encoding", "UTF-8");
 	if ( dbi_conn_connect(conf->DBIconn) < 0) {
-		syslog(LOG_DAEMON,
-			"DBI: could not connect, please check options.");
+		printf("DBI: could not connect, please check options.\n");
+		dbi_conn_error(conf->DBIconn,&dberror);
 		return 1;
 	}
 	if (conf->dbsetup == 1) {
