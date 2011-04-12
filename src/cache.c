@@ -452,9 +452,11 @@ void do_db( struct configuration_data *config, char *dbstring)
 		rc = dbi_conn_ping( config->DBIconn );
 		if (rc == 1) {
 			result = dbi_conn_query(config->DBIconn, dbstring);
-			dbi_conn_error(config->DBIconn,&error);
-			syslog(LOG_DEBUG,"DBI: %s",error);
-			if (result == NULL) rc = 0; else break;
+			if (result == NULL) {
+				dbi_conn_error(config->DBIconn,&error);
+				syslog(LOG_DEBUB,"DBI ERROR: %s",error);
+				rc = 0;}
+			else break;
 		}
 	}
 	if (rc == 0 ) {
