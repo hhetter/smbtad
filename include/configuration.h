@@ -77,7 +77,8 @@ typedef struct configuration_data {
 	unsigned char key[20];
 	/* AES Key for client connections */
 	unsigned char key_clients[20];
-
+	/* wether the first time database setup should be done (==1) */
+	int dbsetup;
 	/* precision is used by the cache, it's value specifies the */
 	/* life time of the cache in seconds, during this time it */
 	/* sums up similar VFS R/W entries. Default is 5.	*/

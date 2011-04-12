@@ -69,4 +69,6 @@ void help_show_help()
 	printf("-U --use-db			Specify 0 or 1 as argument. If\n");
 	printf("				this is 0, no database handling\n");
 	printf("				will be done. Default is 1.\n");
+	printf("-T --setup			Do the initial database setup and exit.\n");
+
 }
