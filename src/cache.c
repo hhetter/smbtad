@@ -454,7 +454,7 @@ void do_db( struct configuration_data *config, char *dbstring)
 			result = dbi_conn_query(config->DBIconn, dbstring);
 			if (result == NULL) {
 				dbi_conn_error(config->DBIconn,&error);
-				syslog(LOG_DEBUB,"DBI ERROR: %s",error);
+				syslog(LOG_DEBUG,"DBI ERROR: %s",error);
 				rc = 0;}
 			else break;
 		}
