@@ -1,5 +1,5 @@
 /* 
- * stad 
+ * smbtad 
  * capture transfer data from the vfs_smb_traffic_analyzer module, and store
  * the data via various plugins
  *
@@ -65,7 +65,7 @@ int monitor_list_add( char *data,int sock) {
 		entry->local_data = NULL;
 		monitor_id ++;
 		entry->state = MONITOR_IDENTIFY;
-		DEBUG(1) syslog(LOG_DEBUG,"returned id %i",entry->id);
+		DEBUG(8) syslog(LOG_DEBUG,"returned id %i",entry->id);
                 return entry->id;
         }
         entry = (struct monitor_item *) malloc(sizeof(struct monitor_item));
@@ -88,7 +88,7 @@ int monitor_list_add( char *data,int sock) {
 
 	monitor_id++;
 	entry->state = MONITOR_IDENTIFY;
-	DEBUG(1) syslog(LOG_DEBUG,"returned id %i",entry->id);
+	DEBUG(8) syslog(LOG_DEBUG,"returned id %i",entry->id);
         return entry->id;
 }
 
@@ -162,7 +162,7 @@ char *monitor_list_parse_argument( char *data, int *pos)
         strncpy(convdummy,data+*pos,4);
 	convdummy[4]='\0';
 
-	DEBUG(1) syslog(LOG_DEBUG,"monitor_list_parse_argument: "
+	DEBUG(8) syslog(LOG_DEBUG,"monitor_list_parse_argument: "
 		"convdummy: %s",convdummy);
 
         l = atoi(convdummy);
@@ -200,7 +200,7 @@ int monitor_list_parse( struct monitor_item *entry)
 		monitor_list_parse_argument( entry->data, &c);
 	entry->domain =
 		monitor_list_parse_argument( entry->data, &c);
-	DEBUG(1) syslog(LOG_DEBUG,"monitor_list_parse: parsed "
+	DEBUG(8) syslog(LOG_DEBUG,"monitor_list_parse: parsed "
 		"id %i, function = %i, param = %s, username = %s,"
 		"usersid = %s, share = %s, file = %s, domain = %s",
 		entry->id,
@@ -220,10 +220,6 @@ int monitor_list_parse( struct monitor_item *entry)
 	case MONITOR_ADD: ;
 		entry->local_data = (struct monitor_local_data_adder *)
 			 malloc( sizeof(struct monitor_local_data_adder));
-		break;
-	case MONITOR_TOTAL: ;
-		entry->local_data = (struct monitor_local_data_total *)
-			malloc( sizeof(struct monitor_local_data_total));
 		break;
 	case MONITOR_LOG: ;
 		entry->local_data = (struct monitor_local_data_log *)
@@ -287,7 +283,7 @@ int monitor_list_filter_apply( struct monitor_item *entry,
 	char *domain)
 {
 
-        DEBUG(1) syslog(LOG_DEBUG, "monitor_list_apply: entry data:"
+        DEBUG(8) syslog(LOG_DEBUG, "monitor_list_apply: entry data:"
                 "entry->username : |%s|vs|%s|, "
                 "entry->usersid  : |%s|vs|%s|, "
                 "entry->share    : %s, "
@@ -320,51 +316,10 @@ int monitor_list_filter_apply( struct monitor_item *entry,
 	if (strcmp(entry->domain,"*") != 0) {
 		if (strcmp(entry->domain, domain)!=0) return 0;
 	}
-	DEBUG(1) syslog(LOG_DEBUG, "monitor_list_apply: "
+	DEBUG(8) syslog(LOG_DEBUG, "monitor_list_apply: "
 		"monitor applied succesfully.");
 	return 1;
 }
-
-
-
-/**
- * create a SQL condition string based on the pattern of the
- * given monitor
- */
-char *monitor_list_create_sql_cond( TALLOC_CTX *ctx,struct monitor_item *entry)
-{
-	char *ret = NULL;
-	char *username = NULL;
-	char *usersid = NULL;
-	char *share = NULL;
-	char *file = NULL;
-	char *domain = NULL;
-
-	if (strcmp(entry->username,"*") != 0)
-		username = talloc_asprintf(ctx,"username = '%s' and ",entry->username);
-	else username = talloc_asprintf(ctx," ");
-	if (strcmp(entry->usersid,"*") != 0)
-		usersid = talloc_asprintf(ctx, "usersid = '%s' and ",entry->usersid);
-	else usersid = talloc_asprintf(ctx," ");
-	if (strcmp(entry->share,"*") != 0)
-		share = talloc_asprintf(ctx,"share = '%s' and ",entry->share);
-	else share = talloc_asprintf(ctx," ");
-	if (strcmp(entry->file,"*") != 0)
-		file = talloc_asprintf(ctx,"file = '%s' and ",entry->file);
-	else file = talloc_asprintf(ctx," ");
-	if (strcmp(entry->domain,"*") != 0)
-		domain = talloc_asprintf(ctx,"domain = '%s' and ",entry->domain);
-	else domain = talloc_asprintf(ctx," ");
-	ret = talloc_asprintf(ctx,"%s %s %s %s %s 1 = 1;",
-		username,
-		usersid,
-		share,
-		file,
-		domain);
-	return ret;
-}
-
-
 
 /**
  * do everything required before a monitor is going to run
@@ -378,35 +333,6 @@ void monitor_initialize( struct monitor_item *entry)
 		((struct monitor_local_data_adder *)
 			entry->local_data)->sum = 0;
 		entry->state = MONITOR_PROCESS;
-		break;
-	case MONITOR_TOTAL: ;
-		((struct monitor_local_data_total *)
-			entry->local_data)->sum = 0;
-		char *request = NULL;
-		if (strcmp(entry->param,"R")==0) {
-			request = talloc_asprintf(NULL,
-				"select sum(length) from read where ");
-		} else if (strcmp(entry->param,"W")==0) {
-			request = talloc_asprintf(NULL,
-				"select sum(length) from write where ");
-		} else if (strcmp(entry->param,"RW")==0) {
-			request = talloc_asprintf(NULL,
-				"select sum(length) from write UNION "
-				"select sum(length) from read where ");
-		} else { // ignore the monitor if it uses wrong parameters
-			syslog(LOG_DEBUG,"ERROR: wrong monitor parameter!");
-			break;
-			}
-		char *cond = monitor_list_create_sql_cond(NULL, entry);
-		request = talloc_asprintf(NULL,"%s %s",request,cond);
-		talloc_free(cond);
-		DEBUG(1) syslog(LOG_DEBUG,"monitor_initizalize: "
-			"created >%s< as request string!",request);
-		query_add(request,
-			strlen(request),
-			entry->sock, entry->id);
-		entry->state = MONITOR_INITIALIZE_INIT_PREP;
-		talloc_free(request);
 		break;
 	case MONITOR_LOG:
 		((struct monitor_local_data_log *)
@@ -446,18 +372,6 @@ void monitor_send_result( struct monitor_item *entry)
 		network_send_data(sendstr,entry->sock,strlen(sendstr));
 		talloc_free(tmpdatastr);
 		break;
-	case MONITOR_TOTAL: ;
-		tmpdatastr = talloc_asprintf(NULL,"%lu",
-			((struct monitor_local_data_total *)
-				(entry->local_data))->sum);
-                sendstr = talloc_asprintf(tmpdatastr,"%04i%s%04i%s",
-                        (int) strlen(idstr),
-                        idstr,
-                        (int) strlen(tmpdatastr),
-                        tmpdatastr);
-                network_send_data(sendstr,entry->sock,strlen(sendstr));
-		talloc_free(tmpdatastr);
-                break;
 	case MONITOR_LOG: ;
 		tmpdatastr = talloc_asprintf(NULL,"%s",
 			((struct monitor_local_data_log *)
@@ -527,34 +441,6 @@ void monitor_list_update( int op_id,
 					((struct monitor_local_data_adder *)
 						entry->local_data)->sum + 1;
 				monitor_send_result(entry);
-				break;
-			case MONITOR_TOTAL: ;
-				if ( (op_id == vfs_id_read ||
-					op_id == vfs_id_pread) && (
-					strcmp(entry->param,"R")== 0 ||
-					strcmp(entry->param,"RW")==0 ))
-					{
-					((struct monitor_local_data_total *)
-						entry->local_data)->sum =
-						((struct monitor_local_data_total *)
-						entry->local_data)->sum +
-						data;
-					monitor_send_result(entry);
-					break;
-				}
-				if ( (op_id == vfs_id_write ||
-					op_id == vfs_id_pwrite) &&
-					(strcmp(entry->param,"W")==0 ||
-					 strcmp(entry->param,"RW")==0))
-					{
-                                        ((struct monitor_local_data_total *)
-                                                entry->local_data)->sum =
-                                                ((struct monitor_local_data_total *)
-                                                entry->local_data)->sum +
-                                                data;
-                                        monitor_send_result(entry);
-                                        break;
-				} 
 				break;
 			case MONITOR_READ:
 				if ((op_id == vfs_id_read ||
@@ -628,60 +514,6 @@ void monitor_list_update( int op_id,
 	}
 }
 			
-void monitor_list_set_init_result(char *res, int monitorid) {
-	/**
-	 * we assume that internal queries only return
-	 * single numbers at this point
-	 */
-	pthread_mutex_lock(&monlock);
-	struct monitor_item *entry;
-	if (monlist_start == NULL) {
-		syslog(LOG_DEBUG,"ERROR: trying to initialize a"
-			" monitor but the monitor list is empty!");
-		exit(1);
-	}
-	entry = monitor_list_get_by_id(monitorid);
-	if (entry == NULL) { // The monitor might already have been
-			     // removed (disconnected)
-			pthread_mutex_unlock(&monlock);
-			return;
-	}
-	switch(entry->function) {
-	case MONITOR_ADD: ;
-		/**
-		 * MONITOR_ADD doesn't need to do any preprocessing
-		 */
-		entry->state = MONITOR_PROCESS;
-		break;
-	case MONITOR_TOTAL: ;
-		struct monitor_local_data_total
-			*data = entry->local_data;
-		char len[10];
-		char sum1[100];
-		char len2[10];
-		char sum2[100];
-		strncpy(len,res,4);
-		strncpy(sum1,(res+4),atoi(len));
-		strncpy(len2,(res+4+atoi(len)),4);
-		strncpy(sum2,(res+4+atoi(len)+4),atoi(len2));
-		
-		data->sum = atoll( sum1 )+ atoll(sum2);
-		DEBUG(1) syslog(LOG_DEBUG, "monitor_list_set_init_result:"
-			" input: %s",res);
-		entry->state = MONITOR_PROCESS;
-		DEBUG(1) syslog(LOG_DEBUG, "monitor_list_set_init_result:"
-			" total sum set to %lu",data->sum);
-		break;
-	case MONITOR_LOG: ;
-		entry->state = MONITOR_PROCESS;
-		break;
-	default: ;
-		break;
-	}
-	pthread_mutex_unlock(&monlock);
-}
-
-		
 
 void monitor_list_process(int sock) {
 	struct monitor_item *entry = monlist_start;
@@ -714,6 +546,7 @@ void monitor_list_process(int sock) {
 			/* the result. This is done when receiving data */
 			/* except for timer based monitors, which are */
 			/* processed here */
+			/* There is no timer based monitor function currently */
 			break;
 		case MONITOR_STOP: ;
 			/* delete a monitor from the monitor_list */
@@ -722,11 +555,6 @@ void monitor_list_process(int sock) {
 			/* send an error message to the client, and delete */
 			/* the monitor from the list */
 			break;
-	/*	case default:
-			syslog(LOG_DEBUG,"ERROR: Unkown monitor state!");
-			exit(1);
-			break;
-	*/
 		}
 	entry = entry->next;
 
