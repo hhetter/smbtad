@@ -20,7 +20,7 @@
  */
 
 #include "../include/includes.h"
-#define CREATE_COMMONS "vfs_id integer,username varchar,usersid varchar,share varchar,domain varchar,timestamp DATE,"
+#define CREATE_COMMONS "vfs_id integer,username varchar,usersid varchar,share varchar,domain varchar,timestamp timestamp,"
 int database_create_tables( struct configuration_data *conf );
 
 
