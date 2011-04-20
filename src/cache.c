@@ -598,10 +598,10 @@ void cache_manager(struct configuration_data *config )
                 			tm->tm_hour, tm->tm_min, tm->tm_sec);
 
 
-        			sprintf(dbstring,"delete from %s where timestamp < \"",
+        			sprintf(dbstring,"delete from %s where timestamp < '",
 					fnnames[fncount]);
         			strcat(dbstring,String);
-        			strcat(dbstring,"\";");
+        			strcat(dbstring,"';");
 				do_db(config,dbstring);
 				fncount++;
 			}
