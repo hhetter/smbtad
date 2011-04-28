@@ -400,7 +400,7 @@ void monitor_send_result( struct monitor_item *entry)
                 tmpdatastr = talloc_asprintf(NULL,"%lu",
                         ((struct monitor_local_data_write *)
                                 (entry->local_data))->write);
-                sendstr = talloc_asprintf(&tmpdatastr,"%04i%s%04i%s",
+                sendstr = talloc_asprintf(tmpdatastr,"%04i%s%04i%s",
                         (int) strlen(idstr),
                         idstr,
                         (int) strlen(tmpdatastr),
