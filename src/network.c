@@ -395,7 +395,7 @@ void network_send_data( char *data, int sock, int length)
 	char *headerstr=talloc_asprintf(NULL,"000000");
 	char *crypted = NULL;
 	char *header = NULL;
-
+	DEBUG(10) syslog(LOG_DEBUG,"Sending %s",data);
 	/* Make sure we can write to the socket */
 	connection_list_recreate_fs_sets(
 			&read_fd_set,
