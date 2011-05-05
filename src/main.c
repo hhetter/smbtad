@@ -30,7 +30,6 @@ int main(int argc, char *argv[])
 	config_t conf;
 	
 	pthread_t thread;
-	pthread_t thread3;
 	cache_init();
 	monitor_list_init();
 	/* parse command line */
