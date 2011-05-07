@@ -377,7 +377,6 @@ void monitor_send_result( struct monitor_item *entry)
 			((struct monitor_local_data_log *)
 				(entry->local_data))->log);
 		sendstr = talloc_asprintf(tmpdatastr,"%04i%s%04i%s",
-<<<<<<< HEAD
 			(int) strlen(idstr),
 			idstr,
 			(int) strlen(tmpdatastr),
@@ -390,8 +389,6 @@ void monitor_send_result( struct monitor_item *entry)
 			((struct monitor_local_data_read *)
 				(entry->local_data))->read);
 		sendstr = talloc_asprintf(tmpdatastr,"%04i%s%04i%s",
-=======
->>>>>>> devel
 			(int) strlen(idstr),
 			idstr,
 			(int) strlen(tmpdatastr),
@@ -399,43 +396,11 @@ void monitor_send_result( struct monitor_item *entry)
 		network_send_data(sendstr,entry->sock,strlen(sendstr));
 		talloc_free(tmpdatastr);
 		break;
-<<<<<<< HEAD
-=======
-	case MONITOR_READ: ;
-		tmpdatastr = talloc_asprintf(NULL,"%lu",
-			((struct monitor_local_data_read *)
-				(entry->local_data))->read);
-		sendstr = talloc_asprintf(tmpdatastr,"%04i%s%04i%s",
-			(int) strlen(idstr),
-			idstr,
-			(int) strlen(tmpdatastr),
-			tmpdatastr);
-		network_send_data(sendstr,entry->sock,strlen(sendstr));
-		talloc_free(tmpdatastr);
-		break;
->>>>>>> devel
         case MONITOR_WRITE: ;
                 tmpdatastr = talloc_asprintf(NULL,"%lu",
                         ((struct monitor_local_data_write *)
                                 (entry->local_data))->write);
                 sendstr = talloc_asprintf(tmpdatastr,"%04i%s%04i%s",
-<<<<<<< HEAD
-                        (int) strlen(idstr),
-                        idstr,
-                        (int) strlen(tmpdatastr),
-                        tmpdatastr);
-                network_send_data(sendstr,entry->sock,strlen(sendstr));
-		talloc_free(tmpdatastr);
-                break;
-
-/*
-	case MONITOR_THROUGHPUT: ;
-		asprintf(&tmpdatastr,"%lu",
-			((struct monitor_local_data_throughput *)
-				(entry->local_data))->throughput);
-                asprintf(&sendstr,"%04i%s%04i%s",
-=======
->>>>>>> devel
                         (int) strlen(idstr),
                         idstr,
                         (int) strlen(tmpdatastr),
