@@ -26,7 +26,8 @@
 int main(int argc, char *argv[])
 {
 
-	syslog(LOG_DEBUG,"smbtad start up.");
+	syslog(LOG_DEBUG,"smbtad version %s start up.",
+			STAD2_VERSION);
 	config_t conf;
 	
 	pthread_t thread;
