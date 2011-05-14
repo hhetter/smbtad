@@ -113,7 +113,7 @@ int database_create_tables( struct configuration_data *conf )
 	result = dbi_conn_query( conf->DBIconn,
 		"CREATE TABLE mkdir ("
 		 CREATE_COMMONS
-		"path varchar, mode varchar, result integer )");
+		"path varchar, mode varchar, result bigint )");
 	if (result == NULL) {
 		syslog(LOG_DEBUG,"create tables: could not create"
 			"the mkdir table!");
@@ -125,7 +125,7 @@ int database_create_tables( struct configuration_data *conf )
 	result = dbi_conn_query( conf->DBIconn,
 		"CREATE TABLE rmdir ("
 		 CREATE_COMMONS
-		"path varchar, mode varchar, result integer )");
+		"path varchar, mode varchar, result bigint )");
 	if (result == NULL) {
 		syslog(LOG_DEBUG,"create tables: could not create"
 			"the rmdir table!");
@@ -137,7 +137,7 @@ int database_create_tables( struct configuration_data *conf )
 	result = dbi_conn_query( conf->DBIconn,
 		"CREATE TABLE rename ("
 		CREATE_COMMONS
-		"source varchar, destination varchar, result integer)");
+		"source varchar, destination varchar, result bigint)");
 	if (result == NULL) {
 		syslog(LOG_DEBUG,"create tables: could not create"
 			"the rename table!");
@@ -149,7 +149,7 @@ int database_create_tables( struct configuration_data *conf )
 	result = dbi_conn_query( conf->DBIconn,
 		"CREATE TABLE chdir ("
 		 CREATE_COMMONS
-		"path varchar, result integer)");
+		"path varchar, result bigint)");
 	if (result == NULL) {
 		syslog(LOG_DEBUG,"create tables: could not create"
 			"the chdir table!");
