@@ -85,102 +85,21 @@ int database_create_tables( struct configuration_data *conf )
 {
 	dbi_result result;
 
-	/* write/pwrite */
+	/**
+	 *  we formerly created single tables for every VFS function,
+	 *  let this be in one table now
+	 */
+
 	result = dbi_conn_query( conf->DBIconn,
-		"CREATE TABLE write ("
+		"CREATE TABLE data ("
 		 CREATE_COMMONS
-		"filename varchar, length integer )");
+		"string1 varchar, length integer, result bigint, string2 varchar)");
 	if (result == NULL) {
 		syslog(LOG_DEBUG,"create tables : could not create"
-			"the write/pwrite table!");
+			"the data table!");
 		return 1;
 	}
 	dbi_result_free(result);
-
-	/* read/pread */
-	result = dbi_conn_query( conf->DBIconn,
-		"CREATE TABLE read ("
-		 CREATE_COMMONS
-		"filename varchar, length integer )");
-	if (result == NULL) {
-		syslog(LOG_DEBUG,"create tables : could not create"
-			"the read/pread table!");
-		return 1;
-	}
-	dbi_result_free(result);
-
-	/* mkdir */
-	result = dbi_conn_query( conf->DBIconn,
-		"CREATE TABLE mkdir ("
-		 CREATE_COMMONS
-		"path varchar, mode varchar, result bigint )");
-	if (result == NULL) {
-		syslog(LOG_DEBUG,"create tables: could not create"
-			"the mkdir table!");
-		return 1;
-	}
-	dbi_result_free(result);
-
-	/* rmdir */
-	result = dbi_conn_query( conf->DBIconn,
-		"CREATE TABLE rmdir ("
-		 CREATE_COMMONS
-		"path varchar, mode varchar, result bigint )");
-	if (result == NULL) {
-		syslog(LOG_DEBUG,"create tables: could not create"
-			"the rmdir table!");
-		return 1;
-	}
-	dbi_result_free(result);
-
-	/* rename */
-	result = dbi_conn_query( conf->DBIconn,
-		"CREATE TABLE rename ("
-		CREATE_COMMONS
-		"source varchar, destination varchar, result bigint)");
-	if (result == NULL) {
-		syslog(LOG_DEBUG,"create tables: could not create"
-			"the rename table!");
-		return 1;
-	}
-	dbi_result_free(result);
-
-	/* chdir */
-	result = dbi_conn_query( conf->DBIconn,
-		"CREATE TABLE chdir ("
-		 CREATE_COMMONS
-		"path varchar, result bigint)");
-	if (result == NULL) {
-		syslog(LOG_DEBUG,"create tables: could not create"
-			"the chdir table!");
-		return 1;
-	}
-	dbi_result_free(result);
-
-	/* open */
-	result = dbi_conn_query( conf->DBIconn,
-		"CREATE TABLE open ("
-		 CREATE_COMMONS
-		"filename varchar, mode varchar, result integer)");
-	if (result == NULL) {
-		syslog(LOG_DEBUG,"create tables: could not create"
-			"the open table!");
-		return 1;
-	}
-	dbi_result_free(result);
-
-	/* close */
-	result = dbi_conn_query( conf->DBIconn,
-		"CREATE TABLE close ("
-		CREATE_COMMONS
-		"filename varchar, result integer)");
-	if (result == NULL) {
-		syslog(LOG_DEBUG,"create tables: could not create"
-			"the close table!");
-		return 1;
-	}
-	dbi_result_free(result);
-
 	return 0;
 }
 
