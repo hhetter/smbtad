@@ -514,17 +514,6 @@ void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
  */
 void cache_manager(struct configuration_data *config )
 {
-	char *fnnames[] = {
-		"write",
-		"read",
-		"close",
-		"rename",
-		"open",
-		"chdir",
-		"rmdir",
-		"mkdir",
-		NULL,
-	};
 	int maintenance_c_val;
 	if (config->precision>0)
 		maintenance_c_val = config->maintenance_seconds / config->precision;
@@ -557,26 +546,21 @@ void cache_manager(struct configuration_data *config )
 			char String[400];
 			char dbstring[300];
 			struct tm *tm;
-			int fncount = 0;
 			do_db(config,"BEGIN TRANSACTION;");
-			while (fnnames[fncount]!=NULL) {
-			        time_t today=time(NULL);
-			        time_t delete_date=today - config->maint_run_time;
-			        tm = localtime ( &delete_date );
+		        time_t today=time(NULL);
+		        time_t delete_date=today - config->maint_run_time;
+		        tm = localtime ( &delete_date );
 
 
-			        sprintf(String,"%04d-%02d-%02d %02d:%02d:%02d", \
-                			tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday, \
-                			tm->tm_hour, tm->tm_min, tm->tm_sec);
+		        sprintf(String,"%04d-%02d-%02d %02d:%02d:%02d", \
+               			tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday, \
+               			tm->tm_hour, tm->tm_min, tm->tm_sec);
 
 
-        			sprintf(dbstring,"delete from %s where timestamp < '",
-					fnnames[fncount]);
-        			strcat(dbstring,String);
-        			strcat(dbstring,"';");
-				do_db(config,dbstring);
-				fncount++;
-			}
+       			strcpy(dbstring,"delete from data where timestamp < '");
+       			strcat(dbstring,String);
+       			strcat(dbstring,"';");
+			do_db(config,dbstring);
 			do_db(config,"COMMIT;");
 			maintenance_count = 0;
 		}
