@@ -388,7 +388,7 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                         "string1, length) VALUES ("
                         "%i,'%s','%s','%s','%s','%s',"
                         "'%s',%lu);",
-                        entry->op_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
+                        vfs_id_write,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
                         entry->filename,entry->len);
                 break;	
         case vfs_id_read:
@@ -402,7 +402,7 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                         "string1, length) VALUES ("
                         "%i,'%s','%s','%s','%s','%s',"
                         "'%s',%lu);",
-                        entry->op_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
+                        vfs_id_read,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
                         entry->filename,entry->len);
                 break;
 	default: ;
