@@ -346,25 +346,25 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                         "vfs_id, username, usersid, share, domain, timestamp,"
                         "string1, result) VALUES ("
                         "%i,'%s','%s','%s','%s',"
-                        "'%s',%s,%s);",
+                        "'%s','%s','%s');",
                         entry->op_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
                         entry->filename,entry->result);
                 break;
         case vfs_id_open: ;
                 retstr = talloc_asprintf(ctx, "INSERT INTO data ("
                         "vfs_id, username, usersid, share, domain, timestamp,"
-                        "string1, mode, result) VALUES ("
+                        "string1, string2, result) VALUES ("
                         "%i,'%s','%s','%s','%s',"
-                        "'%s',%s,%s,%s);",
+                        "'%s','%s','%s','%s');",
                         entry->op_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
                         entry->filename,entry->mode,entry->result);
                 break;
         case vfs_id_chdir: ;
                 retstr = talloc_asprintf( ctx, "INSERT INTO data ("
                         "vfs_id, username, usersid, share, domain, timestamp,"
-                        "path, result) VALUES ("
+                        "string1, result) VALUES ("
                         "%i,'%s','%s','%s','%s',"
-                        "'%s',%s,%s);",
+                        "'%s','%s','%s');",
                         entry->op_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
                         entry->path,entry->result);
                 break;
@@ -373,7 +373,7 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                         "vfs_id, username, usersid, share, domain, timestamp,"
                         "string1, string2, result) VALUES ("
                         "%i,'%s','%s','%s','%s',"
-                        "'%s',%s,%s,%s);",
+                        "'%s','%s','%s','%s');",
                         entry->op_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
                         entry->path, entry->mode, entry->result);
                 break;
@@ -385,7 +385,7 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                 }
                 retstr = talloc_asprintf(ctx, "INSERT INTO data ("
                         "vfs_id, username, usersid, share, domain, timestamp,"
-                        "filename, length) VALUES ("
+                        "string1, length) VALUES ("
                         "%i,'%s','%s','%s','%s','%s',"
                         "'%s',%lu);",
                         entry->op_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
@@ -399,7 +399,7 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                 }
                 retstr = talloc_asprintf(ctx, "INSERT INTO data ("
                         "vfs_id, username, usersid, share, domain, timestamp,"
-                        "filename, length) VALUES ("
+                        "string1, length) VALUES ("
                         "%i,'%s','%s','%s','%s','%s',"
                         "'%s',%lu);",
                         entry->op_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
