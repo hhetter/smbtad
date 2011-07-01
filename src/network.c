@@ -109,7 +109,7 @@ void network_close_connection(int i)
 {
 	struct connection_struct *connection = connection_list_identify(i);
 	close(connection->mysocket);
-        syslog(LOG_DEBUG,"network_close_connection: closed connection number "
+        DEBUG(1) syslog(LOG_DEBUG,"network_close_connection: closed connection number "
                 "%i, socket %i",i,connection->mysocket);
 	monitor_list_delete_by_socket(connection->mysocket);
 	connection_list_remove(connection->mysocket);
@@ -127,7 +127,7 @@ void network_close_connections()
 		monitor_list_delete_by_socket(connection->mysocket);
 		connection2=connection->next;
 		connection_list_remove(connection->mysocket);
-        	syslog(LOG_DEBUG,
+        	DEBUG(1) syslog(LOG_DEBUG,
 			"network_close_connections: closed connection on "
                 	"socket %i",connection->mysocket);
 		connection=connection2;
