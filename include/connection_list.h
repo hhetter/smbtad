@@ -45,6 +45,7 @@ struct connection_struct {
 	char *body;
 	int encrypted;
 	TALLOC_CTX *CTX;
+	int stored;
 };
 
 struct connection_struct *connection_list_identify( int socket );

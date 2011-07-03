@@ -23,5 +23,6 @@
  * Create a database and setup the required tables
  */
 int database_connect( struct configuration_data *conf );
-
+void database_make_conf_table( struct configuration_data *conf );
+void database_check_db_version( struct configuration_data *conf );
 
