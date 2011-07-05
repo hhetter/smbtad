@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
 	 * update the configuration and status tables
 	 */
 	database_make_conf_table( &conf );
+
 	/* become a daemon, depending on configuration	*/
 	daemon_daemonize( &conf );
 
