@@ -48,6 +48,10 @@ void configuration_define_defaults( config_t *c )
 	c->dbuser = NULL;
 	c->dbdriver = NULL;
 	c->dbpassword = NULL;
+	c->sqlite_dbdir = NULL;
+	c->sqlite_timeout = 10000; /* wait a maximum of 10 seconds */
+				   /* to release the lock on a */
+				   /* sqlite connection */
 	c->port = 3940;
 	c->unix_socket_clients = 0;
 	/* AES encryption key from SMBTAD to clients */
@@ -168,6 +172,14 @@ int configuration_load_config_file( config_t *c)
 	cc = iniparser_getstring(Mydict,"database:password",NULL);
 	if ( cc != NULL) {
 		c->dbpassword = strdup(cc);
+	}
+	cc = iniparser_getstring(Mydict,"database:sqlite_dbdir",NULL);
+	if (cc != NULL) {
+		c->sqlite_dbdir = strdup(cc);
+	}
+	cc = iniparser_getstring(Mydict,"database:sqlite_timeout",NULL);
+	if (cc != NULL) {
+		c->sqlite_timeout = atoi(cc);
 	}
 	cc = iniparser_getstring(Mydict,"general:precision",NULL);
 	if (cc != NULL) c->precision = atoi(cc);

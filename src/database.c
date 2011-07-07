@@ -58,6 +58,21 @@ int database_connect( struct configuration_data *conf )
 	dbi_conn_set_option(conf->DBIconn, "password", conf->dbpassword);
 	dbi_conn_set_option(conf->DBIconn, "dbname", conf->dbname);
 	dbi_conn_set_option(conf->DBIconn, "encoding", "UTF-8");
+
+	/**
+	 * support the sqlite driver(s)
+	 */
+	if ( strncmp(conf->dbdriver,"sqlite3",6) == 0 ) {
+		/* options required for sqlite */
+		dbi_conn_set_option(conf->DBIconn,"sqlite3_dbdir",conf->sqlite_dbdir);
+		dbi_conn_set_option_numeric(
+				conf->DBIconn,"sqlite3_timeout",conf->sqlite_timeout);
+	}
+	if ( strcmp(conf->dbdriver,"sqlite") == 0) {
+		dbi_conn_set_option(conf->DBIconn,"sqlite_dbdir",conf->sqlite_dbdir);
+		dbi_conn_set_option_numeric(
+				conf->DBIconn,"sqlite_timeout",conf->sqlite_timeout);
+	}
 	if ( dbi_conn_connect(conf->DBIconn) < 0) {
 		printf("DBI: could not connect, please check options.\n");
 		dbi_conn_error(conf->DBIconn,&dberror);

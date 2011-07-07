@@ -85,6 +85,9 @@ typedef struct configuration_data {
 	int precision;
 	/* if use_db = 0, no db handling will be done. */
 	int use_db;
+	/* for the sqlite3 driver: */
+	char *sqlite_dbdir;
+	int sqlite_timeout;
 } config_t;
 pthread_mutex_t *configuration_get_lock();
 int configuration_check_configuration( config_t *c );
