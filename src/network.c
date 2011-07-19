@@ -96,7 +96,7 @@ int network_accept_connection( config_t *c,
 			return -1;
 		}
 	}
-	connection_list_add(sr, type);
+	connection_list_add(sr, type, remote_inet, remote_unix,c);
 	return sr;
 }
 
@@ -242,7 +242,20 @@ int network_handle_data( int i, config_t *c )
 						connection->blocklen,
 						c->key);
 			}
+			/**
+			 * upon very first data block, we check for the
+			 * stored flag, and in case of it is being unset
+			 * we store the module's data in the database
+			 */
+			if (connection->stored == 0) {
+				connection->common_data_blocks =
+					protocol_common_blocks(connection->body);
+				connection->subrelease_number =
+					protocol_get_subversion(connection->header);
 
+				database_update_module_table( connection,c );
+				connection->stored = 1;
+			}
 			connection->data_state = CONN_READ_HEADER;
 
 			if (connection->connection_function == SOCK_TYPE_DATA) {
@@ -277,13 +290,27 @@ int network_handle_data( int i, config_t *c )
 			}
 			if (connection->body_position != connection->blocklen)
 				break;
-			/* we finally have the full data block, encrypt if needed */
+			/* full data block, encrypt if needed */
 			if ( connection->encrypted == 1) {
 				connection->body =
 					protocol_decrypt(connection->header,
 						connection->body,
 						connection->blocklen,
 						c->key);
+			}
+			/**
+			 * upon very first data block, we check for the
+			 * stored flag, and in case of it is being unset
+			 * we store the module's data in the database
+			 */
+			if (connection->stored == 0) {
+				connection->common_data_blocks =
+					protocol_common_blocks(connection->body);
+				connection->subrelease_number =
+					protocol_get_subversion(connection->header);
+
+				database_update_module_table( connection,c );
+				connection->stored = 1;
 			}
 			connection->data_state = CONN_READ_HEADER;
 			if (connection->connection_function == SOCK_TYPE_DATA) {
@@ -478,8 +505,8 @@ void network_handle_connections( config_t *c )
 	else
 		c->query_socket = network_create_unix_socket("/var/tmp/stadsocket_client");
 
-	connection_list_add( c->vfs_socket, SOCK_TYPE_DATA );
-	connection_list_add( c->query_socket, SOCK_TYPE_DB_QUERY);
+	connection_list_add( c->vfs_socket, SOCK_TYPE_DATA, NULL, NULL, c );
+	connection_list_add( c->query_socket, SOCK_TYPE_DB_QUERY, NULL, NULL, c);
 	for (;;) {
 		connection_list_recreate_fs_sets(
 			&read_fd_set,

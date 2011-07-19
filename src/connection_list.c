@@ -27,7 +27,10 @@ struct connection_struct *connection_list_end = NULL;
 
 
 int connection_list_add( int socket,
-			enum conn_fn_enum conn_fn)
+			enum conn_fn_enum conn_fn,
+			struct sockaddr_in *addr,
+			struct sockaddr_un *uaddr,
+			struct configuration_data *c)
 {
 	struct connection_struct *new_entry =
 		malloc(sizeof(struct connection_struct));
@@ -40,13 +43,6 @@ int connection_list_add( int socket,
 		new_entry->connection_function = conn_fn;
 		new_entry->data_state = CONN_READ_HEADER;
 		new_entry->CTX = talloc_pool( NULL,2048);
-		/**
-		 * If a connection is accepted, we set
-		 * stored to 0. Upon the first incoming data
-		 * we set stored to 1, and store version
-		 * and ip address in the database
-		 */
-		new_entry->stored = 0;
 		return 0;
 	} else {
 		new_entry->mysocket = socket;
@@ -56,8 +52,30 @@ int connection_list_add( int socket,
 		new_entry->data_state = CONN_READ_HEADER;
 		new_entry->next = NULL;
 		new_entry->CTX = talloc_pool( NULL, 2048);
-		new_entry->stored = 0;
 	}
+	/** 
+	 * We store the clients IP adress or
+	 * unix socket address with the connection list
+	 */
+	if ( c->unix_socket == 1 && conn_fn == SOCK_TYPE_DATA && uaddr != NULL) {
+	       memcpy( &(new_entry->uaddr), uaddr, sizeof(uaddr));
+	} else if ( conn_fn == SOCK_TYPE_DATA && addr != NULL) {
+		memcpy( &(new_entry->addr), addr, sizeof(addr));
+	}
+	/**
+	 * if addr and uaddr are both NULL, this is an
+	 * internal connection that doesn't need to be
+	 * registered in the module table.
+	 */
+	if (addr == NULL && uaddr == NULL) new_entry->internal = 1;
+	else new_entry->internal = 0;
+	/**
+	 * If a connection is accepted, we set
+	 * stored to 0. Upon the first incoming data
+	 * we set stored to 1, and store version
+	 * and ip address in the database
+	 */
+	new_entry->stored = 0;
 	return 0;
 }
 

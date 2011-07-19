@@ -259,7 +259,7 @@ int database_create_tables( struct configuration_data *conf )
 		"CREATE TABLE modules ("
 		"module_subrelease_number integer,"
 		"module_common_blocks_overflow integer,"
-		"module_ip_address varchar);");
+		"module_ip_address varchar UNIQUE);");
 	if (result == NULL) {
 		syslog(LOG_DEBUG,"create tables: could not create"
 			"the modules table!");
@@ -270,4 +270,64 @@ int database_create_tables( struct configuration_data *conf )
 	return 0;
 }
 
+void database_update_module_table( struct connection_struct *c,
+		struct configuration_data *conf)
+{
+	char str[INET_ADDRSTRLEN]; // fixme: ipv4 only at the moment
+	const char *test;
+	dbi_result result;
+	result = dbi_conn_query(conf->DBIconn,
+		"BEGIN;");
+	if (result == NULL) {
+		syslog(LOG_DEBUG,"ERROR updating the module table!"
+			" (begin)");
+		exit(1);
+	}
+	dbi_result_free(result);
+	if (conf->unix_socket != 1) { /* inet based */
+		test = inet_ntop(AF_INET, &(c->addr.sin_addr), str, INET_ADDRSTRLEN);
+		if (test == NULL) {
+			syslog(LOG_DEBUG,"ERROR running inet_ntop!\n");
+			exit(1);
+		}
+	} else strcpy(str,"unix");
 
+	/**
+	 * now update the database table
+	 */
+	result = dbi_conn_query(conf->DBIconn,
+		"SAVEPOINT SP1;");
+	if (result == NULL) {
+		syslog(LOG_DEBUG,"ERROR setting SAVEPOINT!");
+		exit(1);
+	}
+	dbi_result_free(result);
+	result = dbi_conn_queryf(conf->DBIconn,
+		"INSERT INTO modules (module_ip_address,module_subrelease_number, module_common_blocks_overflow) VALUES('%s',%i,%i);",
+		str, c->subrelease_number, c->common_data_blocks - SMBTAD_COMMON_DATA_BLOCKS );
+	if (result == NULL) {
+		/**
+		 * if the first query wasn't succesful, the module does
+		 * already exist. So we rollback and insert into with
+		 * WHERE module_ip_address = $str
+		 */
+		result = dbi_conn_query(conf->DBIconn,
+			"ROLLBACK TO SP1;");
+		if (result == NULL) {
+			syslog(LOG_DEBUG,"ERROR rolling back!");
+			exit(1);
+		}
+		dbi_result_free(result);
+		result = dbi_conn_queryf(conf->DBIconn,
+			"UPDATE modules SET module_subrelease_number = %i, module_common_blocks_overflow = %i WHERE module_ip_address = '%s';",
+			str, c->subrelease_number,c->common_data_blocks - SMBTAD_COMMON_DATA_BLOCKS);
+	}
+	dbi_result_free(result);
+	result = dbi_conn_query(conf->DBIconn,
+			"COMMIT;");
+	if (result == NULL) {
+		syslog(LOG_DEBUG,"ERROR: commit!");
+		exit(1);
+	}
+	dbi_result_free(result);
+}

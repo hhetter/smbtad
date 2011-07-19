@@ -22,7 +22,7 @@
 #include <talloc.h>
 
 #define PROTOCOL_SUBRELEASE 0
-
+#define SMBTAD_COMMON_DATA_BLOCKS 6
 
 
 enum header_states {
@@ -48,3 +48,4 @@ char *protocol_get_single_data_block_quoted( TALLOC_CTX *ctx, char **go );
 char *protocol_decrypt( TALLOC_CTX *ctx, char *body, int len, const unsigned char *thekey);
 char *protocol_encrypt( TALLOC_CTX *ctx,
         const char *akey, const char *str, size_t *len);
+int protocol_common_blocks( char *data );

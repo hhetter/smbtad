@@ -236,7 +236,7 @@ int cache_prepare_entry( TALLOC_CTX *data,struct cache_entry *entry)
         /**
          * don't run a newer smbtad with an older VFS module
          */
-        if (common_blocks_num < 6) {
+        if (common_blocks_num < SMBTAD_COMMON_DATA_BLOCKS) {
                 syslog(LOG_DEBUG, "FATAL: Protocol error!"
 			" Too less common data blocks! (%i), ignoring data!",
 			common_blocks_num);
