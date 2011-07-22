@@ -284,13 +284,6 @@ void database_update_module_table( struct connection_struct *c,
 		exit(1);
 	}
 	dbi_result_free(result);
-	if (conf->unix_socket != 1) { /* inet based */
-		test = inet_ntop(AF_INET, &(c->addr.sin_addr), str, INET_ADDRSTRLEN);
-		if (test == NULL) {
-			syslog(LOG_DEBUG,"ERROR running inet_ntop!\n");
-			exit(1);
-		}
-	} else strcpy(str,"unix");
 
 	/**
 	 * now update the database table
@@ -304,7 +297,7 @@ void database_update_module_table( struct connection_struct *c,
 	dbi_result_free(result);
 	result = dbi_conn_queryf(conf->DBIconn,
 		"INSERT INTO modules (module_ip_address,module_subrelease_number, module_common_blocks_overflow) VALUES('%s',%i,%i);",
-		str, c->subrelease_number, c->common_data_blocks - SMBTAD_COMMON_DATA_BLOCKS );
+		c->addrstr, c->subrelease_number, c->common_data_blocks - SMBTAD_COMMON_DATA_BLOCKS );
 	if (result == NULL) {
 		/**
 		 * if the first query wasn't succesful, the module does

@@ -75,6 +75,8 @@ int network_accept_connection( config_t *c,
 	int type)
 {
 	socklen_t t;
+	char addrstr[100];
+	const char *test = NULL;
 	if ( c->unix_socket ==1 ) t=sizeof(*remote_unix);
 	else t=sizeof(*remote_inet);
 	int sr;
@@ -89,14 +91,21 @@ int network_accept_connection( config_t *c,
 				"ERROR: accept (unix socket) failed.");
 			return -1;
 		}
+		strcpy(addrstr,"unix");
 	} else {
 		if ( (sr = accept( sock,
 				(struct sockaddr *) remote_inet, &t)) == -1) {
 			syslog(LOG_DEBUG,"ERROR: accept (inet) failed.");
 			return -1;
 		}
+                test = inet_ntop(AF_INET, &(((struct sockaddr_in *)remote_inet)->sin_addr), addrstr, INET_ADDRSTRLEN);
+                if (test == NULL) {
+                        syslog(LOG_DEBUG,"ERROR running inet_ntop!\n");
+                        exit(1);
+                }
+
 	}
-	connection_list_add(sr, type, remote_inet, remote_unix,c);
+	connection_list_add(sr, type, addrstr,c);
 	return sr;
 }
 
@@ -505,8 +514,8 @@ void network_handle_connections( config_t *c )
 	else
 		c->query_socket = network_create_unix_socket("/var/tmp/stadsocket_client");
 
-	connection_list_add( c->vfs_socket, SOCK_TYPE_DATA, NULL, NULL, c );
-	connection_list_add( c->query_socket, SOCK_TYPE_DB_QUERY, NULL, NULL, c);
+	connection_list_add( c->vfs_socket, SOCK_TYPE_DATA, NULL, c );
+	connection_list_add( c->query_socket, SOCK_TYPE_DB_QUERY, NULL, c);
 	for (;;) {
 		connection_list_recreate_fs_sets(
 			&read_fd_set,
