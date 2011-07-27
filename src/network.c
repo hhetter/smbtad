@@ -351,10 +351,9 @@ int network_handle_data( int i, config_t *c )
  * Create a listening internet socket on a port.
  * int port		The port-number.
  */	 
-int network_create_socket( int port, struct in6_addr *serveraddr )
+int network_create_socket( int port, struct sockaddr_in6 *serveraddr )
 {
 	int sock_fd;
-	struct sockaddr_in6 my_addr;
 
 	if ( (sock_fd = socket(AF_INET6, SOCK_STREAM,0)) == -1 ) {
 		syslog( LOG_DEBUG, "ERROR: socket creation failed." );
@@ -368,13 +367,13 @@ int network_create_socket( int port, struct in6_addr *serveraddr )
 		exit(1);
 	}
 
-	bzero (serveraddr, sizeof (struct in6_addr));
-	my_addr.sin6_family = AF_INET6;
-	my_addr.sin6_port = htons( port );
+	bzero (serveraddr, sizeof ( *serveraddr ));
+	serveraddr->sin6_family = AF_INET6;
+	serveraddr->sin6_port = htons( port );
 
 	if (bind(sock_fd,
 		(struct sockaddr *) serveraddr,
-		sizeof(struct in6_addr)) == -1 ) {
+		sizeof( *serveraddr)) == -1 ) {
 		syslog( LOG_DEBUG, "ERROR: bind failed." );
 		exit(1);
 	}
