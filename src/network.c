@@ -98,7 +98,7 @@ int network_accept_connection( config_t *c,
 			syslog(LOG_DEBUG,"ERROR: accept (inet) failed.");
 			return -1;
 		}
-                test = inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)remote_inet)->sin6_addr), addrstr, INET_ADDRSTRLEN);
+                test = inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)remote_inet)->sin6_addr), addrstr, INET6_ADDRSTRLEN);
                 if (test == NULL) {
                         syslog(LOG_DEBUG,"ERROR running inet_ntop!\n");
                         exit(1);
