@@ -70,5 +70,7 @@ void help_show_help()
 	printf("				this is 0, no database handling\n");
 	printf("				will be done. Default is 1.\n");
 	printf("-T --setup			Do the initial database setup and exit.\n");
+	printf("-I --ip				Specify the ip-address smbtad should listen on.\n");
+
 
 }

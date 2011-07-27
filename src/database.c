@@ -274,7 +274,6 @@ void database_update_module_table( struct connection_struct *c,
 		struct configuration_data *conf)
 {
 	char str[INET_ADDRSTRLEN]; // fixme: ipv4 only at the moment
-	const char *test;
 	dbi_result result;
 	result = dbi_conn_query(conf->DBIconn,
 		"BEGIN;");

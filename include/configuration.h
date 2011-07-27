@@ -22,6 +22,10 @@
 #include <dbi.h>
 
 typedef struct configuration_data {
+	/* IP Address to bind to, for tracking VFS modules */
+	char *smbtad_ip;
+	/* sin6_addr struct to represent smbtad_ip */
+	struct in6_addr serveraddr;
 	/* Number of the port to use */
 	int port;
 	/* portnumber for clients who query */

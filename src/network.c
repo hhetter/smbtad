@@ -70,7 +70,7 @@ char *network_create_header( TALLOC_CTX *ctx,
  * and add it to the list of connections.
  */
 int network_accept_connection( config_t *c,
-	struct sockaddr_in *remote_inet,
+	struct sockaddr_in6 *remote_inet,
 	struct sockaddr_un *remote_unix,
 	int type)
 {
@@ -98,7 +98,7 @@ int network_accept_connection( config_t *c,
 			syslog(LOG_DEBUG,"ERROR: accept (inet) failed.");
 			return -1;
 		}
-                test = inet_ntop(AF_INET, &(((struct sockaddr_in *)remote_inet)->sin_addr), addrstr, INET_ADDRSTRLEN);
+                test = inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)remote_inet)->sin6_addr), addrstr, INET_ADDRSTRLEN);
                 if (test == NULL) {
                         syslog(LOG_DEBUG,"ERROR running inet_ntop!\n");
                         exit(1);
@@ -351,7 +351,7 @@ int network_handle_data( int i, config_t *c )
  * Create a listening internet socket on a port.
  * int port		The port-number.
  */	 
-int network_create_socket( int port )
+int network_create_socket( int port, struct in6_addr *serveraddr )
 {
 	int sock_fd;
 	struct sockaddr_in6 my_addr;
@@ -368,14 +368,13 @@ int network_create_socket( int port )
 		exit(1);
 	}
 
-	bzero (&my_addr, sizeof (my_addr));
+	bzero (serveraddr, sizeof (struct in6_addr));
 	my_addr.sin6_family = AF_INET6;
 	my_addr.sin6_port = htons( port );
-	my_addr.sin6_addr = in6addr_any;
 
 	if (bind(sock_fd,
-		(struct sockaddr *)&my_addr,
-		sizeof(my_addr)) == -1 ) {
+		(struct sockaddr *) serveraddr,
+		sizeof(struct in6_addr)) == -1 ) {
 		syslog( LOG_DEBUG, "ERROR: bind failed." );
 		exit(1);
 	}
@@ -497,7 +496,7 @@ void network_handle_connections( config_t *c )
 	int i;
 	int z=0;
 	struct sockaddr_un remote_unix;
-	struct sockaddr_in remote_inet;
+	struct sockaddr_in6 remote_inet;
 
 	fd_set read_fd_set;
 	fd_set write_fd_set;
@@ -505,12 +504,12 @@ void network_handle_connections( config_t *c )
 	FD_ZERO(&read_fd_set );
 	FD_ZERO(&write_fd_set );
 	if (c->unix_socket == 0) 
-		c->vfs_socket = network_create_socket( c->port );
+		c->vfs_socket = network_create_socket( c->port, &c->serveraddr );
 	else
 		c->vfs_socket = network_create_unix_socket("/var/tmp/stadsocket");
 
 	if (c->unix_socket_clients == 0)
-		c->query_socket = network_create_socket( c->query_port );
+		c->query_socket = network_create_socket( c->query_port, &c->serveraddr );
 	else
 		c->query_socket = network_create_unix_socket("/var/tmp/stadsocket_client");
 

@@ -21,7 +21,7 @@
 
 #include "../include/includes.h"
 #include <sys/stat.h>
-
+#include <netdb.h>
 pthread_mutex_t config_mutex;
 
 pthread_mutex_t *configuration_get_lock(void) {
@@ -43,6 +43,7 @@ config_t *configuration_get_conf() {
 void configuration_define_defaults( config_t *c )
 {
 	c->dbsetup = 0;
+	c->smbtad_ip = NULL; /* null will make it bind to localhost */
 	c->dbname = NULL;
 	c->dbhost = NULL;
 	c->dbuser = NULL;
@@ -139,6 +140,9 @@ int configuration_load_config_file( config_t *c)
 	dictionary *Mydict;
 	Mydict=iniparser_load( c->config_file);
 	char *cc;
+
+	cc = iniparser_getstring( Mydict, "network:smbtad_ip",NULL);
+	if (cc != NULL) c->smbtad_ip = strdup(cc);
 
 	cc = iniparser_getstring( Mydict, "network:query_port",NULL);
 	if (cc != NULL) c->query_port = atoi(cc);
@@ -251,6 +255,7 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 
 		static struct option long_options[] = {\
 			{ "inet-port", 1, NULL, 'i' },
+			{ "ip", 1, NULL, 'I' },
 			{ "dbdriver",1,NULL,'M'},
 			{ "dbname",1,NULL,'N'},
 			{ "dbuser",1,NULL,'S'},
@@ -273,11 +278,14 @@ int configuration_parse_cmdline( config_t *c, int argc, char *argv[] )
 		};
 
 		i = getopt_long( argc, argv,
-			"S:Tnd:i:oc:k:q:t:m:up:U:M:N:H:P:K:", long_options, &option_index );
+			"S:Tnd:i:oc:k:q:t:m:up:U:M:N:H:P:K:I:", long_options, &option_index );
 
 		if ( i == -1 ) break;
 
 		switch (i) {
+			case 'I':
+				c->smbtad_ip = strdup(optarg);
+				break;
 			case 'T':
 				c->dbsetup = 1;
 				break;
@@ -355,6 +363,23 @@ return 0;
 
 int configuration_check_configuration( config_t *c )
 {
+	struct addrinfo hints, *res=NULL;
+	if (c->smbtad_ip == NULL) {
+		// localhost
+		c->smbtad_ip = talloc_asprintf(NULL,"localhost");
+	}
+	// convert the binding address to a sin structure
+	int rc = inet_pton(AF_INET, c->smbtad_ip, &c->serveraddr);
+	if (rc == 1) {
+		hints.ai_family = AF_INET; // IPv4
+		hints.ai_flags |= AI_NUMERICHOST;
+	} else {
+		rc = inet_pton(AF_INET6, c->smbtad_ip, &c->serveraddr);
+		if (rc == 1) {
+			hints.ai_family = AF_INET6; // Ipv6
+			hints.ai_flags |= AI_NUMERICHOST;
+		}
+	}
 	// fixme: add checks
 	// create the maintenance timer
         /* initialize the maintenance timer */

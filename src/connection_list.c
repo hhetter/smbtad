@@ -31,7 +31,6 @@ int connection_list_add( int socket,
 			char *addrstr,
 			struct configuration_data *c)
 {
-	const char *test;
 	struct connection_struct *new_entry =
 		malloc(sizeof(struct connection_struct));
 
