@@ -150,7 +150,8 @@ void database_make_conf_table( struct configuration_data *conf )
 		"smbtad_precision = %i,"
 		"smbtad_daemon = %i,"
 		"smbtad_use_db = %i,"
-		"smbtad_config_file = '%s'"
+		"smbtad_config_file = '%s'",
+		"smbtad_ip = '%s'",
 		" WHERE smbtad_control_entry = 'SMBTAD';", 
 		STAD2_VERSION,
 		conf->query_port,
@@ -165,7 +166,8 @@ void database_make_conf_table( struct configuration_data *conf )
 		conf->precision,
 		conf->daemon,
 		conf->use_db,
-		conf->config_file);
+		conf->config_file,
+		conf->smbtad_ip);
 	if (result == NULL) {
 		// we're not daemonized at this point, use printf
 		printf("\nERROR: could not update the status table!\n");
@@ -224,7 +226,8 @@ int database_create_tables( struct configuration_data *conf )
 		"smbtad_precision integer,"
 		"smbtad_daemon integer,"
 		"smbtad_use_db integer,"
-		"smbtad_config_file varchar);");
+		"smbtad_config_file varchar,"
+		"smbtad_ip varchar);");
 	if (result == NULL) {
 		syslog(LOG_DEBUG,"create tables: could not create"
 			"the status table!");
