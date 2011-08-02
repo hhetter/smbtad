@@ -367,7 +367,6 @@ int network_create_socket( int port, struct sockaddr_in6 *serveraddr )
 		exit(1);
 	}
 
-	bzero (serveraddr, sizeof ( *serveraddr ));
 	serveraddr->sin6_family = AF_INET6;
 	serveraddr->sin6_port = htons( port );
 
