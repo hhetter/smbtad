@@ -363,22 +363,9 @@ return 0;
 
 int configuration_check_configuration( config_t *c )
 {
-	struct addrinfo hints, *res=NULL;
 	if (c->smbtad_ip == NULL) {
 		// localhost
 		c->smbtad_ip = talloc_asprintf(NULL,"localhost");
-	}
-	// convert the binding address to a sin structure
-	int rc = inet_pton(AF_INET, c->smbtad_ip, &c->serveraddr);
-	if (rc == 1) {
-		hints.ai_family = AF_INET; // IPv4
-		hints.ai_flags |= AI_NUMERICHOST;
-	} else {
-		rc = inet_pton(AF_INET6, c->smbtad_ip, &c->serveraddr);
-		if (rc == 1) {
-			hints.ai_family = AF_INET6; // Ipv6
-			hints.ai_flags |= AI_NUMERICHOST;
-		}
 	}
 	// fixme: add checks
 	// create the maintenance timer
