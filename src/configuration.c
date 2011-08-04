@@ -21,7 +21,6 @@
 
 #include "../include/includes.h"
 #include <sys/stat.h>
-#include <netdb.h>
 pthread_mutex_t config_mutex;
 
 pthread_mutex_t *configuration_get_lock(void) {

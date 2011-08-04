@@ -33,6 +33,7 @@
 #include <sys/select.h>
 #include <dlfcn.h>
 #include <dbi.h>
+#include <netdb.h>
 
 #include <talloc.h>
 
