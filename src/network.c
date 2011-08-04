@@ -101,7 +101,7 @@ int network_accept_connection( config_t *c,
 		}
 
 		if (remote_inet->sin6_family == AF_INET) {
-			test = inet_ntop(AF_INET, &(((struct sockaddr_in6 *)remote_inet)->sin6_addr), addrstr, INET6_ADDRSTRLEN);
+			test = inet_ntop(AF_INET, &(((struct sockaddr_in *)remote_inet)->sin_addr), addrstr, INET_ADDRSTRLEN);
 		} else {
 			test = inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)remote_inet)->sin6_addr), addrstr, INET6_ADDRSTRLEN);
 		}
