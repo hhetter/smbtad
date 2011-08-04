@@ -76,11 +76,12 @@ int network_accept_connection( config_t *c,
 {
 	socklen_t t;
 	char addrstr[100];
-	const char *test = NULL;
+ 	const char *test = NULL;
 	if ( c->unix_socket ==1 ) t=sizeof(*remote_unix);
 	else t=sizeof(*remote_inet);
 	int sr;
 	int sock = 0;
+
 	if (type == SOCK_TYPE_DATA) 	sock = c->vfs_socket;
 	if (type == SOCK_TYPE_DB_QUERY) sock = c->query_socket;
 	if ( (c->unix_socket == 1 && type == SOCK_TYPE_DATA) || 
@@ -98,14 +99,19 @@ int network_accept_connection( config_t *c,
 			syslog(LOG_DEBUG,"ERROR: accept (inet) failed.");
 			return -1;
 		}
-                test = inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)remote_inet)->sin6_addr), addrstr, INET6_ADDRSTRLEN);
-                if (test == NULL) {
-                        syslog(LOG_DEBUG,"ERROR running inet_ntop!\n");
-                        exit(1);
-                }
 
+		if (remote_inet->sin6_family == AF_INET) {
+			test = inet_ntop(AF_INET, &(((struct sockaddr_in6 *)remote_inet)->sin6_addr), addrstr, INET6_ADDRSTRLEN);
+		} else {
+			test = inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)remote_inet)->sin6_addr), addrstr, INET6_ADDRSTRLEN);
+		}
+
+		if (test == NULL) {
+			syslog(LOG_DEBUG,"ERROR running inet_ntop!\n");
+			exit(1);
+		}
 	}
-	connection_list_add(sr, type, addrstr,c);
+	connection_list_add(sr, type, addrstr ,c);
 	return sr;
 }
 
@@ -136,9 +142,9 @@ void network_close_connections()
 		monitor_list_delete_by_socket(connection->mysocket);
 		connection2=connection->next;
 		connection_list_remove(connection->mysocket);
-        	DEBUG(1) syslog(LOG_DEBUG,
+		DEBUG(1) syslog(LOG_DEBUG,
 			"network_close_connections: closed connection on "
-                	"socket %i",connection->mysocket);
+			"socket %i",connection->mysocket);
 		connection=connection2;
 	}
 
@@ -158,9 +164,9 @@ int network_handle_data( int i, config_t *c )
 {
 	int l;
 	enum header_states hstate;
-     	struct connection_struct *connection =
+	struct connection_struct *connection =
 		connection_list_identify(i);
-        if (connection->connection_function == SOCK_TYPE_DATA ||
+	if (connection->connection_function == SOCK_TYPE_DATA ||
 	    connection->connection_function == SOCK_TYPE_DB_QUERY) {
 		switch(connection->data_state) {
 		case CONN_READ_HEADER: ;
@@ -351,28 +357,34 @@ int network_handle_data( int i, config_t *c )
  * Create a listening internet socket on a port.
  * int port		The port-number.
  */	 
-int network_create_socket( int port, struct sockaddr_in6 *serveraddr )
+int network_create_socket( int port, char *smbtad_ip )
 {
+	struct addrinfo hints;
+	struct addrinfo *ai;
+	int err;
 	int sock_fd;
+        char buf[5];
 
-	if ( (sock_fd = socket(AF_INET6, SOCK_STREAM,0)) == -1 ) {
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;     /* Allow IPv4 or IPv6 */
+	hints.ai_socktype = SOCK_STREAM; /* Stream socket */
+	hints.ai_flags = AI_PASSIVE;     /* For wildcard IP address */
+	hints.ai_protocol = 0;           /* Any protocol */
+
+	sprintf(buf,"%d",port);
+
+	if (( err = getaddrinfo(smbtad_ip, (char*) &buf, &hints, &ai )) == -1 ) {
+	        syslog( LOG_DAEMON, "ERROR: getaddrinfo: %s\n", gai_strerror(err));
+	        exit(1);
+	}
+
+	if (( sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol )) == -1) {
 		syslog( LOG_DEBUG, "ERROR: socket creation failed." );
 		exit(1);
 	}
 
-	int y;
-	if ( setsockopt( sock_fd, SOL_SOCKET, SO_REUSEADDR, &y,
-		sizeof( int )) == -1 ) {
-		syslog( LOG_DEBUG, "ERROR: setsockopt failed." );
-		exit(1);
-	}
-
-	serveraddr->sin6_family = AF_INET6;
-	serveraddr->sin6_port = htons( port );
-
-	if (bind(sock_fd,
-		(struct sockaddr *) serveraddr,
-		sizeof( *serveraddr)) == -1 ) {
+	if ( bind( sock_fd, ai->ai_addr, ai->ai_addrlen) == -1) {
+		close(sock_fd);
 		syslog( LOG_DEBUG, "ERROR: bind failed." );
 		exit(1);
 	}
@@ -382,6 +394,7 @@ int network_create_socket( int port, struct sockaddr_in6 *serveraddr )
 		exit(1);
 	}
 
+	freeaddrinfo(ai);
 	return sock_fd;
 }
 
@@ -502,12 +515,12 @@ void network_handle_connections( config_t *c )
 	FD_ZERO(&read_fd_set );
 	FD_ZERO(&write_fd_set );
 	if (c->unix_socket == 0) 
-		c->vfs_socket = network_create_socket( c->port, &c->serveraddr );
+		c->vfs_socket = network_create_socket( c->port, c->smbtad_ip );
 	else
 		c->vfs_socket = network_create_unix_socket("/var/tmp/stadsocket");
 
 	if (c->unix_socket_clients == 0)
-		c->query_socket = network_create_socket( c->query_port, &c->serveraddr );
+		c->query_socket = network_create_socket( c->query_port, c->smbtad_ip );
 	else
 		c->query_socket = network_create_unix_socket("/var/tmp/stadsocket_client");
 
