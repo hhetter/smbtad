@@ -276,7 +276,6 @@ int database_create_tables( struct configuration_data *conf )
 void database_update_module_table( struct connection_struct *c,
 		struct configuration_data *conf)
 {
-	char str[INET6_ADDRSTRLEN]; // fixme: ipv4 only at the moment
 	dbi_result result;
 	result = dbi_conn_query(conf->DBIconn,
 		"BEGIN;");
@@ -304,7 +303,7 @@ void database_update_module_table( struct connection_struct *c,
 		/**
 		 * if the first query wasn't succesful, the module does
 		 * already exist. So we rollback and insert into with
-		 * WHERE module_ip_address = $str
+		 * WHERE module_ip_address = c->addrstr
 		 */
 		result = dbi_conn_query(conf->DBIconn,
 			"ROLLBACK TO SP1;");
@@ -315,7 +314,7 @@ void database_update_module_table( struct connection_struct *c,
 		dbi_result_free(result);
 		result = dbi_conn_queryf(conf->DBIconn,
 			"UPDATE modules SET module_subrelease_number = %i, module_common_blocks_overflow = %i WHERE module_ip_address = '%s';",
-			str, c->subrelease_number,c->common_data_blocks - SMBTAD_COMMON_DATA_BLOCKS);
+			c->subrelease_number,c->common_data_blocks - SMBTAD_COMMON_DATA_BLOCKS, c->addrstr);
 	}
 	dbi_result_free(result);
 	result = dbi_conn_query(conf->DBIconn,
