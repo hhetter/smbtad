@@ -262,7 +262,7 @@ int network_handle_data( int i, config_t *c )
 			 * stored flag, and in case of it is being unset
 			 * we store the module's data in the database
 			 */
-			if (connection->stored == 0) {
+			if (connection->stored == 0 && connection->connection_function == SOCK_TYPE_DATA) {
 				connection->common_data_blocks =
 					protocol_common_blocks(connection->body);
 				connection->subrelease_number =
