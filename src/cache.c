@@ -478,6 +478,12 @@ void do_db( struct configuration_data *config, char *dbstring)
 	int try;
 	const char *error;
 	dbi_result result;
+	/**
+	 * a NULL dbstring? May happen when a R/W VFS function
+	 * hat 0 bytes to transfer. This data is not relevant
+	 * for statistics.
+	 */
+	if (dbstring == NULL) return;
 	/** 
 	 * Check if the connection is alive. We try ten times
 	 * to restore the connection if not
