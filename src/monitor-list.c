@@ -107,6 +107,8 @@ int monitor_list_delete_by_socket( int sock ) {
 			if (entry==monlist_start)
 				monlist_start = entry->next;
 			free(entry);
+			pthread_mutex_unlock(&monlock);
+			return 0;
 		}
 		before = entry;
 		entry = entry->next;
