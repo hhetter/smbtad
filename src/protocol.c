@@ -31,8 +31,6 @@
  *						different sub-release of
  *						the protocol
  *
- * the function exits the process if it doesn't see V2 at the beginning
- * of the header
  */
 enum header_states protocol_check_header( char *header )
 {
