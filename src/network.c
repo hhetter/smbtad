@@ -179,6 +179,7 @@ int network_handle_data( int i, config_t *c )
 				&connection->header_position);
 			if ( l == 0) {
 				network_close_connection(i);
+				return -1;
 				break;
 			}
 
@@ -190,8 +191,9 @@ int network_handle_data( int i, config_t *c )
 			hstate = 
 				protocol_check_header(connection->header);
 			if (hstate == HEADER_CHECK_FAIL ||
-				hstate == HEADER_CHECK_NULL)
+				hstate == HEADER_CHECK_NULL) {
 					network_close_connection(i);
+					return -1; }
 			connection->data_state = CONN_READ_DATA;
 			connection->blocklen =
 				protocol_get_data_block_length(connection->header);
@@ -211,6 +213,7 @@ int network_handle_data( int i, config_t *c )
 				&connection->header_position);
 			if ( l == 0 ) {
 				network_close_connection(i);
+				return -1;
 				break;
 			}
 			if (connection->header_position != 26) break;
@@ -218,8 +221,9 @@ int network_handle_data( int i, config_t *c )
 			hstate =
 				protocol_check_header(connection->header);
 			if (hstate == HEADER_CHECK_FAIL ||
-				hstate == HEADER_CHECK_NULL)
+				hstate == HEADER_CHECK_NULL) {
 					network_close_connection(i);
+					return -1; }
                         connection->data_state = CONN_READ_DATA;
                         connection->blocklen =
                                 protocol_get_data_block_length(connection->header);
@@ -243,6 +247,7 @@ int network_handle_data( int i, config_t *c )
 					&connection->body_position);
 			if ( l == 0 ) {
 				network_close_connection(i);
+				return -1;
 				break;
 			}
 			if (connection->body_position != connection->blocklen) {
@@ -301,6 +306,7 @@ int network_handle_data( int i, config_t *c )
 				&connection->body_position);
 			if ( l == 0) {
 				network_close_connection(i);
+				return -1;
 				break;
 			}
 			if (connection->body_position != connection->blocklen)
@@ -567,8 +573,8 @@ void network_handle_connections( config_t *c )
 						break;
 					}
 				} else {
-					network_handle_data(i,c);
-					monitor_list_process(i);
+					int test=network_handle_data(i,c);
+					if (test != -1) monitor_list_process(i);
 				}
 			}
 		}
