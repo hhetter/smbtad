@@ -58,6 +58,21 @@ int database_connect( struct configuration_data *conf )
 	dbi_conn_set_option(conf->DBIconn, "password", conf->dbpassword);
 	dbi_conn_set_option(conf->DBIconn, "dbname", conf->dbname);
 	dbi_conn_set_option(conf->DBIconn, "encoding", "UTF-8");
+
+	/**
+	 * support the sqlite driver(s)
+	 */
+	if ( strncmp(conf->dbdriver,"sqlite3",6) == 0 ) {
+		/* options required for sqlite */
+		dbi_conn_set_option(conf->DBIconn,"sqlite3_dbdir",conf->sqlite_dbdir);
+		dbi_conn_set_option_numeric(
+				conf->DBIconn,"sqlite3_timeout",conf->sqlite_timeout);
+	}
+	if ( strcmp(conf->dbdriver,"sqlite") == 0) {
+		dbi_conn_set_option(conf->DBIconn,"sqlite_dbdir",conf->sqlite_dbdir);
+		dbi_conn_set_option_numeric(
+				conf->DBIconn,"sqlite_timeout",conf->sqlite_timeout);
+	}
 	if ( dbi_conn_connect(conf->DBIconn) < 0) {
 		printf("DBI: could not connect, please check options.\n");
 		dbi_conn_error(conf->DBIconn,&dberror);
@@ -76,107 +91,181 @@ int database_connect( struct configuration_data *conf )
 	return 0;
 }
 
+
+/**
+ * check the database version
+ */
+void database_check_db_version( struct configuration_data *conf )
+{
+	dbi_result result;
+	result = dbi_conn_query( conf->DBIconn,
+		"SELECT smbtad_database_version FROM status "
+		"WHERE smbtad_control_entry = 'SMBTAD';");
+	if (result == NULL) {
+		printf("ERROR: Error getting the database"
+			" version.\n");
+		printf("Probably there is no database existing yet,\n");
+		printf("or your existing database is not compatible\n");
+		printf("with this version of smbtad. Please either\n");
+		printf("upgrade your database by using 'smbtaquery -C'\n");
+		printf("or create a new database with 'smbta -T'.\n");
+		printf("\n");
+		printf("Exiting.\n");
+		exit(1);
+	} else {
+		dbi_result_first_row(result);
+		if (strcmp(
+			dbi_result_get_string_idx(result,1),
+			STAD2_VERSION) != 0) {
+			printf("Your existing database is not compatible\n");
+			printf("with this version of smbtad. Please either\n");
+			printf("upgrade your database by using 'smbtaquery -C'\n");
+			printf("or create a new database with 'smbta -T'.\n");
+			printf("\n");
+			printf("Exiting.\n");
+			exit(1);
+		}
+	}
+	dbi_result_free(result);
+}
+
+/**
+ * fill the status table with data
+ */
+void database_make_conf_table( struct configuration_data *conf )
+{
+	dbi_result result;
+	result = dbi_conn_queryf( conf->DBIconn,
+		"UPDATE status SET "
+		"smbtad_version = '%s',"
+		"smbtad_client_port = %i,"
+		"smbtad_unix_socket_clients = %i,"
+		"smbtad_dbname = '%s',"
+		"smbtad_dbhost = '%s',"
+		"smbtad_dbuser = '%s',"
+		"smbtad_dbdriver = '%s',"
+		"smbtad_maintenance_timer_str = '%s',"
+		"smbtad_maintenance_run_time = %i,"
+		"smbtad_debug_level = %i,"
+		"smbtad_precision = %i,"
+		"smbtad_daemon = %i,"
+		"smbtad_use_db = %i,"
+		"smbtad_config_file = '%s',"
+		"smbtad_ip = '%s'"
+		" WHERE smbtad_control_entry = 'SMBTAD';",
+		STAD2_VERSION,
+		conf->query_port,
+		conf->unix_socket_clients,
+		conf->dbname,
+		conf->dbhost,
+		conf->dbuser,
+		conf->dbdriver,
+		conf->maintenance_timer_str,
+		conf->maint_run_time,
+		conf->dbg,
+		conf->precision,
+		conf->daemon,
+		conf->use_db,
+		conf->config_file,
+		conf->smbtad_ip);
+	if (result == NULL) {
+		// we're not daemonized at this point, use printf
+		printf("\nERROR: could not update the status table!\n");
+		printf("Exiting.\n");
+		exit(1);
+	}
+}	
+
 /**
  * Create the initial tables of the database, to be called at first
  * startup.
  * return 0 on success, 1 if fail
+ *
+ * ATTENTION: This function is called on the very first setup of
+ * SMBTA. When making changes here, please take care for the
+ * smbtaquery -C function in smbtatools, which has to do the
+ * same changes on update
  */
 int database_create_tables( struct configuration_data *conf )
 {
 	dbi_result result;
 
-	/* write/pwrite */
+	/**
+	 *  we formerly created single tables for every VFS function,
+	 *  let this be in one table now
+	 */
+
 	result = dbi_conn_query( conf->DBIconn,
-		"CREATE TABLE write ("
+		"CREATE TABLE data ("
 		 CREATE_COMMONS
-		"filename varchar, length integer )");
+		"string1 varchar, length integer, result bigint, string2 varchar)");
 	if (result == NULL) {
 		syslog(LOG_DEBUG,"create tables : could not create"
-			"the write/pwrite table!");
+			"the data table!");
 		return 1;
 	}
 	dbi_result_free(result);
-
-	/* read/pread */
+	/**
+	 * create a table with version information
+	 * and configuration status
+	 */
 	result = dbi_conn_query( conf->DBIconn,
-		"CREATE TABLE read ("
-		 CREATE_COMMONS
-		"filename varchar, length integer )");
-	if (result == NULL) {
-		syslog(LOG_DEBUG,"create tables : could not create"
-			"the read/pread table!");
-		return 1;
-	}
-	dbi_result_free(result);
-
-	/* mkdir */
-	result = dbi_conn_query( conf->DBIconn,
-		"CREATE TABLE mkdir ("
-		 CREATE_COMMONS
-		"path varchar, mode varchar, result bigint )");
-	if (result == NULL) {
-		syslog(LOG_DEBUG,"create tables: could not create"
-			"the mkdir table!");
-		return 1;
-	}
-	dbi_result_free(result);
-
-	/* rmdir */
-	result = dbi_conn_query( conf->DBIconn,
-		"CREATE TABLE rmdir ("
-		 CREATE_COMMONS
-		"path varchar, mode varchar, result bigint )");
+		"CREATE TABLE status ("
+		"smbtad_control_entry varchar,"
+		"smbtad_version varchar,"
+		"smbtad_database_version varchar,"
+		"smbtad_client_port integer,"
+		"smbtad_unix_socket_clients integer,"
+		"smbtad_dbname varchar,"
+		"smbtad_dbhost varchar,"
+		"smbtad_dbuser varchar,"
+		"smbtad_dbdriver varchar,"
+		"smbtad_maintenance_timer_str varchar,"
+		"smbtad_maintenance_run_time integer,"
+		"smbtad_debug_level integer,"
+		"smbtad_precision integer,"
+		"smbtad_daemon integer,"
+		"smbtad_use_db integer,"
+		"smbtad_config_file varchar,"
+		"smbtad_ip varchar);");
 	if (result == NULL) {
 		syslog(LOG_DEBUG,"create tables: could not create"
-			"the rmdir table!");
+			"the status table!");
 		return 1;
 	}
 	dbi_result_free(result);
-
-	/* rename */
+	/**
+	 * fill in initial data
+	 */
 	result = dbi_conn_query( conf->DBIconn,
-		"CREATE TABLE rename ("
-		CREATE_COMMONS
-		"source varchar, destination varchar, result bigint)");
+		"INSERT INTO status ("
+		"smbtad_control_entry,"
+		"smbtad_version,"
+		"smbtad_database_version)"
+		"VALUES ("
+		"'SMBTAD','"
+		STAD2_VERSION
+		"','"
+		STAD2_VERSION
+		"');");
 	if (result == NULL) {
 		syslog(LOG_DEBUG,"create tables: could not create"
-			"the rename table!");
+			"initial values for status!");
 		return 1;
 	}
 	dbi_result_free(result);
-
-	/* chdir */
+	/**
+	 * create a table for version information on
+	 * modules
+	 */
 	result = dbi_conn_query( conf->DBIconn,
-		"CREATE TABLE chdir ("
-		 CREATE_COMMONS
-		"path varchar, result bigint)");
+		"CREATE TABLE modules ("
+		"module_subrelease_number integer,"
+		"module_common_blocks_overflow integer,"
+		"module_ip_address varchar UNIQUE);");
 	if (result == NULL) {
 		syslog(LOG_DEBUG,"create tables: could not create"
-			"the chdir table!");
-		return 1;
-	}
-	dbi_result_free(result);
-
-	/* open */
-	result = dbi_conn_query( conf->DBIconn,
-		"CREATE TABLE open ("
-		 CREATE_COMMONS
-		"filename varchar, mode varchar, result integer)");
-	if (result == NULL) {
-		syslog(LOG_DEBUG,"create tables: could not create"
-			"the open table!");
-		return 1;
-	}
-	dbi_result_free(result);
-
-	/* close */
-	result = dbi_conn_query( conf->DBIconn,
-		"CREATE TABLE close ("
-		CREATE_COMMONS
-		"filename varchar, result integer)");
-	if (result == NULL) {
-		syslog(LOG_DEBUG,"create tables: could not create"
-			"the close table!");
+			"the modules table!");
 		return 1;
 	}
 	dbi_result_free(result);
@@ -184,4 +273,55 @@ int database_create_tables( struct configuration_data *conf )
 	return 0;
 }
 
+void database_update_module_table( struct connection_struct *c,
+		struct configuration_data *conf)
+{
+	dbi_result result;
+	result = dbi_conn_query(conf->DBIconn,
+		"BEGIN;");
+	if (result == NULL) {
+		syslog(LOG_DEBUG,"ERROR updating the module table!"
+			" (begin)");
+		exit(1);
+	}
+	dbi_result_free(result);
 
+	/**
+	 * now update the database table
+	 */
+	result = dbi_conn_query(conf->DBIconn,
+		"SAVEPOINT SP1;");
+	if (result == NULL) {
+		syslog(LOG_DEBUG,"ERROR setting SAVEPOINT!");
+		exit(1);
+	}
+	dbi_result_free(result);
+	result = dbi_conn_queryf(conf->DBIconn,
+		"INSERT INTO modules (module_ip_address,module_subrelease_number, module_common_blocks_overflow) VALUES('%s',%i,%i);",
+		c->addrstr, c->subrelease_number, c->common_data_blocks - SMBTAD_COMMON_DATA_BLOCKS );
+	if (result == NULL) {
+		/**
+		 * if the first query wasn't succesful, the module does
+		 * already exist. So we rollback and insert into with
+		 * WHERE module_ip_address = c->addrstr
+		 */
+		result = dbi_conn_query(conf->DBIconn,
+			"ROLLBACK TO SP1;");
+		if (result == NULL) {
+			syslog(LOG_DEBUG,"ERROR rolling back!");
+			exit(1);
+		}
+		dbi_result_free(result);
+		result = dbi_conn_queryf(conf->DBIconn,
+			"UPDATE modules SET module_subrelease_number = %i, module_common_blocks_overflow = %i WHERE module_ip_address = '%s';",
+			c->subrelease_number,c->common_data_blocks - SMBTAD_COMMON_DATA_BLOCKS, c->addrstr);
+	}
+	dbi_result_free(result);
+	result = dbi_conn_query(conf->DBIconn,
+			"COMMIT;");
+	if (result == NULL) {
+		syslog(LOG_DEBUG,"ERROR: commit!");
+		exit(1);
+	}
+	dbi_result_free(result);
+}

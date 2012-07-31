@@ -70,15 +70,18 @@ char *network_create_header( TALLOC_CTX *ctx,
  * and add it to the list of connections.
  */
 int network_accept_connection( config_t *c,
-	struct sockaddr_in *remote_inet,
+	struct sockaddr_in6 *remote_inet,
 	struct sockaddr_un *remote_unix,
 	int type)
 {
 	socklen_t t;
+	char addrstr[100];
+ 	const char *test = NULL;
 	if ( c->unix_socket ==1 ) t=sizeof(*remote_unix);
 	else t=sizeof(*remote_inet);
 	int sr;
 	int sock = 0;
+
 	if (type == SOCK_TYPE_DATA) 	sock = c->vfs_socket;
 	if (type == SOCK_TYPE_DB_QUERY) sock = c->query_socket;
 	if ( (c->unix_socket == 1 && type == SOCK_TYPE_DATA) || 
@@ -89,14 +92,26 @@ int network_accept_connection( config_t *c,
 				"ERROR: accept (unix socket) failed.");
 			return -1;
 		}
+		strcpy(addrstr,"unix");
 	} else {
 		if ( (sr = accept( sock,
 				(struct sockaddr *) remote_inet, &t)) == -1) {
 			syslog(LOG_DEBUG,"ERROR: accept (inet) failed.");
 			return -1;
 		}
+
+		if (remote_inet->sin6_family == AF_INET) {
+			test = inet_ntop(AF_INET, &(((struct sockaddr_in *)remote_inet)->sin_addr), addrstr, INET_ADDRSTRLEN);
+		} else {
+			test = inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)remote_inet)->sin6_addr), addrstr, INET6_ADDRSTRLEN);
+		}
+
+		if (test == NULL) {
+			syslog(LOG_DEBUG,"ERROR running inet_ntop!\n");
+			exit(1);
+		}
 	}
-	connection_list_add(sr, type);
+	connection_list_add(sr, type, addrstr ,c);
 	return sr;
 }
 
@@ -109,7 +124,7 @@ void network_close_connection(int i)
 {
 	struct connection_struct *connection = connection_list_identify(i);
 	close(connection->mysocket);
-        syslog(LOG_DEBUG,"network_close_connection: closed connection number "
+        DEBUG(1) syslog(LOG_DEBUG,"network_close_connection: closed connection number "
                 "%i, socket %i",i,connection->mysocket);
 	monitor_list_delete_by_socket(connection->mysocket);
 	connection_list_remove(connection->mysocket);
@@ -127,9 +142,9 @@ void network_close_connections()
 		monitor_list_delete_by_socket(connection->mysocket);
 		connection2=connection->next;
 		connection_list_remove(connection->mysocket);
-        	syslog(LOG_DEBUG,
+		DEBUG(1) syslog(LOG_DEBUG,
 			"network_close_connections: closed connection on "
-                	"socket %i",connection->mysocket);
+			"socket %i",connection->mysocket);
 		connection=connection2;
 	}
 
@@ -149,9 +164,9 @@ int network_handle_data( int i, config_t *c )
 {
 	int l;
 	enum header_states hstate;
-     	struct connection_struct *connection =
+	struct connection_struct *connection =
 		connection_list_identify(i);
-        if (connection->connection_function == SOCK_TYPE_DATA ||
+	if (connection->connection_function == SOCK_TYPE_DATA ||
 	    connection->connection_function == SOCK_TYPE_DB_QUERY) {
 		switch(connection->data_state) {
 		case CONN_READ_HEADER: ;
@@ -164,6 +179,7 @@ int network_handle_data( int i, config_t *c )
 				&connection->header_position);
 			if ( l == 0) {
 				network_close_connection(i);
+				return -1;
 				break;
 			}
 
@@ -175,8 +191,9 @@ int network_handle_data( int i, config_t *c )
 			hstate = 
 				protocol_check_header(connection->header);
 			if (hstate == HEADER_CHECK_FAIL ||
-				hstate == HEADER_CHECK_NULL)
+				hstate == HEADER_CHECK_NULL) {
 					network_close_connection(i);
+					return -1; }
 			connection->data_state = CONN_READ_DATA;
 			connection->blocklen =
 				protocol_get_data_block_length(connection->header);
@@ -196,6 +213,7 @@ int network_handle_data( int i, config_t *c )
 				&connection->header_position);
 			if ( l == 0 ) {
 				network_close_connection(i);
+				return -1;
 				break;
 			}
 			if (connection->header_position != 26) break;
@@ -203,8 +221,9 @@ int network_handle_data( int i, config_t *c )
 			hstate =
 				protocol_check_header(connection->header);
 			if (hstate == HEADER_CHECK_FAIL ||
-				hstate == HEADER_CHECK_NULL)
+				hstate == HEADER_CHECK_NULL) {
 					network_close_connection(i);
+					return -1; }
                         connection->data_state = CONN_READ_DATA;
                         connection->blocklen =
                                 protocol_get_data_block_length(connection->header);
@@ -228,6 +247,7 @@ int network_handle_data( int i, config_t *c )
 					&connection->body_position);
 			if ( l == 0 ) {
 				network_close_connection(i);
+				return -1;
 				break;
 			}
 			if (connection->body_position != connection->blocklen) {
@@ -242,7 +262,20 @@ int network_handle_data( int i, config_t *c )
 						connection->blocklen,
 						c->key);
 			}
+			/**
+			 * upon very first data block, we check for the
+			 * stored flag, and in case of it is being unset
+			 * we store the module's data in the database
+			 */
+			if (connection->stored == 0 && connection->connection_function == SOCK_TYPE_DATA) {
+				connection->common_data_blocks =
+					protocol_common_blocks(connection->body);
+				connection->subrelease_number =
+					protocol_get_subversion(connection->header);
 
+				database_update_module_table( connection,c );
+				connection->stored = 1;
+			}
 			connection->data_state = CONN_READ_HEADER;
 
 			if (connection->connection_function == SOCK_TYPE_DATA) {
@@ -273,17 +306,32 @@ int network_handle_data( int i, config_t *c )
 				&connection->body_position);
 			if ( l == 0) {
 				network_close_connection(i);
+				return -1;
 				break;
 			}
 			if (connection->body_position != connection->blocklen)
 				break;
-			/* we finally have the full data block, encrypt if needed */
+			/* full data block, encrypt if needed */
 			if ( connection->encrypted == 1) {
 				connection->body =
 					protocol_decrypt(connection->header,
 						connection->body,
 						connection->blocklen,
 						c->key);
+			}
+			/**
+			 * upon very first data block, we check for the
+			 * stored flag, and in case of it is being unset
+			 * we store the module's data in the database
+			 */
+			if (connection->stored == 0) {
+				connection->common_data_blocks =
+					protocol_common_blocks(connection->body);
+				connection->subrelease_number =
+					protocol_get_subversion(connection->header);
+
+				database_update_module_table( connection,c );
+				connection->stored = 1;
 			}
 			connection->data_state = CONN_READ_HEADER;
 			if (connection->connection_function == SOCK_TYPE_DATA) {
@@ -315,31 +363,34 @@ int network_handle_data( int i, config_t *c )
  * Create a listening internet socket on a port.
  * int port		The port-number.
  */	 
-int network_create_socket( int port )
+int network_create_socket( int port, char *smbtad_ip )
 {
+	struct addrinfo hints;
+	struct addrinfo *ai;
+	int err;
 	int sock_fd;
-	struct sockaddr_in6 my_addr;
+        char buf[5];
 
-	if ( (sock_fd = socket(AF_INET6, SOCK_STREAM,0)) == -1 ) {
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;     /* Allow IPv4 or IPv6 */
+	hints.ai_socktype = SOCK_STREAM; /* Stream socket */
+	hints.ai_flags = AI_PASSIVE;     /* For wildcard IP address */
+	hints.ai_protocol = 0;           /* Any protocol */
+
+	sprintf(buf,"%d",port);
+
+	if (( err = getaddrinfo(smbtad_ip, (char*) &buf, &hints, &ai )) == -1 ) {
+	        syslog( LOG_DAEMON, "ERROR: getaddrinfo: %s\n", gai_strerror(err));
+	        exit(1);
+	}
+
+	if (( sock_fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol )) == -1) {
 		syslog( LOG_DEBUG, "ERROR: socket creation failed." );
 		exit(1);
 	}
 
-	int y;
-	if ( setsockopt( sock_fd, SOL_SOCKET, SO_REUSEADDR, &y,
-		sizeof( int )) == -1 ) {
-		syslog( LOG_DEBUG, "ERROR: setsockopt failed." );
-		exit(1);
-	}
-
-	bzero (&my_addr, sizeof (my_addr));
-	my_addr.sin6_family = AF_INET6;
-	my_addr.sin6_port = htons( port );
-	my_addr.sin6_addr = in6addr_any;
-
-	if (bind(sock_fd,
-		(struct sockaddr *)&my_addr,
-		sizeof(my_addr)) == -1 ) {
+	if ( bind( sock_fd, ai->ai_addr, ai->ai_addrlen) == -1) {
+		close(sock_fd);
 		syslog( LOG_DEBUG, "ERROR: bind failed." );
 		exit(1);
 	}
@@ -349,6 +400,7 @@ int network_create_socket( int port )
 		exit(1);
 	}
 
+	freeaddrinfo(ai);
 	return sock_fd;
 }
 
@@ -461,7 +513,7 @@ void network_handle_connections( config_t *c )
 	int i;
 	int z=0;
 	struct sockaddr_un remote_unix;
-	struct sockaddr_in remote_inet;
+	struct sockaddr_in6 remote_inet;
 
 	fd_set read_fd_set;
 	fd_set write_fd_set;
@@ -469,17 +521,17 @@ void network_handle_connections( config_t *c )
 	FD_ZERO(&read_fd_set );
 	FD_ZERO(&write_fd_set );
 	if (c->unix_socket == 0) 
-		c->vfs_socket = network_create_socket( c->port );
+		c->vfs_socket = network_create_socket( c->port, c->smbtad_ip );
 	else
 		c->vfs_socket = network_create_unix_socket("/var/tmp/stadsocket");
 
 	if (c->unix_socket_clients == 0)
-		c->query_socket = network_create_socket( c->query_port );
+		c->query_socket = network_create_socket( c->query_port, c->smbtad_ip );
 	else
 		c->query_socket = network_create_unix_socket("/var/tmp/stadsocket_client");
 
-	connection_list_add( c->vfs_socket, SOCK_TYPE_DATA );
-	connection_list_add( c->query_socket, SOCK_TYPE_DB_QUERY);
+	connection_list_add( c->vfs_socket, SOCK_TYPE_DATA, NULL, c );
+	connection_list_add( c->query_socket, SOCK_TYPE_DB_QUERY, NULL, c);
 	for (;;) {
 		connection_list_recreate_fs_sets(
 			&read_fd_set,
@@ -521,8 +573,8 @@ void network_handle_connections( config_t *c )
 						break;
 					}
 				} else {
-					network_handle_data(i,c);
-					monitor_list_process(i);
+					int test=network_handle_data(i,c);
+					if (test != -1) monitor_list_process(i);
 				}
 			}
 		}

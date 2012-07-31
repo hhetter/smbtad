@@ -106,7 +106,8 @@ enum vfs_id {
         vfs_id_rename,
         vfs_id_chdir,
 	vfs_id_open,
-	vfs_id_close
+	vfs_id_close,
+	vfs_id_max
 };
 
 

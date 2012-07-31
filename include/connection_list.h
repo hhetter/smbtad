@@ -45,10 +45,20 @@ struct connection_struct {
 	char *body;
 	int encrypted;
 	TALLOC_CTX *CTX;
+	int stored;
+	struct sockaddr_in addr;
+	struct sockaddr_un uaddr;
+	int internal;
+	int common_data_blocks;
+	int subrelease_number;
+	char addrstr[80];
 };
 
 struct connection_struct *connection_list_identify( int socket );
-int connection_list_add( int socket, enum conn_fn_enum conn_fn );
+int connection_list_add( int socket,
+		enum conn_fn_enum conn_fn,
+		char *addstr,
+		struct configuration_data *c);
 int connection_list_remove( int socket );
 int connection_list_max();
 void connection_list_recreate_fs_sets(  fd_set *active_read_fd_set,

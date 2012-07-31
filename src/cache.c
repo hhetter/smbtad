@@ -236,7 +236,7 @@ int cache_prepare_entry( TALLOC_CTX *data,struct cache_entry *entry)
         /**
          * don't run a newer smbtad with an older VFS module
          */
-        if (common_blocks_num < 6) {
+        if (common_blocks_num < SMBTAD_COMMON_DATA_BLOCKS) {
                 syslog(LOG_DEBUG, "FATAL: Protocol error!"
 			" Too less common data blocks! (%i), ignoring data!",
 			common_blocks_num);
@@ -247,37 +247,9 @@ int cache_prepare_entry( TALLOC_CTX *data,struct cache_entry *entry)
         /* vfs_operation_identifier */
 	str = protocol_get_single_data_block( data, &go_through);
 	entry->op_id = atoi(str);
-	switch(entry->op_id) {
-	case vfs_id_read:
-	case vfs_id_pread:
-		entry->vfs_id = talloc_strdup( data, "read");
-		break;
-	case vfs_id_write:
-	case vfs_id_pwrite:
-		entry->vfs_id = talloc_strdup(data, "write");
-		break;
-	case vfs_id_mkdir:
-		entry->vfs_id = talloc_strdup(data, "mkdir");
-		break;
-	case vfs_id_chdir:
-		entry->vfs_id = talloc_strdup(data, "chdir");
-		break;
-	case vfs_id_rename:
-		entry->vfs_id = talloc_strdup(data, "rename");
-		break;
-	case vfs_id_rmdir:
-		entry->vfs_id = talloc_strdup(data, "rmdir");
-		break;
-	case vfs_id_open:
-		entry->vfs_id = talloc_strdup(data, "open");
-		break;
-	case vfs_id_close:
-		entry->vfs_id = talloc_strdup(data, "close");
-		break;
-	}
 
 	/* in case we received a vfs_id that we don't support, return NULL */
-	if (entry->vfs_id == NULL) {
+	if (entry->op_id < 0 || entry->op_id >  vfs_id_max -1 ) {
 		syslog(LOG_DEBUG,"Unsupported VFS function!");
 		TALLOC_FREE(data);
 		return -2;
@@ -353,57 +325,109 @@ int cache_prepare_entry( TALLOC_CTX *data,struct cache_entry *entry)
 }
 
 
-char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
+char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry,
+		struct configuration_data *conf)
 {
 	/*
 	 * create a database string from the given metadata in a cache entry
 	 */
 	char *retstr=NULL;
+
+	/**
+	 * qoute required strings, that need potientially be qouted
+	 * .. allocate other quote in the specific functions
+	 * We are bound to not use talloc here.
+	 */
+	char *username;
+	char *share;
+	char *domain;
+	char *timestamp;
+	char *usersid;
+	/* fn depending strings */
+	char *source, *destination, *result, *filename, *mode;
+
+	dbi_conn_quote_string_copy( conf->DBIconn, entry->username, &username);
+	dbi_conn_quote_string_copy( conf->DBIconn, entry->share, &share);
+	dbi_conn_quote_string_copy( conf->DBIconn, entry->domain, &domain);
+	dbi_conn_quote_string_copy( conf->DBIconn, entry->timestamp, &timestamp);
+	dbi_conn_quote_string_copy( conf->DBIconn, entry->usersid, &usersid);
 	switch( entry->op_id ) {
         case vfs_id_rename: ;
-                retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
-                        "username, usersid, share, domain, timestamp,"
-                        "source, destination, result) VALUES ("
-                        "'%s','%s','%s','%s','%s',"
-                        "'%s','%s',%s);",
-                        entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
-                        entry->source,entry->destination,entry->result);
+		dbi_conn_quote_string_copy( conf->DBIconn, entry->source,
+				&source);
+		dbi_conn_quote_string_copy( conf->DBIconn, entry->destination,
+				&destination);
+		dbi_conn_quote_string_copy( conf->DBIconn, entry->result,
+				&result);
+
+                retstr = talloc_asprintf(ctx, "INSERT INTO data ("
+                        "vfs_id, username, usersid, share, domain, timestamp,"
+                        "string1, string2, result) VALUES ("
+                        "%i, %s,%s,%s,%s,"
+                        "%s,%s,%s,%s);",
+                        entry->op_id,username,usersid,share,domain,timestamp,
+                        source,destination,result);
+		free(source);
+		free(destination);
+		free(result);
 		break;
         case vfs_id_close: ;
-                retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
-                        "username, usersid, share, domain, timestamp,"
-                        "filename, result) VALUES ("
-                        "'%s','%s','%s','%s','%s',"
-                        "'%s',%s);",
-                        entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
-                        entry->filename,entry->result);
+		dbi_conn_quote_string_copy( conf->DBIconn, entry->filename, &filename);
+		dbi_conn_quote_string_copy( conf->DBIconn, entry->result, &result);
+
+                retstr = talloc_asprintf(ctx, "INSERT INTO data ("
+                        "vfs_id, username, usersid, share, domain, timestamp,"
+                        "string1, result) VALUES ("
+                        "%i,%s,%s,%s,%s,"
+                        "%s,%s,%s);",
+                        entry->op_id,username,usersid,share,domain,timestamp,
+                        filename,result);
+		free(result);
+		free(filename);
                 break;
         case vfs_id_open: ;
-                retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
-                        "username, usersid, share, domain, timestamp,"
-                        "filename, mode, result) VALUES ("
-                        "'%s','%s','%s','%s','%s',"
-                        "'%s',%s,%s);",
-                        entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
-                        entry->filename,entry->mode,entry->result);
+		dbi_conn_quote_string_copy( conf->DBIconn, entry->filename, &filename);
+		dbi_conn_quote_string_copy( conf->DBIconn, entry->mode, &mode);
+		dbi_conn_quote_string_copy( conf->DBIconn, entry->result, &result);
+                retstr = talloc_asprintf(ctx, "INSERT INTO data ("
+                        "vfs_id, username, usersid, share, domain, timestamp,"
+                        "string1, string2, result) VALUES ("
+                        "%i,%s,%s,%s,%s,"
+                        "%s,%s,%s,%s);",
+                        entry->op_id,username,usersid,share,domain,timestamp,
+                        filename,mode,result);
+		free(mode);
+		free(result);
+		free(filename);
                 break;
         case vfs_id_chdir: ;
-                retstr = talloc_asprintf( ctx, "INSERT INTO %s ("
-                        "username, usersid, share, domain, timestamp,"
-                        "path, result) VALUES ("
-                        "'%s','%s','%s','%s','%s',"
-                        "'%s',%s);",
-                        entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
-                        entry->path,entry->result);
+		char *path;
+		dbi_conn_quote_string_copy( conf->DBIconn, entry->path, &path);
+		dbi_conn_quote_string_copy( conf->DBIconn, entry->result, &result);
+                retstr = talloc_asprintf( ctx, "INSERT INTO data ("
+                        "vfs_id, username, usersid, share, domain, timestamp,"
+                        "string1, result) VALUES ("
+                        "%i,%s,%s,%s,%s,"
+                        "%s,%s,%s);",
+                        entry->op_id,username,usersid,share,domain,timestamp,
+                        path,result);
+		free(path);
+		free(result);
                 break;
         case vfs_id_mkdir: ;
-                retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
-                        "username, usersid, share, domain, timestamp,"
-                        "path, mode, result) VALUES ("
-                        "'%s','%s','%s','%s','%s',"
-                        "'%s',%s,%s);",
-                        entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
-                        entry->path, entry->mode, entry->result);
+		dbi_conn_quote_string_copy( conf->DBIconn, entry->path, &path);
+		dbi_conn_quote_string_copy( conf->DBIconn, entry->mode, &mode);
+		dbi_conn_quote_string_copy( conf->DBIconn, entry->result, &result);
+                retstr = talloc_asprintf(ctx, "INSERT INTO data ("
+                        "vfs_id, username, usersid, share, domain, timestamp,"
+                        "string1, string2, result) VALUES ("
+                        "%i,%s,%s,%s,%s,"
+                        "%s,%s,%s,%s);",
+                        entry->op_id,username,usersid,share,domain,timestamp,
+                        path, mode, result);
+		free(mode);
+		free(result);
+		free(path);
                 break;
         case vfs_id_write:
         case vfs_id_pwrite: ;
@@ -411,13 +435,15 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                         retstr=NULL;
                         break;
                 }
-                retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
-                        "username, usersid, share, domain, timestamp,"
-                        "filename, length) VALUES ("
-                        "'%s','%s','%s','%s','%s',"
-                        "'%s',%lu);",
-                        entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
-                        entry->filename,entry->len);
+		dbi_conn_quote_string_copy( conf->DBIconn, entry->filename, &filename);
+                retstr = talloc_asprintf(ctx, "INSERT INTO data ("
+                        "vfs_id, username, usersid, share, domain, timestamp,"
+                        "string1, length) VALUES ("
+                        "%i,%s,%s,%s,%s,%s,"
+                        "%s,%lu);",
+                        vfs_id_write,username,usersid,share,domain,timestamp,
+                        filename,entry->len);
+		free(filename);
                 break;	
         case vfs_id_read:
         case vfs_id_pread: ;
@@ -425,16 +451,24 @@ char *cache_create_database_string(TALLOC_CTX *ctx,struct cache_entry *entry)
                         retstr=NULL;
                         break;
                 }
-                retstr = talloc_asprintf(ctx, "INSERT INTO %s ("
-                        "username, usersid, share, domain, timestamp,"
-                        "filename, length) VALUES ("
-                        "'%s','%s','%s','%s','%s',"
-                        "'%s',%lu);",
-                        entry->vfs_id,entry->username,entry->usersid,entry->share,entry->domain,entry->timestamp,
-                        entry->filename,entry->len);
+		dbi_conn_quote_string_copy( conf->DBIconn, entry->filename, &filename);
+                retstr = talloc_asprintf(ctx, "INSERT INTO data ("
+                        "vfs_id, username, usersid, share, domain, timestamp,"
+                        "string1, length) VALUES ("
+                        "%i,%s,%s,%s,%s,%s,"
+                        "%s,%lu);",
+                        vfs_id_read,username,usersid,share,domain,timestamp,
+                        filename,entry->len);
+		free(filename);
                 break;
 	default: ;
-	}	
+	}
+
+	free(username);
+	free(share);
+	free(domain);
+	free(timestamp);
+	free(usersid);
 	return retstr;
 }
 
@@ -444,6 +478,12 @@ void do_db( struct configuration_data *config, char *dbstring)
 	int try;
 	const char *error;
 	dbi_result result;
+	/**
+	 * a NULL dbstring? May happen when a R/W VFS function
+	 * hat 0 bytes to transfer. This data is not relevant
+	 * for statistics.
+	 */
+	if (dbstring == NULL) return;
 	/** 
 	 * Check if the connection is alive. We try ten times
 	 * to restore the connection if not
@@ -478,14 +518,14 @@ void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
 	go = go->left;
 	while (go != NULL) {
 		backup = go->left;
-		dbstring = cache_create_database_string(ctx,go);
+		dbstring = cache_create_database_string(ctx,go,config);
 		do_db(config,dbstring);
 		talloc_free(dbstring);
 		// go down
 		down = go->down;
 		while (down != NULL) {
 			backup2 = down->down;
-			dbstring = cache_create_database_string(ctx,down);
+			dbstring = cache_create_database_string(ctx,down,config);
 			do_db(config,dbstring);
 			talloc_free(dbstring);
 			talloc_free(down);
@@ -498,14 +538,14 @@ void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
 	go = entry->right;
         while (go != NULL) {
                 backup = go->right;
-                dbstring = cache_create_database_string(ctx,go);
+                dbstring = cache_create_database_string(ctx,go,config);
                 do_db(config,dbstring);
 		talloc_free(dbstring);
                 // go down
                 down = go->down;
                 while (down != NULL) { 
                         backup2 = down->down;
-                        dbstring = cache_create_database_string(ctx,down);
+                        dbstring = cache_create_database_string(ctx,down,config);
                         do_db(config,dbstring);
                         talloc_free(dbstring);
                         talloc_free(down);
@@ -518,14 +558,14 @@ void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
 	go = entry->other_ops;
 	while (go != NULL) {
 		backup = go->other_ops;
-		dbstring = cache_create_database_string(ctx,go);
+		dbstring = cache_create_database_string(ctx,go,config);
 		do_db(config,dbstring);
 		talloc_free(dbstring);
 		talloc_free(go);
 		go = backup;
 	}
 	// delete tree begin
-	dbstring = cache_create_database_string(ctx,entry);
+	dbstring = cache_create_database_string(ctx,entry,config);
 	do_db(config,dbstring);
 	if (dbstring != NULL) talloc_free(dbstring);
 	talloc_free(entry);
@@ -542,17 +582,6 @@ void cleanup_cache( TALLOC_CTX *ctx,struct configuration_data *config,
  */
 void cache_manager(struct configuration_data *config )
 {
-	char *fnnames[] = {
-		"write",
-		"read",
-		"close",
-		"rename",
-		"open",
-		"chdir",
-		"rmdir",
-		"mkdir",
-		NULL,
-	};
 	int maintenance_c_val;
 	if (config->precision>0)
 		maintenance_c_val = config->maintenance_seconds / config->precision;
@@ -585,26 +614,21 @@ void cache_manager(struct configuration_data *config )
 			char String[400];
 			char dbstring[300];
 			struct tm *tm;
-			int fncount = 0;
 			do_db(config,"BEGIN TRANSACTION;");
-			while (fnnames[fncount]!=NULL) {
-			        time_t today=time(NULL);
-			        time_t delete_date=today - config->maint_run_time;
-			        tm = localtime ( &delete_date );
+		        time_t today=time(NULL);
+		        time_t delete_date=today - config->maint_run_time;
+		        tm = localtime ( &delete_date );
 
 
-			        sprintf(String,"%04d-%02d-%02d %02d:%02d:%02d", \
-                			tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday, \
-                			tm->tm_hour, tm->tm_min, tm->tm_sec);
+		        sprintf(String,"%04d-%02d-%02d %02d:%02d:%02d", \
+               			tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday, \
+               			tm->tm_hour, tm->tm_min, tm->tm_sec);
 
 
-        			sprintf(dbstring,"delete from %s where timestamp < '",
-					fnnames[fncount]);
-        			strcat(dbstring,String);
-        			strcat(dbstring,"';");
-				do_db(config,dbstring);
-				fncount++;
-			}
+       			strcpy(dbstring,"delete from data where timestamp < '");
+       			strcat(dbstring,String);
+       			strcat(dbstring,"';");
+			do_db(config,dbstring);
 			do_db(config,"COMMIT;");
 			maintenance_count = 0;
 		}

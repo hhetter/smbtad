@@ -31,8 +31,6 @@
  *						different sub-release of
  *						the protocol
  *
- * the function exits the process if it doesn't see V2 at the beginning
- * of the header
  */
 enum header_states protocol_check_header( char *header )
 {
@@ -70,6 +68,21 @@ enum header_states protocol_check_header( char *header )
 
 	return HEADER_CHECK_OK;
 }
+
+
+/**
+ * return the number of common blocks to come
+ */
+int protocol_common_blocks( char *data )
+{
+	/* the very first data block tells the number of blocks */
+	/* to come */
+	char *str;
+	str = protocol_get_single_data_block( data, &data);
+	int common_blocks_num = atoi(str);
+	return common_blocks_num;
+}
+
 
 /**
  * AES decrypt a data block.

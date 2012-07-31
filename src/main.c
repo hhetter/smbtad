@@ -43,6 +43,17 @@ int main(int argc, char *argv[])
 			"please check syslog.\n");
 		exit(1);
 	}
+	/**
+	 * check for the database version.
+	 * If we are starting from a new version, we will
+	 * stop here and tell the user to update the
+	 * database
+	 */
+	database_check_db_version( &conf );
+	/**
+	 * update the configuration and status tables
+	 */
+	database_make_conf_table( &conf );
 
 	/* become a daemon, depending on configuration	*/
 	daemon_daemonize( &conf );
