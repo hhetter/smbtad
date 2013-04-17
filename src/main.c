@@ -33,6 +33,11 @@ int main(int argc, char *argv[])
 	pthread_t thread;
 	cache_init();
 	monitor_list_init();
+	/* We expect write failures to occur but we want to handle them where*/
+	/* the error occurs rather than in a SIGPIPE handler.		*/
+	signal(SIGPIPE, SIG_IGN);
+
+
 	/* parse command line */
 	if ( configuration_parse_cmdline( &conf, argc, argv ) <0 ) exit(1);
 	/* global debug level */
