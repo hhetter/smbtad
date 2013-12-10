@@ -1,4 +1,3 @@
-Documentation can be found in the /doc/smbta-guide.html file in the
-smbtatools package.
-
-This includes information on how to build smbtad.
+Documentation for smbtad / smbtatools is available at
+http://wiki.samba.org/index.php/SMBTA
+.
