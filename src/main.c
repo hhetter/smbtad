@@ -36,14 +36,14 @@ int main(int argc, char *argv[])
 	/* We expect write failures to occur but we want to handle them where*/
 	/* the error occurs rather than in a SIGPIPE handler.		*/
 	signal(SIGPIPE, SIG_IGN);
-
+	signal(SIGUSR1, configuration_handle_signal);
 
 	/* parse command line */
 	if ( configuration_parse_cmdline( &conf, argc, argv ) <0 ) exit(1);
 	/* global debug level */
 	_DBG = conf.dbg;
 	/* set the db */
-	if ( database_connect(&conf) == 1) {
+	if ( conf.use_db==1 && database_connect(&conf) == 1) {
 		printf("Error connecting to the database.\n"
 			"please check syslog.\n");
 		exit(1);
@@ -54,11 +54,11 @@ int main(int argc, char *argv[])
 	 * stop here and tell the user to update the
 	 * database
 	 */
-	database_check_db_version( &conf );
+	if ( conf.use_db==1 ) database_check_db_version( &conf );
 	/**
 	 * update the configuration and status tables
 	 */
-	database_make_conf_table( &conf );
+	if ( conf.use_db==1 ) database_make_conf_table( &conf );
 
 	/* become a daemon, depending on configuration	*/
 	daemon_daemonize( &conf );

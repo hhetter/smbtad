@@ -28,13 +28,28 @@ pthread_mutex_t *configuration_get_lock(void) {
 }
 
 int configuration_check_configuration( config_t *c );
-
+int configuration_load_config_file( config_t *c);
 static config_t *conf;
 
 
 config_t *configuration_get_conf() {
 	return conf;
 }
+
+
+/* handle SIGUSR1 to re-read the configuration file
+ * on demand
+ */
+void configuration_handle_signal( int signo )
+{
+	/* reload the configuration file */
+	syslog(LOG_DEBUG,"Got SIGUSR1, reloading configuration file.");
+	configuration_load_config_file(conf);
+
+}
+
+
+
 
 /* Initialize default values of the configuration.
  * Also initialize the configuration mutex.
